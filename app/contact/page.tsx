@@ -18,9 +18,7 @@ import {
   CheckCircle,
   AlertCircle,
 } from "lucide-react";
-import { useEffect, useRef } from 'react'
-import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
+import { useEffect } from "react";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -145,34 +143,104 @@ export default function ContactPage() {
     }));
   };
 
-  // Map initialization (client-only) — select the element by id because ref wasn't attached
+  // Map initialization (client-only) — removed because the dynamic-import useEffect below performs Leaflet setup.
   useEffect(() => {
-    const container = document.getElementById('adts-map') as HTMLElement | null
-    if (!container) return
+    // Intentionally left blank: the dynamic-import useEffect that follows initializes Leaflet and the map.
+  }, []);
+  // Map initialization (client-only) — dynamically import Leaflet inside an async init
+  useEffect(() => {
+    let map: any = null;
+    let cssLink: HTMLLinkElement | null = null;
 
-    // avoid double-init
-    if ((container as any).__mapInitialized) return
+    const init = async () => {
+      if (typeof window === "undefined") return;
+      const container = document.getElementById(
+        "adts-map"
+      ) as HTMLElement | null;
+      if (!container) return;
+      if ((container as any).__mapInitialized) return;
 
-    const map = L.map(container, { scrollWheelZoom: false }).setView([-1.9596, 30.0605], 13)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors',
-    }).addTo(map)
+      // Inject Leaflet CSS from CDN if not already present
+      if (!document.querySelector("link[data-leaflet]")) {
+        cssLink = document.createElement("link");
+        cssLink.rel = "stylesheet";
+        cssLink.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+        cssLink.setAttribute("data-leaflet", "true");
+        document.head.appendChild(cssLink);
+      }
 
-    // marker at Muhima, Nyarugenge, Kigali
-    const marker = L.marker([-1.9596, 30.0605]).addTo(map)
-    marker.bindPopup('<b>ADTS Rwanda</b><br/>Muhima, Nyarugenge District').openPopup()
+      // dynamic import of leaflet (client only)
+      const mod = await import("leaflet");
+      const L = (mod && (mod as any).default) || mod;
 
-    ;(container as any).__mapInitialized = true
+      map = L.map(container, { scrollWheelZoom: false }).setView(
+        [-1.9596, 30.0605],
+        13
+      );
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "&copy; OpenStreetMap contributors",
+      }).addTo(map);
+
+      // Try to geocode address and show a circle marker; fall back on Muhima coords
+      try {
+        const address = "Kinyinya, KG 380 St 7, Kigali, Rwanda";
+        const q = encodeURIComponent(address);
+        const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${q}`;
+        const res = await fetch(url, { headers: { "Accept-Language": "en" } });
+        const json = await res.json();
+        if (Array.isArray(json) && json.length > 0) {
+          const lat = parseFloat(json[0].lat);
+          const lon = parseFloat(json[0].lon);
+          map.setView([lat, lon], 16);
+          const circle = L.circleMarker([lat, lon], {
+            radius: 8,
+            color: "#1e40af",
+            fillColor: "#1e40af",
+            fillOpacity: 0.9,
+          }).addTo(map);
+          circle
+            .bindPopup("<b>ADTS Rwanda</b><br/>Kinyinya, KG 380 St 7")
+            .openPopup();
+        } else {
+          const circle = L.circleMarker([-1.9596, 30.0605], {
+            radius: 8,
+            color: "#1e40af",
+            fillColor: "#1e40af",
+            fillOpacity: 0.9,
+          }).addTo(map);
+          circle
+            .bindPopup("<b>ADTS Rwanda</b><br/>Muhima, Nyarugenge District")
+            .openPopup();
+        }
+      } catch (e) {
+        console.warn("Geocoding failed, falling back to fixed coords", e);
+        const circle = L.circleMarker([-1.9596, 30.0605], {
+          radius: 8,
+          color: "#1e40af",
+          fillColor: "#1e40af",
+          fillOpacity: 0.9,
+        }).addTo(map);
+        circle
+          .bindPopup("<b>ADTS Rwanda</b><br/>Muhima, Nyarugenge District")
+          .openPopup();
+      }
+
+      (container as any).__mapInitialized = true;
+    };
+
+    init();
 
     return () => {
       try {
-        map.remove()
+        if (map) map.remove();
       } catch (e) {
         // ignore
       }
-    }
-  }, [])
+      if (cssLink && cssLink.parentNode)
+        cssLink.parentNode.removeChild(cssLink);
+    };
+  }, []);
 
   return (
     <div className="flex flex-col">
