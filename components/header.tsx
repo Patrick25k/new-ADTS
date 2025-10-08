@@ -1,14 +1,14 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { useState } from "react"
-import { Menu, X, Phone, Mail, ChevronDown } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import Image from "next/image"
+import Link from "next/link";
+import { useState } from "react";
+import { Menu, X, Phone, Mail, ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 export function Header() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   const navigation = [
     { name: "Home", href: "/" },
@@ -16,7 +16,10 @@ export function Header() {
       name: "About Us",
       href: "/about",
       dropdown: [
-        { name: "What Makes Us Different?", href: "/about/what-makes-us-different" },
+        {
+          name: "What Makes Us Different?",
+          href: "/about/what-makes-us-different",
+        },
         { name: "Who we are & What we do", href: "/about/who-we-are" },
         { name: "Why we exist", href: "/about/why-we-exist" },
         { name: "Where we work", href: "/about/where-we-work" },
@@ -54,16 +57,19 @@ export function Header() {
       ],
     },
     { name: "Contact Us", href: "/contact" },
-  ]
+  ];
 
   return (
-  <header className="sticky top-0 z-[9999] w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-[9999] w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       {/* Top bar with contact info */}
       <div className="bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 py-2">
           <div className="flex flex-wrap items-center justify-end gap-4 text-sm">
             <div className="flex items-center gap-6">
-              <a href="tel:+250788308255" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+              <a
+                href="tel:+250788308255"
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              >
                 <Phone className="h-4 w-4" />
                 <span>+250 788 308 255</span>
               </a>
@@ -84,7 +90,12 @@ export function Header() {
         <div className="flex h-16 items-center justify-between">
           <Link href="/" className="flex items-center gap-3 ml-5">
             <div className="relative h-12 w-12 flex-shrink-0">
-              <Image src="/adts-rwanda-ngo-logo-with-globe-and-people.jpg" alt="ADTS Rwanda Logo" fill className="object-contain" />
+              <Image
+                src="/adts-rwanda-ngo-logo-with-globe-and-people.jpg"
+                alt="ADTS Rwanda Logo"
+                fill
+                className="object-contain"
+              />
             </div>
             <div className="flex flex-col">
               <span className="text-2xl font-bold tracking-tight">ADTS</span>
@@ -129,8 +140,17 @@ export function Header() {
           </nav>
 
           {/* Mobile menu button */}
-          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
           </Button>
         </div>
 
@@ -142,12 +162,18 @@ export function Header() {
                 {item.dropdown ? (
                   <>
                     <button
-                      onClick={() => setOpenDropdown(openDropdown === item.name ? null : item.name)}
+                      onClick={() =>
+                        setOpenDropdown(
+                          openDropdown === item.name ? null : item.name
+                        )
+                      }
                       className="flex items-center justify-between w-full py-2 text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
                     >
                       {item.name}
                       <ChevronDown
-                        className={`h-4 w-4 transition-transform ${openDropdown === item.name ? "rotate-180" : ""}`}
+                        className={`h-4 w-4 transition-transform ${
+                          openDropdown === item.name ? "rotate-180" : ""
+                        }`}
                       />
                     </button>
                     {openDropdown === item.name && (
@@ -180,5 +206,5 @@ export function Header() {
         )}
       </div>
     </header>
-  )
+  );
 }
