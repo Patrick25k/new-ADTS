@@ -67,7 +67,7 @@ export default function Videos() {
               to share your testimony, we'd love to hear from you.
             </p>
             <a
-              href="mailto:adtsrwanda@yahoo.fr?subject=Video Testimony"
+              href="mailto:rwandaadts@gmail.com?subject=Video Testimony"
               className="inline-block px-8 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity"
             >
               Contact Us

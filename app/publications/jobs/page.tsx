@@ -1,5 +1,5 @@
-import { Briefcase, MapPin, Calendar } from "lucide-react"
-import Image from "next/image"
+import { Briefcase, MapPin, Calendar } from "lucide-react";
+import Image from "next/image";
 
 export default function Jobs() {
   const jobs = [
@@ -67,7 +67,7 @@ export default function Jobs() {
       ],
       status: "Open",
     },
-  ]
+  ];
 
   return (
     <main className="min-h-screen">
@@ -80,9 +80,12 @@ export default function Jobs() {
           className="object-cover object-[center_40%] brightness-50"
         />
         <div className="relative z-10 container mx-auto px-4 text-center text-white">
-          <h1 className="text-4xl md:text-5xl font-bold mb-6 text-[#FCB20B]">Career Opportunities</h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-6 text-[#FCB20B]">
+            Career Opportunities
+          </h1>
           <p className="text-xl max-w-3xl mx-auto text-pretty">
-            Join our team in transforming lives and empowering communities across Rwanda
+            Join our team in transforming lives and empowering communities
+            across Rwanda
           </p>
         </div>
       </section>
@@ -91,24 +94,37 @@ export default function Jobs() {
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl font-bold mb-8 text-center">Why Work With ADTS Rwanda?</h2>
+            <h2 className="text-3xl font-bold mb-8 text-center">
+              Why Work With ADTS Rwanda?
+            </h2>
             <p className="text-lg text-foreground/80 mb-12 text-center text-pretty">
-              At ADTS Rwanda, you'll be part of a mission-driven team committed to social transformation, gender
-              equality, and sustainable development. We offer meaningful work, professional growth, and the opportunity
-              to make a real difference.
+              At ADTS Rwanda, you'll be part of a mission-driven team committed
+              to social transformation, gender equality, and sustainable
+              development. We offer meaningful work, professional growth, and
+              the opportunity to make a real difference.
             </p>
             <div className="grid md:grid-cols-3 gap-6">
               <div className="p-6 rounded-lg border bg-card text-center">
                 <div className="text-3xl font-bold text-primary mb-2">23+</div>
-                <div className="text-sm text-foreground/70">Years of Impact</div>
+                <div className="text-sm text-foreground/70">
+                  Years of Impact
+                </div>
               </div>
               <div className="p-6 rounded-lg border bg-card text-center">
-                <div className="text-3xl font-bold text-primary mb-2">140K+</div>
-                <div className="text-sm text-foreground/70">Lives Transformed</div>
+                <div className="text-3xl font-bold text-primary mb-2">
+                  140K+
+                </div>
+                <div className="text-sm text-foreground/70">
+                  Lives Transformed
+                </div>
               </div>
               <div className="p-6 rounded-lg border bg-card text-center">
-                <div className="text-3xl font-bold text-primary mb-2">Values</div>
-                <div className="text-sm text-foreground/70">Integrity, Innovation, Solidarity</div>
+                <div className="text-3xl font-bold text-primary mb-2">
+                  Values
+                </div>
+                <div className="text-sm text-foreground/70">
+                  Integrity, Innovation, Solidarity
+                </div>
               </div>
             </div>
           </div>
@@ -122,19 +138,26 @@ export default function Jobs() {
             <h2 className="text-3xl font-bold mb-12">Current Openings</h2>
             <div className="space-y-6">
               {jobs.map((job, index) => (
-                <div key={index} className="bg-background rounded-lg border p-6">
+                <div
+                  key={index}
+                  className="bg-background rounded-lg border p-6"
+                >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-3">
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                            job.status === "Open" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
+                            job.status === "Open"
+                              ? "bg-green-100 text-green-700"
+                              : "bg-gray-100 text-gray-700"
                           }`}
                         >
                           {job.status}
                         </span>
                       </div>
-                      <h3 className="text-2xl font-semibold mb-3">{job.title}</h3>
+                      <h3 className="text-2xl font-semibold mb-3">
+                        {job.title}
+                      </h3>
                       <div className="flex flex-wrap items-center gap-4 text-sm text-foreground/60 mb-4">
                         <span className="flex items-center gap-1">
                           <MapPin className="h-4 w-4" />
@@ -149,9 +172,13 @@ export default function Jobs() {
                           Deadline: {job.deadline}
                         </span>
                       </div>
-                      <p className="text-foreground/70 mb-4">{job.description}</p>
+                      <p className="text-foreground/70 mb-4">
+                        {job.description}
+                      </p>
                       <div className="mb-4">
-                        <h4 className="font-semibold mb-2">Key Requirements:</h4>
+                        <h4 className="font-semibold mb-2">
+                          Key Requirements:
+                        </h4>
                         <ul className="list-disc list-inside space-y-1 text-sm text-foreground/70">
                           {job.requirements.map((req, idx) => (
                             <li key={idx}>{req}</li>
@@ -179,30 +206,41 @@ export default function Jobs() {
             <h2 className="text-3xl font-bold mb-8">How to Apply</h2>
             <div className="space-y-6">
               <div className="p-6 rounded-lg border bg-card">
-                <h3 className="text-xl font-semibold mb-2">1. Review Job Description</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  1. Review Job Description
+                </h3>
                 <p className="text-foreground/70">
-                  Carefully read the job description, requirements, and responsibilities to ensure you meet the
-                  qualifications.
+                  Carefully read the job description, requirements, and
+                  responsibilities to ensure you meet the qualifications.
                 </p>
               </div>
               <div className="p-6 rounded-lg border bg-card">
-                <h3 className="text-xl font-semibold mb-2">2. Prepare Application Documents</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  2. Prepare Application Documents
+                </h3>
                 <p className="text-foreground/70">
-                  Prepare your CV, cover letter, and copies of relevant certificates and references. Ensure all
-                  documents are up to date.
+                  Prepare your CV, cover letter, and copies of relevant
+                  certificates and references. Ensure all documents are up to
+                  date.
                 </p>
               </div>
               <div className="p-6 rounded-lg border bg-card">
-                <h3 className="text-xl font-semibold mb-2">3. Submit Your Application</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  3. Submit Your Application
+                </h3>
                 <p className="text-foreground/70">
-                  Email your application to adtsrwanda@yahoo.fr with the job title in the subject line. Applications
-                  must be received before the deadline.
+                  Email your application to rwandaadts@gmail.com with the job
+                  title in the subject line. Applications must be received
+                  before the deadline.
                 </p>
               </div>
               <div className="p-6 rounded-lg border bg-card">
-                <h3 className="text-xl font-semibold mb-2">4. Selection Process</h3>
+                <h3 className="text-xl font-semibold mb-2">
+                  4. Selection Process
+                </h3>
                 <p className="text-foreground/70">
-                  Shortlisted candidates will be contacted for interviews. Only successful applicants will be notified.
+                  Shortlisted candidates will be contacted for interviews. Only
+                  successful applicants will be notified.
                 </p>
               </div>
             </div>
@@ -214,11 +252,15 @@ export default function Jobs() {
       <section className="py-20 bg-accent/30">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-6">Equal Opportunity Employer</h2>
+            <h2 className="text-3xl font-bold mb-6">
+              Equal Opportunity Employer
+            </h2>
             <p className="text-lg text-foreground/80 text-pretty">
-              ADTS Rwanda is an equal opportunity employer. We celebrate diversity and are committed to creating an
-              inclusive environment for all employees. We encourage applications from women, people with disabilities,
-              and members of historically marginalized communities.
+              ADTS Rwanda is an equal opportunity employer. We celebrate
+              diversity and are committed to creating an inclusive environment
+              for all employees. We encourage applications from women, people
+              with disabilities, and members of historically marginalized
+              communities.
             </p>
           </div>
         </div>
@@ -228,28 +270,30 @@ export default function Jobs() {
       <section className="py-20 bg-secondary/80 text-primary-foreground">
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl font-bold mb-6">Questions About Careers?</h2>
+            <h2 className="text-3xl font-bold mb-6">
+              Questions About Careers?
+            </h2>
             <p className="text-lg mb-8 text-pretty">
-              For inquiries about job openings, application procedures, or working at ADTS Rwanda, please contact our HR
-              department.
+              For inquiries about job openings, application procedures, or
+              working at ADTS Rwanda, please contact our HR department.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
                 href="tel:+250788308255"
                 className="inline-block px-6 py-3 bg-background text-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity"
               >
-                +250 788 308 255
+                +250 788 605 493
               </a>
               <a
-                href="mailto:adtsrwanda@yahoo.fr?subject=Career Inquiry"
+                href="mailto:rwandaadts@gmail.com?subject=Career Inquiry"
                 className="inline-block px-6 py-3 bg-background text-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity"
               >
-                adtsrwanda@yahoo.fr
+                rwandaadts@gmail.com
               </a>
             </div>
           </div>
         </div>
       </section>
     </main>
-  )
+  );
 }

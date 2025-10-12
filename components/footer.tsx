@@ -1,5 +1,12 @@
-import Link from "next/link"
-import { Facebook, Instagram, Twitter, Mail, Phone, MapPin } from "lucide-react"
+import Link from "next/link";
+import {
+  Facebook,
+  Instagram,
+  Twitter,
+  Mail,
+  Phone,
+  MapPin,
+} from "lucide-react";
 
 export function Footer() {
   return (
@@ -13,8 +20,8 @@ export function Footer() {
               <span className="text-sm font-bold text-blue-500">RWANDA</span>
             </div>
             <p className="text-sm text-background/80 leading-relaxed">
-              Transforming lives and empowering communities through social transformation, sustainable and equitable
-              development.
+              Transforming lives and empowering communities through social
+              transformation, sustainable and equitable development.
             </p>
           </div>
 
@@ -23,22 +30,34 @@ export function Footer() {
             <h3 className="font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/about" className="text-background/80 hover:text-[#FCB20B] transition-colors">
+                <Link
+                  href="/about"
+                  className="text-background/80 hover:text-[#FCB20B] transition-colors"
+                >
                   About Us
                 </Link>
               </li>
               <li>
-                <Link href="/programs" className="text-background/80 hover:text-[#FCB20B] transition-colors">
+                <Link
+                  href="/programs"
+                  className="text-background/80 hover:text-[#FCB20B] transition-colors"
+                >
                   Programs
                 </Link>
               </li>
               <li>
-                <Link href="/get-involved" className="text-background/80 hover:text-[#FCB20B] transition-colors">
+                <Link
+                  href="/get-involved"
+                  className="text-background/80 hover:text-[#FCB20B] transition-colors"
+                >
                   Get Involved
                 </Link>
               </li>
               <li>
-                <Link href="/gallery" className="text-background/80 hover:text-[#FCB20B] transition-colors">
+                <Link
+                  href="/gallery"
+                  className="text-background/80 hover:text-[#FCB20B] transition-colors"
+                >
                   Gallery
                 </Link>
               </li>
@@ -59,17 +78,20 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="h-4 w-4 flex-shrink-0" />
-                <a href="tel:+250788308255" className="text-background/80 hover:text-[#FCB20B] transition-colors">
-                  +250 788 308 255
+                <a
+                  href="tel:+250788308255"
+                  className="text-background/80 hover:text-[#FCB20B] transition-colors"
+                >
+                  +250 788 605 493
                 </a>
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="h-4 w-4 flex-shrink-0" />
                 <a
-                  href="mailto:adtsrwanda@yahoo.fr"
+                  href="mailto:rwandaadts@gmail.com"
                   className="text-background/80 hover:text-[#FCB20B] transition-colors"
                 >
-                  adtsrwanda@yahoo.fr
+                  rwandaadts@gmail.com
                 </a>
               </li>
             </ul>
@@ -108,9 +130,11 @@ export function Footer() {
         </div>
 
         <div className="border-t border-background/20 mt-8 pt-8 text-center text-sm text-background/60">
-          <p>&copy; {new Date().getFullYear()} ADTS Rwanda. All rights reserved.</p>
+          <p>
+            &copy; {new Date().getFullYear()} ADTS Rwanda. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>
-  )
+  );
 }

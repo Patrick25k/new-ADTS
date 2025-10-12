@@ -1,5 +1,5 @@
-import { MapPin, Users, Globe } from "lucide-react"
-import Image from "next/image"
+import { MapPin, Users, Globe } from "lucide-react";
+import Image from "next/image";
 
 export default function WhereWeWork() {
   return (
@@ -13,9 +13,12 @@ export default function WhereWeWork() {
           className="object-cover brightness-50 top-[30px]"
         />
         <div className="relative z-10 container mx-auto px-4 text-center text-white">
-          <h1 className="text-4xl md:text-5xl font-bold mb-6 text-[#FCB20B]">Where We Work</h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-6 text-[#FCB20B]">
+            Where We Work
+          </h1>
           <p className="text-xl max-w-3xl mx-auto text-pretty">
-            Operating across Rwanda with regional reach throughout the Great Lakes region
+            Operating across Rwanda with regional reach throughout the Great
+            Lakes region
           </p>
         </div>
       </section>
@@ -27,11 +30,15 @@ export default function WhereWeWork() {
             <div className="flex items-start gap-4 mb-12">
               <MapPin className="h-8 w-8 text-primary flex-shrink-0" />
               <div>
-                <h2 className="text-3xl font-bold mb-4">Rwanda - Our Home Base</h2>
+                <h2 className="text-3xl font-bold mb-4">
+                  Rwanda - Our Home Base
+                </h2>
                 <p className="text-lg text-foreground/80 mb-6 text-pretty">
-                  ADTS Rwanda is headquartered in Kigali and operates programs across multiple districts throughout
-                  Rwanda. Our work reaches both urban and rural communities, with a particular focus on areas with high
-                  rates of poverty, gender-based violence, and limited access to services.
+                  ADTS Rwanda is headquartered in Kigali and operates programs
+                  across multiple districts throughout Rwanda. Our work reaches
+                  both urban and rural communities, with a particular focus on
+                  areas with high rates of poverty, gender-based violence, and
+                  limited access to services.
                 </p>
               </div>
             </div>
@@ -46,10 +53,12 @@ export default function WhereWeWork() {
                 </div>
               </div>
               <div className="p-6 rounded-lg border bg-card">
-                <h3 className="text-xl font-semibold mb-3">Contact Information</h3>
+                <h3 className="text-xl font-semibold mb-3">
+                  Contact Information
+                </h3>
                 <div className="space-y-2 text-foreground/70">
-                  <p>Phone: +250 788 308 255</p>
-                  <p>Email: adtsrwanda@yahoo.fr</p>
+                  <p>Phone: +250 788 605 493</p>
+                  <p>Email: rwandaadts@gmail.com</p>
                 </div>
               </div>
             </div>
@@ -66,8 +75,9 @@ export default function WhereWeWork() {
               <div>
                 <h2 className="text-3xl font-bold mb-4">Great Lakes Region</h2>
                 <p className="text-lg text-foreground/80 mb-6 text-pretty">
-                  Beyond Rwanda, ADTS extends its Training for Transformation programs to community mobilizers and
-                  trainers from across the Great Lakes region, including:
+                  Beyond Rwanda, ADTS extends its Training for Transformation
+                  programs to community mobilizers and trainers from across the
+                  Great Lakes region, including:
                 </p>
               </div>
             </div>
@@ -75,15 +85,23 @@ export default function WhereWeWork() {
             <div className="grid md:grid-cols-3 gap-6">
               <div className="bg-background p-6 rounded-lg border text-center">
                 <h3 className="text-xl font-semibold mb-2">Rwanda</h3>
-                <p className="text-foreground/70">Primary operations and programs</p>
+                <p className="text-foreground/70">
+                  Primary operations and programs
+                </p>
               </div>
               <div className="bg-background p-6 rounded-lg border text-center">
                 <h3 className="text-xl font-semibold mb-2">Burundi</h3>
-                <p className="text-foreground/70">Training and capacity building</p>
+                <p className="text-foreground/70">
+                  Training and capacity building
+                </p>
               </div>
               <div className="bg-background p-6 rounded-lg border text-center">
-                <h3 className="text-xl font-semibold mb-2">Democratic Republic of Congo</h3>
-                <p className="text-foreground/70">Training and capacity building</p>
+                <h3 className="text-xl font-semibold mb-2">
+                  Democratic Republic of Congo
+                </h3>
+                <p className="text-foreground/70">
+                  Training and capacity building
+                </p>
               </div>
             </div>
           </div>
@@ -99,7 +117,8 @@ export default function WhereWeWork() {
               <div>
                 <h2 className="text-3xl font-bold mb-4">Who We Serve</h2>
                 <p className="text-lg text-foreground/80 mb-8 text-pretty">
-                  Our programs reach diverse groups across the communities where we work:
+                  Our programs reach diverse groups across the communities where
+                  we work:
                 </p>
               </div>
             </div>
@@ -108,31 +127,40 @@ export default function WhereWeWork() {
               <div className="p-6 rounded-lg border bg-card">
                 <h3 className="font-semibold mb-2">Women & Girls</h3>
                 <p className="text-sm text-foreground/70">
-                  Especially the poorest women, survivors of domestic violence, and teen mothers
+                  Especially the poorest women, survivors of domestic violence,
+                  and teen mothers
                 </p>
               </div>
               <div className="p-6 rounded-lg border bg-card">
                 <h3 className="font-semibold mb-2">Youth</h3>
-                <p className="text-sm text-foreground/70">Young people seeking education, skills, and opportunities</p>
+                <p className="text-sm text-foreground/70">
+                  Young people seeking education, skills, and opportunities
+                </p>
               </div>
               <div className="p-6 rounded-lg border bg-card">
                 <h3 className="font-semibold mb-2">Families & Couples</h3>
-                <p className="text-sm text-foreground/70">Households affected by domestic violence and conflict</p>
+                <p className="text-sm text-foreground/70">
+                  Households affected by domestic violence and conflict
+                </p>
               </div>
               <div className="p-6 rounded-lg border bg-card">
                 <h3 className="font-semibold mb-2">Vulnerable Groups</h3>
                 <p className="text-sm text-foreground/70">
-                  Widows, historically marginalized communities, and those living in extreme poverty
+                  Widows, historically marginalized communities, and those
+                  living in extreme poverty
                 </p>
               </div>
               <div className="p-6 rounded-lg border bg-card">
                 <h3 className="font-semibold mb-2">Community Leaders</h3>
-                <p className="text-sm text-foreground/70">Mobilizers, trainers, and local leaders driving change</p>
+                <p className="text-sm text-foreground/70">
+                  Mobilizers, trainers, and local leaders driving change
+                </p>
               </div>
               <div className="p-6 rounded-lg border bg-card">
                 <h3 className="font-semibold mb-2">General Communities</h3>
                 <p className="text-sm text-foreground/70">
-                  All community members participating in civic life and development
+                  All community members participating in civic life and
+                  development
                 </p>
               </div>
             </div>
@@ -167,5 +195,5 @@ export default function WhereWeWork() {
         </div>
       </section>
     </main>
-  )
+  );
 }

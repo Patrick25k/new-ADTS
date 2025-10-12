@@ -1,6 +1,7 @@
 "use client";
 
 import type React from "react";
+import Image from "next/image";
 
 import { useState } from "react";
 import emailjs from "@emailjs/browser";
@@ -268,20 +269,14 @@ export default function ContactPage() {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative h-[400px] flex items-center justify-center overflow-hidden">
-        <div
-          className="absolute inset-0 z-0"
-          style={{
-            backgroundImage:
-              "url(/images/image_17.jpeg?height=400&width=1920&query=Rwanda+landscape+beautiful+nature)",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-foreground/90 to-foreground/70" />
-        </div>
-
-        <div className="container mx-auto px-4 z-10 text-center">
+      <section className="relative h-[400px] flex items-center justify-center">
+              <Image
+                src="/images/image_17.jpeg"
+                alt="Children learning in Rwanda"
+                fill
+                className="object-cover object-[center_30%] brightness-50"
+              />
+              <div className="container mx-auto px-4 z-10 text-center">
           <h1 className="text-5xl md:text-6xl font-bold text-[#FCB20B] mb-4">
             CONTACT US
           </h1>
@@ -289,7 +284,8 @@ export default function ContactPage() {
             Get in touch with us to learn more about our work or get involved
           </p>
         </div>
-      </section>
+            </section>
+      
 
       {/* Contact Information & Form */}
       <section className="py-20 bg-background">
