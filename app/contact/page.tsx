@@ -44,7 +44,6 @@ export default function ContactPage() {
       !formData.subject ||
       !formData.message
     ) {
-      console.log("❌ Form validation failed - missing fields");
       setSubmitStatus("error");
       setStatusMessage("Please fill in all required fields.");
       return;
@@ -55,8 +54,6 @@ export default function ContactPage() {
     setStatusMessage("");
 
     try {
-      console.log("📤 Sending form data via EmailJS:", formData);
-
       const serviceId = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
       const templateId = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
       const publicKey =
@@ -91,8 +88,6 @@ export default function ContactPage() {
         templateParams,
         publicKey
       );
-      console.log("📨 EmailJS admin send result:", result);
-
       // Optionally send an auto-reply if an auto-reply template id is configured
       const autoTemplateId =
         process.env.NEXT_PUBLIC_EMAILJS_AUTOREPLY_TEMPLATE_ID;
@@ -111,7 +106,6 @@ export default function ContactPage() {
             autoParams,
             publicKey
           );
-          console.log("📨 EmailJS auto-reply send result:", autoResult);
         } catch (autoErr) {
           console.warn("Auto-reply failed:", autoErr);
         }

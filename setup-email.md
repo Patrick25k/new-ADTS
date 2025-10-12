@@ -8,7 +8,7 @@ The contact form is getting an `EAUTH` error because Gmail authentication isn't 
 Create a new file called `.env.local` in the root directory (same level as package.json) with this content:
 
 ```
-EMAIL_USER=jeandamour013@gmail.com
+EMAIL_USER=jeandamourkubwimana0@gmail.com
 EMAIL_PASS=your_app_password_here
 ```
 

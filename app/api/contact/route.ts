@@ -10,13 +10,6 @@ const createTransporter = () => {
     throw new Error('EMAIL_PASS environment variable is required. Please set up Gmail App Password in .env.local file.')
   }
   
-  // Debug logging (remove in production)
-  console.log('🔧 Email Config Debug:')
-  console.log(`📧 Email User: ${emailUser}`)
-  console.log(`🔑 Password Length: ${emailPass.length} characters`)
-  console.log(`🔑 Password Format: ${emailPass.replace(/./g, '*')}`)
-  console.log('=' .repeat(40))
-  
   return nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 587,
@@ -32,11 +25,8 @@ const createTransporter = () => {
 }
 
 export async function POST(request: NextRequest) {
-  console.log('🔥 API Route: Contact form submission received')
   try {
     const { name, email, subject, message } = await request.json()
-    console.log('📋 Form data received:', { name, email, subject, message: message.substring(0, 50) + '...' })
-
     // Validate required fields
     if (!name || !email || !subject || !message) {
       return NextResponse.json(
@@ -66,8 +56,6 @@ export async function POST(request: NextRequest) {
       // Always use fallback mode if Gmail auth fails
       useEmailFallback = true
       sendError = error
-      console.log('📧 EMAIL FALLBACK MODE: Gmail authentication failed, logging message instead')
-      console.log('Gmail Error:', error)
     }
 
     // Email to admin (jeandamour013@gmail.com)
@@ -208,17 +196,6 @@ export async function POST(request: NextRequest) {
     // Send both emails
     console.log('📧 Email sending mode:', useEmailFallback ? 'FALLBACK' : 'LIVE EMAIL')
     if (useEmailFallback) {
-      // Log emails to console in development when Gmail isn't configured
-      console.log('📧 FALLBACK MODE - Contact Form Submission:')
-      console.log('=' .repeat(60))
-      console.log(`👤 From: ${name} (${email})`)
-      console.log(`📝 Subject: ${subject}`)
-      console.log(`💬 Message: ${message}`)
-      console.log(`🕐 Time: ${new Date().toLocaleString('en-US', { timeZone: 'Africa/Kigali' })} (Rwanda Time)`)
-      console.log('=' .repeat(60))
-      console.log('📨 Auto-reply would be sent to:', email)
-      console.log('📨 Admin notification would be sent to: jeandamourkubwimana0@gmail.com')
-      console.log('=' .repeat(60))
       
       // Simulate email delay
       await new Promise(resolve => setTimeout(resolve, 1000))
@@ -237,17 +214,6 @@ export async function POST(request: NextRequest) {
         console.log('❌ Email sending failed, switching to fallback mode')
         console.log('Email Error:', emailError)
         
-        // Log the contact form submission as fallback
-        console.log('📧 FALLBACK MODE - Contact Form Submission:')
-        console.log('=' .repeat(60))
-        console.log(`👤 From: ${name} (${email})`)
-        console.log(`📝 Subject: ${subject}`)
-        console.log(`💬 Message: ${message}`)
-        console.log(`🕐 Time: ${new Date().toLocaleString('en-US', { timeZone: 'Africa/Kigali' })} (Rwanda Time)`)
-        console.log('=' .repeat(60))
-        console.log('📨 Auto-reply would be sent to:', email)
-        console.log('📨 Admin notification would be sent to: jeandamourkubwimana0@gmail.com')
-        console.log('=' .repeat(60))
       }
     }
 

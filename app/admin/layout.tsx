@@ -153,14 +153,6 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
             </Link>
 
             <Link
-              href="/admin/prayers"
-              className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 hover:text-gray-900 transition-colors"
-            >
-              <BookOpen className="w-5 h-5" />
-              <span className="font-medium">Prayer Requests</span>
-            </Link>
-
-            <Link
               href="/admin/child-protection"
               className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 hover:text-gray-900 transition-colors"
             >
