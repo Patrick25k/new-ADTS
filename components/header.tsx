@@ -91,7 +91,7 @@ export function Header() {
           <Link href="/" className="flex items-center gap-3 ml-5">
             <div className="relative h-12 w-12 flex-shrink-0">
               <Image
-                src="/adts-rwanda-ngo-logo-with-globe-and-people.jpg"
+                src="/images/ADTS LOGO.jpg"
                 alt="ADTS Rwanda Logo"
                 fill
                 className="object-contain"

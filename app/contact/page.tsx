@@ -93,7 +93,7 @@ export default function ContactPage() {
         console.warn("EmailJS environment variables are not set");
         setSubmitStatus("error");
         setStatusMessage(
-          "Email service not configured. Please set NEXT_PUBLIC_EMAILJS_SERVICE_ID, NEXT_PUBLIC_EMAILJS_TEMPLATE_ID and NEXT_PUBLIC_EMAILJS_PUBLIC_KEY."
+          "Sorry, email not sent try again later!"
         );
         return;
       }
@@ -416,7 +416,7 @@ export default function ContactPage() {
                   {/* Visible debug banner: shows whether EmailJS envs were inlined at build time */}
                   {!_emailjs_all_set && (
                     <div className="mb-4 p-3 rounded border bg-yellow-50 border-yellow-200 text-yellow-800">
-                      EmailJS environment variables are missing in this build. The contact form will not send messages until NEXT_PUBLIC_EMAILJS_SERVICE_ID, NEXT_PUBLIC_EMAILJS_TEMPLATE_ID and NEXT_PUBLIC_EMAILJS_PUBLIC_KEY are set at build time.
+                      Sorry, mail not sent try again later!
                     </div>
                   )}
 
