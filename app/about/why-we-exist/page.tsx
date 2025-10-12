@@ -6,7 +6,7 @@ export default function WhyWeExist() {
       {/* Hero Section */}
       <section className="relative h-[400px] flex items-center justify-center">
         <Image
-          src="/women-empowerment-rwanda-education.jpg"
+          src="/images/image_23.jpeg"
           alt="Women empowerment in Rwanda"
           fill
           className="object-cover brightness-50"

@@ -58,7 +58,7 @@ export default function HistoricalBackground() {
       {/* Hero Section */}
       <section className="relative h-[400px] flex items-center justify-center">
         <Image
-          src="/rwanda-community-celebration-anniversary.jpg"
+          src="/images/image1a.jpeg"
           alt="ADTS Rwanda historical journey"
           fill
           className="object-cover brightness-50"

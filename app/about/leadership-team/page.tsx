@@ -5,9 +5,9 @@ export default function LeadershipTeam() {
   return (
     <main className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative h-[400px] flex items-center justify-center">
+      <section className="relative h-[600px] flex items-center justify-center">
         <Image
-          src="/community-leader-woman-speaking-meeting.jpg"
+          src="/images/image_39.jpeg"
           alt="ADTS Rwanda leadership"
           fill
           className="object-cover brightness-50"

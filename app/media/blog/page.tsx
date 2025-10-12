@@ -4,13 +4,13 @@ import Image from "next/image"
 export default function Blog() {
   const blogPosts = [
     {
-      title: "23 Years of Transformation: Reflecting on ADTS Rwanda's Journey",
+      title: "25 Years of Transformation: Reflecting on ADTS Rwanda's Journey",
       date: "March 15, 2024",
       author: "ADTS Rwanda Team",
       category: "Organizational Updates",
       excerpt:
         "As we celebrate over two decades of service, we reflect on the journey from post-genocide recovery to sustainable community transformation. Discover the milestones, challenges, and triumphs that have shaped ADTS Rwanda.",
-      image: "/rwanda-community-celebration-anniversary.jpg",
+      image: "/images/image1.jpg",
     },
     {
       title: "The Power of Training for Transformation: A Methodology That Changes Lives",
@@ -19,7 +19,7 @@ export default function Blog() {
       category: "Methodologies",
       excerpt:
         "Training for Transformation (TFT) is more than a training program—it's a philosophy of empowerment. Learn how this Paulo Freire-inspired approach has trained 6,732 community mobilizers and transformed countless communities.",
-      image: "/community-training-workshop-participatory-learning.jpg",
+      image: "/images/image3.jpg",
     },
     {
       title: "Breaking the Cycle: How VSL Groups Are Lifting Women Out of Poverty",
@@ -28,7 +28,7 @@ export default function Blog() {
       category: "Socio-Economic Empowerment",
       excerpt:
         "Voluntary Savings and Loan groups have created 51,259 members, with 82% being women. Discover how this simple yet powerful model is transforming economic realities for Rwanda's poorest women.",
-      image: "/women-savings-group-counting-money-rwanda.jpg",
+      image: "/images/image_37.jpeg",
     },
     {
       title: "Ending Domestic Violence: A Community-Led Approach",
@@ -37,7 +37,7 @@ export default function Blog() {
       category: "Gender Equality",
       excerpt:
         "Domestic violence doesn't end with laws and policies alone—it requires community mobilization, behavior change, and grassroots action. Learn how our EDV working groups are creating peaceful families across Rwanda.",
-      image: "/community-meeting-dialogue-gender-equality.jpg",
+      image: "/images/image4.jpg",
     },
     {
       title: "Teen Mothers: From Stigma to Success",
@@ -46,7 +46,7 @@ export default function Blog() {
       category: "Youth Empowerment",
       excerpt:
         "Teen pregnancy often leads to rejection, poverty, and lost opportunities. But it doesn't have to. Discover how our teen mothers' program is restoring hope and creating pathways to success for 300+ young mothers.",
-      image: "/young-mother-vocational-training-sewing.jpg",
+      image: "/images/image_9.jpeg",
     },
     {
       title: "The Role of Gender Focal Points in Preventing GBV",
@@ -55,7 +55,7 @@ export default function Blog() {
       category: "Gender Equality",
       excerpt:
         "Gender focal points are unsung heroes in the fight against gender-based violence. Learn how these trained community members are monitoring, preventing, and responding to GBV at the grassroots level.",
-      image: "/community-leader-woman-speaking-meeting.jpg",
+      image: "/images/image6.jpg",
     },
   ]
 
@@ -64,7 +64,7 @@ export default function Blog() {
       {/* Hero Section */}
       <section className="relative h-[400px] flex items-center justify-center">
         <Image
-          src="/rwanda-community-celebration-success.jpg"
+          src="/images/image5.jpg"
           alt="ADTS Rwanda blog and insights"
           fill
           className="object-cover brightness-50"

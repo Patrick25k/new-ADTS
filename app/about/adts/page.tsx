@@ -7,7 +7,7 @@ export default function AboutADTS() {
       {/* Hero Section */}
       <section className="relative h-[400px] flex items-center justify-center">
         <Image
-          src="/women-savings-group-counting-money-rwanda.jpg"
+          src="/images/image_18.jpeg"
           alt="ADTS Rwanda — community development and child protection"
           fill
           className="object-cover brightness-50"

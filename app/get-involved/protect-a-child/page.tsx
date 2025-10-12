@@ -46,10 +46,10 @@ export default function ProtectAChild() {
       {/* Hero Section */}
       <section className="relative h-[400px] flex items-center justify-center">
         <Image
-          src="/rwanda-children-learning-classroom-education.jpg"
+          src="/images/image6.jpg"
           alt="Children learning in Rwanda"
           fill
-          className="object-cover brightness-50"
+          className="object-cover object-[center_30%] brightness-50"
         />
         <div className="relative z-10 container mx-auto px-4 text-center text-white">
           <h1 className="text-4xl md:text-5xl font-bold mb-6 text-[#FCB20B]">Protect a Child</h1>

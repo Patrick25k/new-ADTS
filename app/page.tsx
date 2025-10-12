@@ -39,7 +39,7 @@ export default function HomePage() {
               <CardContent className="p-8">
                 <div className="mb-6">
                   <img
-                    src="/community-prayer-rwanda-faith.jpg"
+                    src="/images/image_3.jpeg"
                     alt="Christ Centered"
                     className="w-full h-48 object-cover rounded-lg"
                   />
@@ -67,7 +67,7 @@ export default function HomePage() {
               <CardContent className="p-8">
                 <div className="mb-6">
                   <img
-                    src="/community-gathering-rwanda-partnership.jpg"
+                    src="/images/image_31.jpeg"
                     alt="Community Based"
                     className="w-full h-48 object-cover rounded-lg"
                   />
@@ -95,7 +95,7 @@ export default function HomePage() {
               <CardContent className="p-8">
                 <div className="mb-6">
                   <img
-                    src="/women-empowerment-rwanda-education.jpg"
+                    src="/images/image_25.jpeg"
                     alt="People Focused"
                     className="w-full h-48 object-cover rounded-lg"
                   />

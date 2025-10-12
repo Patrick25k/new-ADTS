@@ -50,7 +50,7 @@ export default function WhatMakesUsDifferent() {
       {/* Hero Section */}
       <section className="relative h-[400px] flex items-center justify-center">
         <Image
-          src="/diverse-community-people-rwanda-hope-gathering.jpg"
+          src="/images/image_29.jpeg"
           alt="ADTS Rwanda community diversity"
           fill
           className="object-cover brightness-50"

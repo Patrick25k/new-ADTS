@@ -9,12 +9,12 @@ export default function GetInvolvedPage() {
       {/* Hero Section */}
       <section className="relative h-[400px] flex items-center justify-center overflow-hidden">
         <div
-          className="absolute inset-0 z-0"
+          className="absolute inset-0 z-0 brightness-300"
           style={{
             backgroundImage:
-              "url(/diverse-community-people-rwanda-hope-gathering.jpg?height=400&width=1920&query=volunteers+helping+community+Rwanda+together)",
+              "url(/images/image4.jpg?height=400&width=1920&query=volunteers+helping+community+Rwanda+together)",
             backgroundSize: "cover",
-            backgroundPosition: "center",
+            backgroundPosition: "top",
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-r from-foreground/90 to-foreground/70" />
@@ -39,7 +39,7 @@ export default function GetInvolvedPage() {
               <CardContent className="p-0">
                 <div className="relative h-64 overflow-hidden">
                   <img
-                    src="/children-education-rwanda-hope.jpg"
+                    src="/images/image2a.jpeg"
                     alt="Donate to Meet a Need"
                     className="w-full h-full object-cover"
                   />
@@ -69,7 +69,7 @@ export default function GetInvolvedPage() {
               <CardContent className="p-0">
                 <div className="relative h-64 overflow-hidden">
                   <img
-                    src="/volunteers-working-together-community-service.jpg"
+                    src="/images/act2.jpg"
                     alt="Become a Volunteer"
                     className="w-full h-full object-cover"
                   />
@@ -98,7 +98,7 @@ export default function GetInvolvedPage() {
             <Card className="border-2 hover:shadow-lg transition-shadow">
               <CardContent className="p-0">
                 <div className="relative h-64 overflow-hidden">
-                  <img src="/partnership-handshake-collaboration-business.jpg" alt="Partner With Us" className="w-full h-full object-cover" />
+                  <img src="/images/image_12.jpeg" alt="Partner With Us" className="w-full h-full object-cover" />
                 </div>
                 <div className="p-6">
                   <div className="flex items-center gap-3 mb-4">

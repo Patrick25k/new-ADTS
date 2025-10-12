@@ -34,7 +34,7 @@ export default function WhoWeAre() {
       {/* Hero Section */}
       <section className="relative h-[400px] flex items-center justify-center">
         <Image
-          src="/community-gathering-rwanda-partnership.jpg"
+          src="/images/image_31.jpeg"
           alt="ADTS Rwanda community gathering"
           fill
           className="object-cover brightness-50"

@@ -33,7 +33,6 @@ export function Header() {
       href: "/get-involved",
       dropdown: [
         { name: "Get Involved", href: "/get-involved" },
-        { name: "Prayer", href: "/get-involved/prayer" },
         { name: "Protect a child", href: "/get-involved/protect-a-child" },
       ],
     },

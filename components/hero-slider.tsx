@@ -7,19 +7,19 @@ import { ArrowRight } from "lucide-react"
 
 const heroImages = [
   {
-    url: "/diverse-community-people-rwanda-hope-gathering.jpg",
-    alt: "Community gathering in Rwanda",
+    url: "/images/image_28.jpeg",
+    alt: "Graduation",
   },
   {
-    url: "/women-empowerment-rwanda-education-training.jpg",
+    url: "/images/image_8.jpeg",
     alt: "Women empowerment program",
   },
   {
-    url: "/children-education-rwanda-classroom-learning.jpg",
+    url: "/images/image_16.jpeg",
     alt: "Children education program",
   },
   {
-    url: "/community-development-rwanda-village-transformatio.jpg",
+    url: "/images/image_20.jpeg",
     alt: "Community development",
   },
 ]

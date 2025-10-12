@@ -7,10 +7,10 @@ export default function WhereWeWork() {
       {/* Hero Section */}
       <section className="relative h-[400px] flex items-center justify-center">
         <Image
-          src="/community-development-rwanda-village-transformatio.jpg"
+          src="/images/image_28.jpeg"
           alt="ADTS Rwanda working across communities"
           fill
-          className="object-cover brightness-50"
+          className="object-cover brightness-50 top-[30px]"
         />
         <div className="relative z-10 container mx-auto px-4 text-center text-white">
           <h1 className="text-4xl md:text-5xl font-bold mb-6 text-[#FCB20B]">Where We Work</h1>

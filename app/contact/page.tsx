@@ -273,7 +273,7 @@ export default function ContactPage() {
           className="absolute inset-0 z-0"
           style={{
             backgroundImage:
-              "url(/diverse-community-people-rwanda-hope-gathering.jpg?height=400&width=1920&query=Rwanda+landscape+beautiful+nature)",
+              "url(/images/image_17.jpeg?height=400&width=1920&query=Rwanda+landscape+beautiful+nature)",
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}
