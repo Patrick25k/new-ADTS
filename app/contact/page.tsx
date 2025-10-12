@@ -33,6 +33,31 @@ export default function ContactPage() {
   >("idle");
   const [statusMessage, setStatusMessage] = useState("");
 
+  // TEMP DEBUG: print whether NEXT_PUBLIC_EMAILJS_* were inlined at build time.
+  useEffect(() => {
+    try {
+      const svc = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
+      const tmpl = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
+      const key =
+        process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY ||
+        process.env.NEXT_PUBLIC_EMAILJS_USER_ID;
+      console.debug(
+        "[DEBUG] NEXT_PUBLIC_EMAILJS_SERVICE_ID:",
+        svc ? "SET" : "MISSING"
+      );
+      console.debug(
+        "[DEBUG] NEXT_PUBLIC_EMAILJS_TEMPLATE_ID:",
+        tmpl ? "SET" : "MISSING"
+      );
+      console.debug(
+        "[DEBUG] NEXT_PUBLIC_EMAILJS_PUBLIC_KEY:",
+        key ? "SET" : "MISSING"
+      );
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("🚀 Form submission started");
