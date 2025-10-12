@@ -33,30 +33,34 @@ export default function ContactPage() {
   >("idle");
   const [statusMessage, setStatusMessage] = useState("");
 
-  // TEMP DEBUG: print whether NEXT_PUBLIC_EMAILJS_* were inlined at build time.
+  // TEMP DEBUG (user-visible): determine whether NEXT_PUBLIC_EMAILJS_* were inlined at build time
+  const _emailjs_service = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
+  const _emailjs_template = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
+  const _emailjs_key =
+    process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY ||
+    process.env.NEXT_PUBLIC_EMAILJS_USER_ID;
+  const _emailjs_all_set = Boolean(
+    _emailjs_service && _emailjs_template && _emailjs_key
+  );
+
   useEffect(() => {
     try {
-      const svc = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
-      const tmpl = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
-      const key =
-        process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY ||
-        process.env.NEXT_PUBLIC_EMAILJS_USER_ID;
-      console.debug(
+      console.log(
         "[DEBUG] NEXT_PUBLIC_EMAILJS_SERVICE_ID:",
-        svc ? "SET" : "MISSING"
+        _emailjs_service ? "SET" : "MISSING"
       );
-      console.debug(
+      console.log(
         "[DEBUG] NEXT_PUBLIC_EMAILJS_TEMPLATE_ID:",
-        tmpl ? "SET" : "MISSING"
+        _emailjs_template ? "SET" : "MISSING"
       );
-      console.debug(
+      console.log(
         "[DEBUG] NEXT_PUBLIC_EMAILJS_PUBLIC_KEY:",
-        key ? "SET" : "MISSING"
+        _emailjs_key ? "SET" : "MISSING"
       );
     } catch (e) {
       // ignore
     }
-  }, []);
+  }, [_emailjs_service, _emailjs_template, _emailjs_key]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -406,6 +410,13 @@ export default function ContactPage() {
                           {statusMessage}
                         </p>
                       </div>
+                    </div>
+                  )}
+
+                  {/* Visible debug banner: shows whether EmailJS envs were inlined at build time */}
+                  {!_emailjs_all_set && (
+                    <div className="mb-4 p-3 rounded border bg-yellow-50 border-yellow-200 text-yellow-800">
+                      EmailJS environment variables are missing in this build. The contact form will not send messages until NEXT_PUBLIC_EMAILJS_SERVICE_ID, NEXT_PUBLIC_EMAILJS_TEMPLATE_ID and NEXT_PUBLIC_EMAILJS_PUBLIC_KEY are set at build time.
                     </div>
                   )}
 

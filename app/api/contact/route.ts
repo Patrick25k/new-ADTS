@@ -3,7 +3,7 @@ import nodemailer from 'nodemailer'
 
 // Create transporter for sending emails
 const createTransporter = () => {
-  const emailUser = process.env.EMAIL_USER || 'jeandamourkubwimana0@gmail.com'
+  const emailUser = process.env.EMAIL_USER || 'kwihpatric69@gmail.com'
   const emailPass = process.env.EMAIL_PASS
   
   if (!emailPass) {
@@ -58,10 +58,10 @@ export async function POST(request: NextRequest) {
       sendError = error
     }
 
-    // Email to admin (jeandamour013@gmail.com)
+    // Email to admin (kwihpatric69@gmail.com)
     const adminMailOptions = {
-      from: process.env.EMAIL_USER || 'jeandamourkubwimana0@gmail.com',
-      to: 'jeandamourkubwimana0@gmail.com',
+      from: process.env.EMAIL_USER || 'kwihpatric69@gmail.com',
+      to: 'kwihpatric69@gmail.com',
       subject: `New Contact Form Submission: ${subject}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
 
     // Auto-reply email to sender
     const autoReplyOptions = {
-      from: process.env.EMAIL_USER || 'jeandamour013@gmail.com',
+      from: process.env.EMAIL_USER || 'kwihpatric69@gmail.com',
       to: email,
       subject: 'Thank you for contacting ADTS Rwanda - We received your message!',
       html: `
