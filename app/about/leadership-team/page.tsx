@@ -1,7 +1,49 @@
 import { Users, Shield, Target } from "lucide-react";
 import Image from "next/image";
 
-export default function LeadershipTeam() {
+interface PublicTeamMember {
+  id: string;
+  name: string;
+  position: string;
+  department: string;
+  email: string;
+  phone: string;
+  location: string;
+  status: string;
+  featured: boolean;
+  imageUrl: string;
+  bio: string;
+  skills: string[];
+  joinDate: string | null;
+  createdAt: string;
+}
+
+export default async function LeadershipTeam() {
+  let members: PublicTeamMember[] = [];
+
+  try {
+    const baseUrl =
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
+    const response = await fetch(`${baseUrl}/api/team`, {
+      cache: "no-store",
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      members = (data.members ?? []) as PublicTeamMember[];
+    }
+  } catch (error) {
+    console.error("Failed to load leadership team", error);
+  }
+
+  const leadershipMembers = members.filter((m) =>
+    m.department.toLowerCase().includes("leadership"),
+  );
+  const featuredMembers = members.filter((m) => m.featured);
+  const displayMembers = leadershipMembers.length > 0 ? leadershipMembers : featuredMembers;
+
   return (
     <main className="min-h-screen">
       {/* Hero Section */}
@@ -102,73 +144,86 @@ export default function LeadershipTeam() {
         </div>
       </section>
 
-      {/* Field-Level Leadership */}
+      {/* Leadership Profiles (real data) */}
       <section className="py-20 bg-accent/30">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl font-bold mb-8 text-center">
-              Field-Level Leadership
+              Leadership Profiles
             </h2>
             <p className="text-lg text-foreground/80 mb-12 text-center text-pretty">
-              Our grassroots leadership structures ensure programs are
-              responsive to community needs and driven by local ownership.
+              These leaders oversee programs, governance, and day-to-day management of
+              ADTS Rwanda, ensuring our work remains rooted in communities and driven by
+              our core values.
             </p>
 
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="p-6 rounded-lg border bg-background">
-                <h3 className="text-xl font-semibold mb-3">
-                  Ending Domestic Violence Working Groups (EDV WGs)
-                </h3>
-                <p className="text-foreground/70 mb-4">
-                  Community-based groups that lead GBV prevention efforts,
-                  provide peer support, conduct awareness campaigns, and offer
-                  counseling and mediation services at the grassroots level.
-                </p>
-                <div className="text-sm font-semibold text-primary">
-                  76,825+ people reached through EDV programs
-                </div>
+            {displayMembers.length === 0 ? (
+              <p className="text-center text-sm text-foreground/60">
+                Leadership profiles will appear here once team members are added in the
+                admin dashboard.
+              </p>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-6">
+                {displayMembers.map((member) => (
+                  <div
+                    key={member.id}
+                    className="p-6 rounded-lg border bg-background flex flex-col gap-4"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {member.imageUrl ? (
+                          <img
+                            src={member.imageUrl}
+                            alt={member.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-lg font-semibold text-primary">
+                            {member.name
+                              .split(" ")
+                              .filter(Boolean)
+                              .map((part) => part[0]?.toUpperCase())
+                              .slice(0, 2)
+                              .join("") || "TM"}
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold mb-1">{member.name}</h3>
+                        <p className="text-primary font-medium mb-1">
+                          {member.position || "Leadership"}
+                        </p>
+                        {member.department && (
+                          <p className="text-xs text-foreground/70 mb-1">
+                            {member.department}
+                          </p>
+                        )}
+                        {member.location && (
+                          <p className="text-xs text-foreground/60">
+                            {member.location}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    {member.bio && (
+                      <p className="text-foreground/70 text-sm">{member.bio}</p>
+                    )}
+                    {member.skills.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {member.skills.map((skill) => (
+                          <span
+                            key={skill}
+                            className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-
-              <div className="p-6 rounded-lg border bg-background">
-                <h3 className="text-xl font-semibold mb-3">
-                  Gender Focal Points
-                </h3>
-                <p className="text-foreground/70 mb-4">
-                  Trained community members who serve as champions for gender
-                  equality, monitor GBV cases, facilitate trainings, and link
-                  communities to services and support.
-                </p>
-                <div className="text-sm font-semibold text-primary">
-                  Operating across multiple districts
-                </div>
-              </div>
-
-              <div className="p-6 rounded-lg border bg-background">
-                <h3 className="text-xl font-semibold mb-3">Field Officers</h3>
-                <p className="text-foreground/70 mb-4">
-                  ADTS staff members who work directly with communities,
-                  facilitating trainings, supporting VSL groups, monitoring
-                  programs, and ensuring quality implementation.
-                </p>
-                <div className="text-sm font-semibold text-primary">
-                  Credited in testimonies for family transformation
-                </div>
-              </div>
-
-              <div className="p-6 rounded-lg border bg-background">
-                <h3 className="text-xl font-semibold mb-3">
-                  Community Mobilizers
-                </h3>
-                <p className="text-foreground/70 mb-4">
-                  Trained facilitators who lead Training for Transformation
-                  sessions, organize community dialogues, and mobilize
-                  collective action for social change.
-                </p>
-                <div className="text-sm font-semibold text-primary">
-                  6,732 trained across the Great Lakes region
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </section>

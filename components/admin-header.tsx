@@ -1,7 +1,10 @@
+"use client"
+
 import type React from "react"
 import { Bell, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useAuth } from "@/lib/auth-context"
 
 interface AdminHeaderProps {
   title: string
@@ -10,6 +13,17 @@ interface AdminHeaderProps {
 }
 
 export function AdminHeader({ title, description, action }: AdminHeaderProps) {
+  const { user } = useAuth()
+
+  const email = user?.email ?? "admin@adtsrwanda.org"
+  const name = user?.fullName ?? "Jean D Amour"
+  const initials = name
+    .split(/[._-]/)
+    .filter(Boolean)
+    .map((part) => part[0]?.toUpperCase() ?? "A")
+    .slice(0, 2)
+    .join("") || "AD"
+
   return (
     <div className="bg-white border-b border-gray-200 px-8 py-6">
       <div className="flex items-center justify-between mb-4">
@@ -26,11 +40,11 @@ export function AdminHeader({ title, description, action }: AdminHeaderProps) {
           </Button>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-              <span className="text-white font-semibold">AD</span>
+              <span className="text-white font-semibold">{initials}</span>
             </div>
             <div>
-              <p className="text-sm font-medium">Admin User</p>
-              <p className="text-xs text-gray-500">admin@adtsrwanda.org</p>
+              <p className="text-sm font-medium break-all">{name}</p>
+              <p className="text-xs text-gray-500 break-all">{email}</p>
             </div>
           </div>
         </div>

@@ -1,73 +1,76 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 import { Briefcase, MapPin, Calendar } from "lucide-react";
 import Image from "next/image";
+import { useToast } from "@/components/ui/use-toast";
+
+type JobStatus = "Open" | "Closed" | string;
+
+interface PublicJob {
+  id: string;
+  title: string;
+  description: string;
+  department: string;
+  location: string;
+  type: string;
+  postDate: string | null;
+  deadline: string | null;
+  requirements: string[];
+  status: JobStatus;
+}
 
 export default function Jobs() {
-  const jobs = [
-    {
-      title: "Program Officer - Ending Domestic Violence",
-      location: "Kigali, Rwanda",
-      type: "Full-time",
-      deadline: "April 20, 2024",
-      description:
-        "ADTS Rwanda seeks a passionate Program Officer to coordinate and implement our Ending Domestic Violence programs across multiple districts. The ideal candidate will have experience in GBV prevention, community mobilization, and program management.",
-      requirements: [
-        "Bachelor's degree in Social Work, Gender Studies, or related field",
-        "3+ years experience in GBV prevention or women's empowerment programs",
-        "Strong community mobilization and facilitation skills",
-        "Fluency in Kinyarwanda and English; French is an asset",
-        "Willingness to travel to field sites",
-      ],
-      status: "Open",
-    },
-    {
-      title: "Field Officer - Socio-Economic Empowerment",
-      location: "Multiple Districts",
-      type: "Full-time",
-      deadline: "April 25, 2024",
-      description:
-        "We are looking for dedicated Field Officers to support our VSL groups, cooperatives, and entrepreneurship training programs. You will work directly with communities to facilitate economic empowerment and financial literacy.",
-      requirements: [
-        "Diploma or Bachelor's degree in Economics, Business, or related field",
-        "2+ years experience in microfinance, VSL, or cooperative development",
-        "Strong training and facilitation skills",
-        "Ability to work independently in rural communities",
-        "Fluency in Kinyarwanda required",
-      ],
-      status: "Open",
-    },
-    {
-      title: "Monitoring & Evaluation Officer",
-      location: "Kigali, Rwanda",
-      type: "Full-time",
-      deadline: "March 30, 2024",
-      description:
-        "ADTS Rwanda seeks an M&E Officer to design and implement monitoring and evaluation systems, conduct data analysis, and produce impact reports for our programs.",
-      requirements: [
-        "Bachelor's degree in Statistics, Social Sciences, or related field",
-        "3+ years experience in M&E for development programs",
-        "Proficiency in data analysis tools (SPSS, Excel, etc.)",
-        "Strong report writing and documentation skills",
-        "Experience with participatory evaluation methods",
-      ],
-      status: "Closed",
-    },
-    {
-      title: "Finance & Administration Officer",
-      location: "Kigali, Rwanda",
-      type: "Full-time",
-      deadline: "April 15, 2024",
-      description:
-        "We are seeking a Finance & Administration Officer to manage financial operations, budgeting, reporting, and administrative functions for ADTS Rwanda.",
-      requirements: [
-        "Bachelor's degree in Accounting, Finance, or Business Administration",
-        "CPA or ACCA qualification preferred",
-        "3+ years experience in NGO finance and administration",
-        "Knowledge of donor financial reporting requirements",
-        "Proficiency in accounting software",
-      ],
-      status: "Open",
-    },
-  ];
+  const { toast } = useToast();
+  const [jobs, setJobs] = useState<PublicJob[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadJobs = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch("/api/jobs");
+
+        if (!response.ok) {
+          throw new Error("Failed to load jobs");
+        }
+
+        const data = await response.json();
+        const items: PublicJob[] = (data.jobs ?? []).map((job: any) => ({
+          id: job.id as string,
+          title: (job.title as string) ?? "",
+          description: (job.description as string) ?? "",
+          department: (job.department as string) ?? "",
+          location: (job.location as string) ?? "",
+          type: (job.type as string) ?? "",
+          postDate: (job.postDate as string | null) ?? null,
+          deadline: (job.deadline as string | null) ?? null,
+          requirements: Array.isArray(job.requirements)
+            ? (job.requirements as string[])
+            : [],
+          status: (job.status as string) ?? "Open",
+        }));
+
+        setJobs(items);
+      } catch (error) {
+        console.error("Failed to load jobs", error);
+        toast({
+          title: "Failed to load jobs",
+          description: "Please try again later.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadJobs();
+  }, [toast]);
+
+  const openJobs = useMemo(
+    () => jobs.filter((job) => (job.status || "Open") === "Open"),
+    [jobs],
+  );
 
   return (
     <main className="min-h-screen">
@@ -136,10 +139,20 @@ export default function Jobs() {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl font-bold mb-12">Current Openings</h2>
+            {isLoading && openJobs.length === 0 && (
+              <p className="text-sm text-foreground/60">
+                Loading current openings...
+              </p>
+            )}
+            {!isLoading && openJobs.length === 0 && (
+              <p className="text-sm text-foreground/60">
+                There are currently no open positions. Please check back later.
+              </p>
+            )}
             <div className="space-y-6">
-              {jobs.map((job, index) => (
+              {openJobs.map((job) => (
                 <div
-                  key={index}
+                  key={job.id}
                   className="bg-background rounded-lg border p-6"
                 >
                   <div className="flex items-start justify-between mb-4">
@@ -161,30 +174,37 @@ export default function Jobs() {
                       <div className="flex flex-wrap items-center gap-4 text-sm text-foreground/60 mb-4">
                         <span className="flex items-center gap-1">
                           <MapPin className="h-4 w-4" />
-                          {job.location}
+                          {job.location || "Rwanda"}
                         </span>
-                        <span className="flex items-center gap-1">
-                          <Briefcase className="h-4 w-4" />
-                          {job.type}
-                        </span>
+                        {job.type && (
+                          <span className="flex items-center gap-1">
+                            <Briefcase className="h-4 w-4" />
+                            {job.type}
+                          </span>
+                        )}
                         <span className="flex items-center gap-1">
                           <Calendar className="h-4 w-4" />
-                          Deadline: {job.deadline}
+                          Deadline:{" "}
+                          {job.deadline
+                            ? new Date(job.deadline).toLocaleDateString()
+                            : "TBA"}
                         </span>
                       </div>
                       <p className="text-foreground/70 mb-4">
                         {job.description}
                       </p>
-                      <div className="mb-4">
-                        <h4 className="font-semibold mb-2">
-                          Key Requirements:
-                        </h4>
-                        <ul className="list-disc list-inside space-y-1 text-sm text-foreground/70">
-                          {job.requirements.map((req, idx) => (
-                            <li key={idx}>{req}</li>
-                          ))}
-                        </ul>
-                      </div>
+                      {job.requirements.length > 0 && (
+                        <div className="mb-4">
+                          <h4 className="font-semibold mb-2">
+                            Key Requirements:
+                          </h4>
+                          <ul className="list-disc list-inside space-y-1 text-sm text-foreground/70">
+                            {job.requirements.map((req, idx) => (
+                              <li key={idx}>{req}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   </div>
                   {job.status === "Open" && (

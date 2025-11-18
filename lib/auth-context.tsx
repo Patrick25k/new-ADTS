@@ -8,7 +8,7 @@ interface AuthContextType {
   isLoading: boolean
   login: (email: string, password: string) => Promise<boolean>
   logout: () => void
-  user: { email: string } | null
+  user: { email: string, fullName: string } | null
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -16,7 +16,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [user, setUser] = useState<{ email: string } | null>(null)
+  const [user, setUser] = useState<{ email: string, fullName: string } | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuthStatus()
   }, [])
 
-  const checkAuthStatus = () => {
+  const checkAuthStatus = async () => {
     try {
       // Check for token in localStorage and cookies
       const token = document.cookie
@@ -34,10 +34,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (token === 'authenticated-admin-session') {
         setIsAuthenticated(true)
-        setUser({ email: 'admin@adtsrwanda.org' }) // In production, decode from JWT
+        return
+      }
+
+      const response = await fetch('/api/admin/me', {
+        method: 'GET',
+        credentials: 'include',
+      })
+
+      if (!response.ok) {
+        setIsAuthenticated(false)
+        setUser(null)
+        return
+      }
+
+      const data = await response.json()
+
+      if (data?.authenticated && data.user?.email) {
+        setIsAuthenticated(true)
+        setUser({ email: data.user.email, fullName: data.user.fullName })
+      } else {
+        setIsAuthenticated(false)
+        setUser(null)
       }
     } catch (error) {
       console.error('Auth check failed:', error)
+      setIsAuthenticated(false)
+      setUser(null)
     } finally {
       setIsLoading(false)
     }
@@ -46,14 +69,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       // Simple authentication - in production, call your API
-      if (email === 'admin@adtsrwanda.org' && password === 'admin123') {
-        // Set cookie with authentication token
-        document.cookie = 'admin-token=authenticated-admin-session; path=/; max-age=86400' // 24 hours
-        
+      const response = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
+      })
+
+      if (!response.ok) {
+        return false
+      }
+
+      const data = await response.json()
+
+      // Set cookie with authentication token
+      if (data?.success && data.user?.email) {
         setIsAuthenticated(true)
-        setUser({ email })
+        setUser({ email: data.user.email, fullName: data.user.fullName })
         return true
       }
+
       return false
     } catch (error) {
       console.error('Login failed:', error)
@@ -63,11 +100,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     // Remove authentication cookie
-    document.cookie = 'admin-token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT'
-    
-    setIsAuthenticated(false)
-    setUser(null)
-    router.push('/admin/login')
+    ;(async () => {
+      try {
+        await fetch('/api/admin/logout', {
+          method: 'POST',
+          credentials: 'include',
+        })
+      } catch (error) {
+        console.error('Logout failed:', error)
+      } finally {
+        setIsAuthenticated(false)
+        setUser(null)
+        router.push('/admin/login')
+      }
+    })()
   }
 
   return (

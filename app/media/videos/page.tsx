@@ -1,8 +1,74 @@
 import { Play } from "lucide-react";
 import Image from "next/image";
 
-export default function Videos() {
-  const youtubeId = "rwVO60Mck7s";
+function extractYouTubeId(url: string): string | null {
+  if (!url) return null;
+
+  try {
+    const parsed = new URL(url.trim());
+
+    if (parsed.hostname === "youtu.be") {
+      return parsed.pathname.slice(1) || null;
+    }
+
+    if (parsed.hostname.includes("youtube.com")) {
+      const v = parsed.searchParams.get("v");
+      if (v) return v;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+interface PublicVideoItem {
+  id: string;
+  title: string;
+  description: string;
+  youtubeUrl: string;
+  category: string;
+  status: string;
+  featured: boolean;
+  duration: string;
+  date: string;
+}
+
+export default async function Videos() {
+  const fallbackYoutubeId = "rwVO60Mck7s";
+
+  let videos: PublicVideoItem[] = [];
+  let youtubeId = fallbackYoutubeId;
+  let featuredTitle = "ADTS Rwanda — Featured Video";
+  let featuredDescription = "Watch this video to learn more about ADTS Rwanda's work and impact.";
+
+  try {
+    const baseUrl =
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
+    const response = await fetch(`${baseUrl}/api/videos`, {
+      cache: "no-store",
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      videos = (data.videos ?? []) as PublicVideoItem[];
+
+      const featured = videos.find((v) => v.featured) ?? videos[0];
+
+      if (featured) {
+        const id = extractYouTubeId(featured.youtubeUrl);
+        if (id) {
+          youtubeId = id;
+          featuredTitle = featured.title || featuredTitle;
+          featuredDescription = featured.description || featuredDescription;
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Failed to load public videos", error);
+  }
 
   return (
     <main className="min-h-screen">
@@ -45,11 +111,10 @@ export default function Videos() {
               />
             </div>
             <h2 className="text-2xl font-semibold mt-6">
-              ADTS Rwanda — Featured Video
+              {featuredTitle}
             </h2>
             <p className="text-foreground/80 mt-2">
-              Watch this video to learn more about ADTS Rwanda's work and
-              impact.
+              {featuredDescription}
             </p>
           </div>
         </div>

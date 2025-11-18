@@ -1,6 +1,9 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdminHeader } from "@/components/admin-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
@@ -20,124 +23,359 @@ import {
   Eye,
   UserPlus,
 } from "lucide-react";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/components/ui/use-toast";
+
+type TeamStatus = "Active" | "On Leave" | "Inactive";
+
+interface TeamMember {
+  id: string;
+  name: string;
+  position: string;
+  department: string;
+  email: string;
+  phone: string;
+  location: string;
+  status: TeamStatus;
+  featured: boolean;
+  image: string;
+  avatar: string;
+  bio: string;
+  skills: string[];
+  joinDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export default function TeamManagement() {
-  const teamMembers = [
-    {
-      id: 1,
-      name: "Dr. Jean Baptiste Nkurunziza",
-      position: "Executive Director",
-      department: "Leadership",
-      email: "jean@adtsrwanda.org",
-      phone: "+250 788 605 493",
-      location: "Kigali, Rwanda",
-      joinDate: "2018-01-15",
-      status: "Active",
-      avatar: "JN",
-      bio: "Leading ADTS Rwanda with over 15 years of experience in community development and social transformation.",
-      skills: ["Leadership", "Strategic Planning", "Community Development"],
-      featured: true,
-    },
-    {
-      id: 2,
-      name: "Marie Claire Uwimana",
-      position: "Program Coordinator",
-      department: "Programs",
-      email: "marie@adtsrwanda.org",
-      phone: "+250 788 308 256",
-      location: "Kigali, Rwanda",
-      joinDate: "2019-03-20",
-      status: "Active",
-      avatar: "MU",
-      bio: "Coordinating various community programs with focus on women empowerment and youth development.",
-      skills: ["Program Management", "Community Outreach", "Training"],
-      featured: false,
-    },
-    {
-      id: 3,
-      name: "Emmanuel Habimana",
-      position: "Finance Manager",
-      department: "Finance",
-      email: "emmanuel@adtsrwanda.org",
-      phone: "+250 788 308 257",
-      location: "Kigali, Rwanda",
-      joinDate: "2019-06-10",
-      status: "Active",
-      avatar: "EH",
-      bio: "Managing financial operations and ensuring transparent use of resources for maximum community impact.",
-      skills: ["Financial Management", "Budgeting", "Compliance"],
-      featured: true,
-    },
-    {
-      id: 4,
-      name: "Grace Mukamana",
-      position: "Communications Specialist",
-      department: "Communications",
-      email: "grace@adtsrwanda.org",
-      phone: "+250 788 308 258",
-      location: "Kigali, Rwanda",
-      joinDate: "2020-09-15",
-      status: "Active",
-      avatar: "GM",
-      bio: "Managing communications, social media, and community engagement to amplify ADTS impact stories.",
-      skills: ["Communications", "Social Media", "Content Creation"],
-      featured: false,
-    },
-    {
-      id: 5,
-      name: "Samuel Nzeyimana",
-      position: "Field Coordinator",
-      department: "Field Operations",
-      email: "samuel@adtsrwanda.org",
-      phone: "+250 788 308 259",
-      location: "Musanze, Rwanda",
-      joinDate: "2021-02-01",
-      status: "On Leave",
-      avatar: "SN",
-      bio: "Coordinating field activities and direct community interventions in rural areas.",
-      skills: [
-        "Field Operations",
-        "Community Relations",
-        "Project Implementation",
-      ],
-      featured: false,
-    },
-  ];
+  const { toast } = useToast();
 
-  const stats = [
-    {
-      label: "Total Team",
-      value: "12",
-      change: "+2",
-      icon: Users,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
-    },
-    {
-      label: "Active Members",
-      value: "11",
-      change: "+1",
-      icon: User,
-      color: "text-green-600",
-      bgColor: "bg-green-50",
-    },
-    {
-      label: "Departments",
-      value: "5",
-      change: "0",
-      icon: TrendingUp,
-      color: "text-purple-600",
-      bgColor: "bg-purple-50",
-    },
-    {
-      label: "New This Year",
-      value: "3",
-      change: "+3",
-      icon: UserPlus,
-      color: "text-orange-600",
-      bgColor: "bg-orange-50",
-    },
-  ];
+  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] =
+    useState<"all" | TeamStatus | "featured" | "leadership">("all");
+
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
+  const [form, setForm] = useState({
+    name: "",
+    position: "",
+    department: "",
+    email: "",
+    phone: "",
+    location: "",
+    status: "Active" as TeamStatus,
+    featured: false,
+    image: "",
+    bio: "",
+    skills: "",
+    joinDate: "",
+  });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  const loadMembers = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch("/api/admin/team", {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to load team members");
+      }
+
+      const data = await response.json();
+      setMembers(data.members ?? []);
+    } catch (error) {
+      console.error("Failed to load team members", error);
+      toast({
+        title: "Failed to load team members",
+        description: "Please try again or check your connection.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    loadMembers();
+  }, [loadMembers]);
+
+  const filteredMembers = useMemo(() => {
+    return members.filter((member) => {
+      const matchesSearch =
+        !search ||
+        member.name.toLowerCase().includes(search.toLowerCase()) ||
+        member.position.toLowerCase().includes(search.toLowerCase()) ||
+        member.department.toLowerCase().includes(search.toLowerCase()) ||
+        member.email.toLowerCase().includes(search.toLowerCase());
+
+      const matchesStatus = (() => {
+        if (statusFilter === "all") return true;
+        if (statusFilter === "featured") return member.featured;
+        if (statusFilter === "leadership")
+          return member.department.toLowerCase().includes("leadership");
+        return member.status === statusFilter;
+      })();
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [members, search, statusFilter]);
+
+  const stats = useMemo(() => {
+    const total = members.length;
+    const active = members.filter((m) => m.status === "Active").length;
+    const departments = new Set(
+      members.map((m) => m.department).filter((d) => d && d.trim().length > 0),
+    ).size;
+    const currentYear = new Date().getFullYear();
+    const newThisYear = members.filter((m) => {
+      if (!m.joinDate) return false;
+      const date = new Date(m.joinDate);
+      return !Number.isNaN(date.getTime()) && date.getFullYear() === currentYear;
+    }).length;
+
+    return [
+      {
+        label: "Total Team",
+        value: String(total),
+        change: "",
+        icon: Users,
+        color: "text-blue-600",
+        bgColor: "bg-blue-50",
+      },
+      {
+        label: "Active Members",
+        value: String(active),
+        change: "",
+        icon: User,
+        color: "text-green-600",
+        bgColor: "bg-green-50",
+      },
+      {
+        label: "Departments",
+        value: String(departments),
+        change: "",
+        icon: TrendingUp,
+        color: "text-purple-600",
+        bgColor: "bg-purple-50",
+      },
+      {
+        label: "New This Year",
+        value: String(newThisYear),
+        change: "",
+        icon: UserPlus,
+        color: "text-orange-600",
+        bgColor: "bg-orange-50",
+      },
+    ];
+  }, [members]);
+
+  const openNewDialog = () => {
+    setEditingMember(null);
+    setForm({
+      name: "",
+      position: "",
+      department: "",
+      email: "",
+      phone: "",
+      location: "",
+      status: "Active",
+      featured: false,
+      image: "",
+      bio: "",
+      skills: "",
+      joinDate: "",
+    });
+    setImageFile(null);
+    setIsDialogOpen(true);
+  };
+
+  const openEditDialog = (member: TeamMember) => {
+    setEditingMember(member);
+    setForm({
+      name: member.name,
+      position: member.position,
+      department: member.department,
+      email: member.email,
+      phone: member.phone,
+      location: member.location,
+      status: member.status,
+      featured: member.featured,
+      image: member.image,
+      bio: member.bio,
+      skills: member.skills.join(", "),
+      joinDate: member.joinDate ?? "",
+    });
+    setImageFile(null);
+    setIsDialogOpen(true);
+  };
+
+  const handleFormChange = (
+    field: keyof typeof form,
+    value: string | boolean,
+  ) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleImageFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      setImageFile(null);
+      return;
+    }
+
+    try {
+      setIsUploadingImage(true);
+      setImageFile(file);
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/admin/upload-image", {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error || "Failed to upload image");
+      }
+
+      const data = await response.json();
+      const url = data.url as string | undefined;
+
+      if (!url) {
+        throw new Error("Upload succeeded but no URL was returned");
+      }
+
+      setForm((prev) => ({
+        ...prev,
+        image: url,
+      }));
+
+      toast({
+        title: "Image uploaded",
+        description: "Team member photo has been uploaded successfully.",
+      });
+    } catch (error: any) {
+      console.error("Failed to upload image", error);
+      toast({
+        title: "Failed to upload image",
+        description: error?.message || "Please try again.",
+        variant: "destructive",
+      });
+      setImageFile(null);
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    try {
+      if (isUploadingImage) {
+        toast({
+          title: "Please wait",
+          description: "Image is still uploading. Please wait for it to finish.",
+        });
+        return;
+      }
+
+      const payload = { ...form };
+
+      const endpoint = editingMember
+        ? `/api/admin/team/${editingMember.id}`
+        : "/api/admin/team";
+      const method = editingMember ? "PUT" : "POST";
+
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error || "Failed to save team member");
+      }
+
+      const data = await response.json();
+      const saved: TeamMember = data.member;
+
+      setMembers((prev) => {
+        if (editingMember) {
+          return prev.map((m) => (m.id === saved.id ? saved : m));
+        }
+        return [saved, ...prev];
+      });
+
+      toast({
+        title: editingMember ? "Team member updated" : "Team member created",
+        description: editingMember
+          ? "Your changes have been saved."
+          : "The team member has been created.",
+      });
+
+      setIsDialogOpen(false);
+      setEditingMember(null);
+
+      await loadMembers();
+    } catch (error: any) {
+      console.error("Failed to save team member", error);
+      toast({
+        title: "Failed to save team member",
+        description: error?.message || "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDelete = async (member: TeamMember) => {
+    if (!confirm(`Delete team member "${member.name}"? This cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/team/${member.id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error || "Failed to delete team member");
+      }
+
+      setMembers((prev) => prev.filter((m) => m.id !== member.id));
+
+      toast({
+        title: "Team member deleted",
+        description: "The team member has been removed.",
+      });
+
+      await loadMembers();
+    } catch (error: any) {
+      console.error("Failed to delete team member", error);
+      toast({
+        title: "Failed to delete team member",
+        description: error?.message || "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50/50">
@@ -150,7 +388,11 @@ export default function TeamManagement() {
               <Filter className="w-4 h-4" />
               Filter
             </Button>
-            <Button className="gap-2 bg-primary hover:bg-primary/90">
+            <Button
+              type="button"
+              className="gap-2 bg-primary hover:bg-primary/90"
+              onClick={openNewDialog}
+            >
               <UserPlus className="w-4 h-4" />
               Add Member
             </Button>
@@ -194,19 +436,40 @@ export default function TeamManagement() {
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input placeholder="Search team members..." className="pl-10" />
+                <Input
+                  placeholder="Search team members..."
+                  className="pl-10"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                />
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm">
+                <Button
+                  variant={statusFilter === "all" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setStatusFilter("all")}
+                >
                   All Members
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button
+                  variant={statusFilter === "Active" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setStatusFilter("Active")}
+                >
                   Active
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button
+                  variant={statusFilter === "leadership" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setStatusFilter("leadership")}
+                >
                   Leadership
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button
+                  variant={statusFilter === "featured" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setStatusFilter("featured")}
+                >
                   Featured
                 </Button>
               </div>
@@ -216,17 +479,35 @@ export default function TeamManagement() {
 
         {/* Team Members Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {teamMembers.map((member) => (
+          {isLoading && members.length === 0 && (
+            <p className="text-sm text-gray-500 col-span-full">
+              Loading team members...
+            </p>
+          )}
+          {!isLoading && filteredMembers.length === 0 && (
+            <p className="text-sm text-gray-500 col-span-full">
+              No team members found. Try creating a new one.
+            </p>
+          )}
+          {filteredMembers.map((member) => (
             <Card
               key={member.id}
               className="bg-white hover:shadow-lg transition-all duration-200 group"
             >
               <div className="relative">
                 <div className="h-32 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-t-lg flex items-center justify-center">
-                  <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg">
-                    <span className="text-2xl font-bold text-primary">
-                      {member.avatar}
-                    </span>
+                  <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg overflow-hidden">
+                    {member.image ? (
+                      <img
+                        src={member.image}
+                        alt={member.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-2xl font-bold text-primary">
+                        {member.avatar}
+                      </span>
+                    )}
                   </div>
                 </div>
                 {member.featured && (
@@ -280,7 +561,11 @@ export default function TeamManagement() {
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Calendar className="w-4 h-4 text-gray-400" />
                       <span>
-                        Joined {new Date(member.joinDate).toLocaleDateString()}
+                        {member.joinDate
+                          ? `Joined ${new Date(
+                              member.joinDate,
+                            ).toLocaleDateString()}`
+                          : ""}
                       </span>
                     </div>
                   </div>
@@ -314,6 +599,7 @@ export default function TeamManagement() {
                         variant="outline"
                         size="sm"
                         className="text-gray-700 border-gray-200 hover:bg-gray-50"
+                        onClick={() => openEditDialog(member)}
                       >
                         <Edit className="w-4 h-4 mr-1" />
                         Edit
@@ -331,6 +617,7 @@ export default function TeamManagement() {
                         variant="ghost"
                         size="sm"
                         className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => handleDelete(member)}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -342,6 +629,171 @@ export default function TeamManagement() {
           ))}
         </div>
       </div>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingMember ? "Edit Team Member" : "New Team Member"}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Full Name</label>
+              <Input
+                value={form.name}
+                onChange={(event) => handleFormChange("name", event.target.value)}
+                required
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Position</label>
+                <Input
+                  value={form.position}
+                  onChange={(event) =>
+                    handleFormChange("position", event.target.value)
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Department</label>
+                <Input
+                  value={form.department}
+                  onChange={(event) =>
+                    handleFormChange("department", event.target.value)
+                  }
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Email</label>
+                <Input
+                  type="email"
+                  value={form.email}
+                  onChange={(event) =>
+                    handleFormChange("email", event.target.value)
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Phone</label>
+                <Input
+                  value={form.phone}
+                  onChange={(event) =>
+                    handleFormChange("phone", event.target.value)
+                  }
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Location</label>
+                <Input
+                  value={form.location}
+                  onChange={(event) =>
+                    handleFormChange("location", event.target.value)
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Join Date</label>
+                <Input
+                  type="date"
+                  value={form.joinDate}
+                  onChange={(event) =>
+                    handleFormChange("joinDate", event.target.value)
+                  }
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Bio</label>
+              <Textarea
+                value={form.bio}
+                onChange={(event) => handleFormChange("bio", event.target.value)}
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Skills (comma separated)</label>
+              <Input
+                value={form.skills}
+                onChange={(event) =>
+                  handleFormChange("skills", event.target.value)
+                }
+                placeholder="Leadership, Strategic Planning, Community Development"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Photo</label>
+              <div className="space-y-2">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageFileChange}
+                />
+                {form.image && (
+                  <p className="text-xs text-gray-500 break-all">
+                    Current image URL: {form.image}
+                  </p>
+                )}
+                {isUploadingImage && (
+                  <p className="text-xs text-blue-600">Uploading image...</p>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <input
+                  id="featured"
+                  type="checkbox"
+                  checked={form.featured}
+                  onChange={(event) =>
+                    handleFormChange("featured", event.target.checked)
+                  }
+                  className="w-4 h-4 rounded border-gray-300"
+                />
+                <label htmlFor="featured" className="text-sm">
+                  Mark as featured
+                </label>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Button
+                  type="button"
+                  variant={form.status === "Active" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleFormChange("status", "Active")}
+                >
+                  Active
+                </Button>
+                <Button
+                  type="button"
+                  variant={form.status === "On Leave" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleFormChange("status", "On Leave")}
+                >
+                  On Leave
+                </Button>
+                <Button
+                  type="button"
+                  variant={form.status === "Inactive" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleFormChange("status", "Inactive")}
+                >
+                  Inactive
+                </Button>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit" className="ml-auto">
+                {editingMember ? "Save Changes" : "Create Team Member"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

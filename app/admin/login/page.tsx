@@ -150,12 +150,6 @@ export default function AdminLogin() {
                   <span className="text-sm">{error}</span>
                 </div>
               )}
-              
-              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-700 font-medium">Demo Credentials:</p>
-                <p className="text-sm text-blue-600">Email: admin@adtsrwanda.org</p>
-                <p className="text-sm text-blue-600">Password: admin123</p>
-              </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">

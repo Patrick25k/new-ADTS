@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { ADMIN_TOKEN_COOKIE_NAME, verifyAdminToken } from '@/lib/auth-tokens'
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   // Check if the request is for an admin route (excluding login)
   if (request.nextUrl.pathname.startsWith('/admin') && 
       !request.nextUrl.pathname.startsWith('/admin/login')) {
     
     // Check for authentication token in cookies
-    const token = request.cookies.get('admin-token')
+    const token = request.cookies.get(ADMIN_TOKEN_COOKIE_NAME)?.value
     
     if (!token) {
       // Redirect to login page if no token found
@@ -18,15 +19,18 @@ export function middleware(request: NextRequest) {
     // For now, we'll do basic token validation
     // In production, you'd want to verify the JWT token properly
     try {
-      // Simple validation - in production use proper JWT verification
-      if (token.value !== 'authenticated-admin-session') {
-        const loginUrl = new URL('/admin/login', request.url)
-        return NextResponse.redirect(loginUrl)
-      }
+      await verifyAdminToken(token)
     } catch (error) {
       // Invalid token, redirect to login
       const loginUrl = new URL('/admin/login', request.url)
-      return NextResponse.redirect(loginUrl)
+      const response = NextResponse.redirect(loginUrl)
+      response.cookies.set({
+        name: ADMIN_TOKEN_COOKIE_NAME,
+        value: '',
+        path: '/',
+        maxAge: 0,
+      })
+      return response
     }
   }
   

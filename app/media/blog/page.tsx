@@ -1,8 +1,16 @@
 import { Calendar, User, ArrowRight } from "lucide-react"
 import Image from "next/image"
 
-export default function Blog() {
-  const blogPosts = [
+interface BlogPost {
+  title: string
+  date: string
+  author: string
+  category: string
+  excerpt: string
+  image: string
+}
+
+const staticBlogPosts: BlogPost[] = [
     {
       title: "25 Years of Transformation: Reflecting on ADTS Rwanda's Journey",
       date: "March 15, 2024",
@@ -58,6 +66,37 @@ export default function Blog() {
       image: "/images/image6.jpg",
     },
   ]
+
+export default async function Blog() {
+  let blogPosts: BlogPost[] = staticBlogPosts
+
+  try {
+    const baseUrl =
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
+
+    const response = await fetch(`${baseUrl}/api/blogs`, {
+      cache: "no-store",
+    })
+
+    if (response.ok) {
+      const data = await response.json()
+      const dynamicPosts = (data.blogs ?? []).map((post: any) => ({
+        title: post.title as string,
+        date: (post.date as string) ?? "",
+        author: (post.authorName as string) || "ADTS Rwanda Team",
+        category: (post.category as string) || "Blog",
+        excerpt: (post.excerpt as string) ?? "",
+        image: (post.coverImageUrl as string) || "/placeholder.svg",
+      })) as BlogPost[]
+
+      if (dynamicPosts.length > 0) {
+        blogPosts = dynamicPosts
+      }
+    }
+  } catch (error) {
+    console.error("Failed to load public blogs", error)
+  }
 
   return (
     <main className="min-h-screen">
@@ -123,11 +162,11 @@ export default function Blog() {
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <h2 className="text-3xl font-bold mb-12">Recent Posts</h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {blogPosts.slice(1).map((post, index) => (
                 <div
                   key={index}
-                  className="bg-background rounded-lg border overflow-hidden hover:shadow-lg transition-shadow"
+                  className="bg-background rounded-lg border overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col"
                 >
                   <div className="aspect-video bg-accent overflow-hidden">
                     <img
@@ -136,21 +175,21 @@ export default function Blog() {
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                     />
                   </div>
-                  <div className="p-6">
-                    <div className="flex items-center gap-3 text-xs text-foreground/60 mb-3">
+                  <div className="p-4 flex-1 flex flex-col">
+                    <div className="flex items-center gap-3 text-xs text-foreground/60 mb-2">
                       <span className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
                         {post.date}
                       </span>
                     </div>
-                    <div className="inline-block px-2 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full mb-3">
+                    <div className="inline-block px-2 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full mb-2">
                       {post.category}
                     </div>
-                    <h3 className="text-xl font-semibold mb-3 line-clamp-2">{post.title}</h3>
-                    <p className="text-foreground/70 text-sm mb-4 line-clamp-3">{post.excerpt}</p>
+                    <h3 className="text-lg font-semibold mb-2 line-clamp-2">{post.title}</h3>
+                    <p className="text-foreground/70 text-sm mb-3 line-clamp-2">{post.excerpt}</p>
                     <a
                       href="#"
-                      className="inline-flex items-center gap-2 text-primary text-sm font-semibold hover:gap-3 transition-all"
+                      className="mt-auto inline-flex items-center gap-2 text-primary text-sm font-semibold hover:gap-3 transition-all"
                     >
                       Read More <ArrowRight className="h-4 w-4" />
                     </a>

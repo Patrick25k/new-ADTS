@@ -1,37 +1,47 @@
 import { Calendar, FileText, Download } from "lucide-react";
 import Image from "next/image";
 
-export default function Tender() {
-  const tenders = [
-    {
-      title: "Supply of Training Materials for Community Mobilization Programs",
-      reference: "ADTS/TENDER/2024/001",
-      deadline: "April 30, 2024",
-      category: "Goods",
-      description:
-        "ADTS Rwanda invites qualified suppliers to submit bids for the supply of training materials including flip charts, markers, notebooks, and other educational materials for our Training for Transformation programs across multiple districts.",
-      status: "Open",
-    },
-    {
-      title: "Construction of Community Training Center - Kigali District",
-      reference: "ADTS/TENDER/2024/002",
-      deadline: "May 15, 2024",
-      category: "Works",
-      description:
-        "ADTS Rwanda seeks qualified contractors to construct a community training center in Kigali District. The facility will include training rooms, offices, and community meeting spaces.",
-      status: "Open",
-    },
-    {
-      title:
-        "Consultancy Services for Program Evaluation and Impact Assessment",
-      reference: "ADTS/TENDER/2024/003",
-      deadline: "March 31, 2024",
-      category: "Services",
-      description:
-        "ADTS Rwanda invites qualified consultants to conduct a comprehensive evaluation of our Ending Domestic Violence and Socio-Economic Empowerment programs, including impact assessment and recommendations for improvement.",
-      status: "Closed",
-    },
-  ];
+interface PublicTender {
+  id: string;
+  title: string;
+  description: string;
+  reference: string;
+  category: string;
+  status: string;
+  featured: boolean;
+  priority: string;
+  publishDate: string | null;
+  deadline: string | null;
+  budget: string;
+  budgetMin: number | null;
+  budgetMax: number | null;
+  requirements: string[];
+  documentUrl: string;
+  createdAt: string;
+}
+
+export default async function Tender() {
+  let tenders: PublicTender[] = [];
+
+  try {
+    const baseUrl =
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
+    const response = await fetch(`${baseUrl}/api/tenders`, {
+      cache: "no-store",
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      tenders = (data.tenders ?? []) as PublicTender[];
+    }
+  } catch (error) {
+    console.error("Failed to load tenders", error);
+  }
+
+  const openTenders = tenders.filter((t) => t.status === "Open");
+  const displayTenders = openTenders.length > 0 ? openTenders : tenders;
 
   return (
     <main className="min-h-screen">
@@ -96,53 +106,72 @@ export default function Tender() {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl font-bold mb-12">Current Tenders</h2>
-            <div className="space-y-6">
-              {tenders.map((tender, index) => (
-                <div
-                  key={index}
-                  className="bg-background rounded-lg border p-6"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                            tender.status === "Open"
-                              ? "bg-green-100 text-green-700"
-                              : "bg-gray-100 text-gray-700"
-                          }`}
-                        >
-                          {tender.status}
-                        </span>
-                        <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-semibold">
-                          {tender.category}
-                        </span>
+            {displayTenders.length === 0 ? (
+              <p className="text-sm text-foreground/60">
+                There are currently no active tenders. Please check back later.
+              </p>
+            ) : (
+              <div className="space-y-6">
+                {displayTenders.map((tender) => (
+                  <div
+                    key={tender.id}
+                    className="bg-background rounded-lg border p-6"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                              tender.status === "Open"
+                                ? "bg-green-100 text-green-700"
+                                : "bg-gray-100 text-gray-700"
+                            }`}
+                          >
+                            {tender.status}
+                          </span>
+                          <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-semibold">
+                            {tender.category}
+                          </span>
+                        </div>
+                        <h3 className="text-xl font-semibold mb-2">
+                          {tender.title}
+                        </h3>
+                        <div className="flex items-center gap-4 text-sm text-foreground/60 mb-3">
+                          <span className="flex items-center gap-1">
+                            <FileText className="h-4 w-4" />
+                            {tender.reference}
+                          </span>
+                          {tender.deadline && (
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-4 w-4" />
+                              Deadline: {new Date(tender.deadline).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-foreground/70">{tender.description}</p>
+                        {tender.budget && (
+                          <p className="mt-2 text-sm text-foreground/70">
+                            <span className="font-semibold">Estimated budget:</span>{" "}
+                            {tender.budget}
+                          </p>
+                        )}
                       </div>
-                      <h3 className="text-xl font-semibold mb-2">
-                        {tender.title}
-                      </h3>
-                      <div className="flex items-center gap-4 text-sm text-foreground/60 mb-3">
-                        <span className="flex items-center gap-1">
-                          <FileText className="h-4 w-4" />
-                          {tender.reference}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          Deadline: {tender.deadline}
-                        </span>
-                      </div>
-                      <p className="text-foreground/70">{tender.description}</p>
                     </div>
+                    {tender.status === "Open" && tender.documentUrl && (
+                      <a
+                        href={tender.documentUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity"
+                      >
+                        <Download className="h-4 w-4" />
+                        Download Tender Document
+                      </a>
+                    )}
                   </div>
-                  {tender.status === "Open" && (
-                    <button className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity">
-                      <Download className="h-4 w-4" />
-                      Download Tender Document
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </section>
