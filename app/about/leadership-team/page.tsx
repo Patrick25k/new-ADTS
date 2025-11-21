@@ -1,3 +1,6 @@
+"use client"
+
+import { useState, useEffect } from "react";
 import { Users, Shield, Target } from "lucide-react";
 import Image from "next/image";
 
@@ -18,25 +21,29 @@ interface PublicTeamMember {
   createdAt: string;
 }
 
-export default async function LeadershipTeam() {
-  let members: PublicTeamMember[] = [];
+export default function LeadershipTeam() {
+  const [members, setMembers] = useState<PublicTeamMember[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  try {
-    const baseUrl =
-      process.env.NEXT_PUBLIC_SITE_URL ||
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
-
-    const response = await fetch(`${baseUrl}/api/team`, {
-      cache: "no-store",
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      members = (data.members ?? []) as PublicTeamMember[];
+  useEffect(() => {
+    async function loadMembers() {
+      try {
+        setIsLoading(true);
+        
+        const response = await fetch("/api/team");
+        if (!response.ok) throw new Error("Failed to load team members");
+        
+        const data = await response.json();
+        setMembers(data.members || []);
+      } catch (error) {
+        console.error("Failed to load leadership team", error);
+      } finally {
+        setIsLoading(false);
+      }
     }
-  } catch (error) {
-    console.error("Failed to load leadership team", error);
-  }
+
+    loadMembers();
+  }, []);
 
   const leadershipMembers = members.filter((m) =>
     m.department.toLowerCase().includes("leadership"),
@@ -157,7 +164,11 @@ export default async function LeadershipTeam() {
               our core values.
             </p>
 
-            {displayMembers.length === 0 ? (
+            {isLoading ? (
+              <p className="text-center text-sm text-foreground/60">
+                Loading leadership team...
+              </p>
+            ) : displayMembers.length === 0 ? (
               <p className="text-center text-sm text-foreground/60">
                 Leadership profiles will appear here once team members are added in the
                 admin dashboard.

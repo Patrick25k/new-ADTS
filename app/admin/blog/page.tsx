@@ -68,6 +68,7 @@ export default function BlogManagement() {
     featured: false,
     coverImageUrl: "",
   })
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
 
@@ -237,6 +238,8 @@ export default function BlogManagement() {
         return
       }
 
+      setIsSubmitting(true)
+
       const payload = { ...form }
 
       const endpoint = editingBlog
@@ -286,6 +289,8 @@ export default function BlogManagement() {
         description: error?.message || "Please try again.",
         variant: "destructive",
       })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -414,13 +419,23 @@ export default function BlogManagement() {
         </Card>
 
         {/* Blog Posts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {isLoading && blogs.length === 0 && (
-            <p className="text-sm text-gray-500 col-span-full">Loading posts...</p>
-          )}
-          {!isLoading && filteredBlogs.length === 0 && (
-            <p className="text-sm text-gray-500 col-span-full">No posts found. Try creating a new one.</p>
-          )}
+        {isLoading && blogs.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <div className="flex flex-col items-center gap-3">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <p className="text-gray-600">Loading posts...</p>
+            </div>
+          </div>
+        ) : !isLoading && filteredBlogs.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <div className="flex flex-col items-center gap-3">
+              <FileText className="w-12 h-12 text-gray-400" />
+              <p className="text-gray-600">No posts found.</p>
+              <p className="text-sm text-gray-500">Try adjusting your filters or create a new post to get started.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredBlogs.map((post) => (
             <Card
               key={post.id}
@@ -548,6 +563,7 @@ export default function BlogManagement() {
             </Card>
           ))}
         </div>
+        )}
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent>
@@ -640,8 +656,21 @@ export default function BlogManagement() {
                 </div>
               </div>
               <DialogFooter>
-                <Button type="submit" className="ml-auto">
-                  {editingBlog ? "Save Changes" : "Create Post"}
+                <Button 
+                  type="submit" 
+                  className="ml-auto cursor-pointer"
+                  disabled={isSubmitting || isUploadingImage}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      {editingBlog ? "Saving..." : "Creating..."}
+                    </>
+                  ) : (
+                    <>
+                      {editingBlog ? "Save Changes" : "Create Post"}
+                    </>
+                  )}
                 </Button>
               </DialogFooter>
             </form>

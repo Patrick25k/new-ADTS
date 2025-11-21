@@ -62,6 +62,7 @@ interface VolunteerItem {
 export default function VolunteersManagement() {
   const { toast } = useToast();
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [volunteers, setVolunteers] = useState<VolunteerItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -250,6 +251,8 @@ export default function VolunteersManagement() {
     event.preventDefault();
 
     try {
+      setIsSubmitting(true);
+
       const endpoint = editingVolunteer
         ? "/api/admin/volunteers"
         : "/api/admin/volunteers";
@@ -300,6 +303,8 @@ export default function VolunteersManagement() {
         description: error?.message || "Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -472,17 +477,23 @@ export default function VolunteersManagement() {
         </Card>
 
         {/* Volunteers Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {isLoading && volunteers.length === 0 && (
-            <p className="text-sm text-gray-500 col-span-full">
-              Loading volunteers...
-            </p>
-          )}
-          {!isLoading && filteredVolunteers.length === 0 && (
-            <p className="text-sm text-gray-500 col-span-full">
-              No volunteers found.
-            </p>
-          )}
+        {isLoading && volunteers.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <div className="flex flex-col items-center gap-3">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <p className="text-gray-600">Loading volunteers...</p>
+            </div>
+          </div>
+        ) : !isLoading && filteredVolunteers.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <div className="flex flex-col items-center gap-3">
+              <Users className="w-12 h-12 text-gray-400" />
+              <p className="text-gray-600">No volunteers found.</p>
+              <p className="text-sm text-gray-500">Try adjusting your filters or check back later for new volunteer applications.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {filteredVolunteers.map((volunteer) => {
             const applied = new Date(volunteer.appliedAt);
 
@@ -689,6 +700,7 @@ export default function VolunteersManagement() {
             );
           })}
         </div>
+        )}
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -890,8 +902,21 @@ export default function VolunteersManagement() {
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit" className="ml-auto">
-                {editingVolunteer ? "Save Changes" : "Create Volunteer"}
+              <Button 
+                type="submit" 
+                className="ml-auto cursor-pointer"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    {editingVolunteer ? "Saving..." : "Creating..."}
+                  </>
+                ) : (
+                  <>
+                    {editingVolunteer ? "Save Changes" : "Create Volunteer"}
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </form>

@@ -22,7 +22,8 @@ import {
   Heart,
   Clock,
   Share2,
-  FileText
+  FileText,
+  BookOpen
 } from "lucide-react"
 
 type StoryStatus = "Draft" | "Published"
@@ -51,6 +52,7 @@ interface Story {
 
 export default function StoriesManagement() {
   const { toast } = useToast()
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [stories, setStories] = useState<Story[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [search, setSearch] = useState("")
@@ -243,6 +245,8 @@ export default function StoriesManagement() {
         return
       }
 
+      setIsSubmitting(true)
+
       const payload = { ...form }
 
       const endpoint = editingStory
@@ -292,6 +296,8 @@ export default function StoriesManagement() {
         description: error?.message || "Please try again.",
         variant: "destructive",
       })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -421,13 +427,23 @@ export default function StoriesManagement() {
         </Card>
 
         {/* Stories Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {isLoading && stories.length === 0 && (
-            <p className="text-sm text-gray-500 col-span-full">Loading stories...</p>
-          )}
-          {!isLoading && filteredStories.length === 0 && (
-            <p className="text-sm text-gray-500 col-span-full">No stories found. Try creating a new one.</p>
-          )}
+        {isLoading && stories.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <div className="flex flex-col items-center gap-3">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <p className="text-gray-600">Loading stories...</p>
+            </div>
+          </div>
+        ) : !isLoading && filteredStories.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <div className="flex flex-col items-center gap-3">
+              <BookOpen className="w-12 h-12 text-gray-400" />
+              <p className="text-gray-600">No stories found.</p>
+              <p className="text-sm text-gray-500">Try adjusting your filters or create a new story to get started.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredStories.map((story) => (
             <Card key={story.id} className="bg-white hover:shadow-lg transition-all duration-200 group">
               <div className="relative">
@@ -537,7 +553,9 @@ export default function StoriesManagement() {
             </Card>
           ))}
         </div>
+        )}
       </div>
+
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -654,8 +672,21 @@ export default function StoriesManagement() {
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit" className="ml-auto">
-                {editingStory ? "Save Changes" : "Create Story"}
+              <Button 
+                type="submit" 
+                className="ml-auto cursor-pointer"
+                disabled={isSubmitting || isUploadingImage}
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    {editingStory ? "Saving..." : "Creating..."}
+                  </>
+                ) : (
+                  <>
+                    {editingStory ? "Save Changes" : "Create Story"}
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </form>

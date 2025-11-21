@@ -73,6 +73,7 @@ function getDaysLeft(deadline: string | null): number | null {
 export default function JobsManagement() {
   const { toast } = useToast();
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [jobs, setJobs] = useState<JobItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -332,6 +333,8 @@ export default function JobsManagement() {
         return;
       }
 
+      setIsSubmitting(true);
+
       const payload = { ...form };
 
       const endpoint = editingJob
@@ -381,6 +384,8 @@ export default function JobsManagement() {
         description: error?.message || "Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -519,17 +524,23 @@ export default function JobsManagement() {
         </Card>
 
         {/* Jobs Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {isLoading && jobs.length === 0 && (
-            <p className="text-sm text-gray-500 col-span-full">
-              Loading jobs...
-            </p>
-          )}
-          {!isLoading && filteredJobs.length === 0 && (
-            <p className="text-sm text-gray-500 col-span-full">
-              No jobs found. Try creating a new one.
-            </p>
-          )}
+        {isLoading && jobs.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <div className="flex flex-col items-center gap-3">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <p className="text-gray-600">Loading jobs...</p>
+            </div>
+          </div>
+        ) : !isLoading && filteredJobs.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <div className="flex flex-col items-center gap-3">
+              <Briefcase className="w-12 h-12 text-gray-400" />
+              <p className="text-gray-600">No jobs found.</p>
+              <p className="text-sm text-gray-500">Try adjusting your filters or create a new job posting to get started.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {filteredJobs.map((job) => {
             const daysLeft = getDaysLeft(job.deadline);
 
@@ -736,6 +747,7 @@ export default function JobsManagement() {
             );
           })}
         </div>
+        )}
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -982,8 +994,21 @@ export default function JobsManagement() {
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit" className="ml-auto">
-                {editingJob ? "Save Changes" : "Create Job"}
+              <Button 
+                type="submit" 
+                className="ml-auto cursor-pointer"
+                disabled={isSubmitting || isUploadingDocument}
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    {editingJob ? "Saving..." : "Creating..."}
+                  </>
+                ) : (
+                  <>
+                    {editingJob ? "Save Changes" : "Create Job"}
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </form>

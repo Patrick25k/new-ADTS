@@ -328,17 +328,23 @@ export default function ContactsManagement() {
         </Card>
 
         {/* Contacts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {isLoading && contacts.length === 0 && (
-            <p className="text-sm text-gray-500 col-span-full">
-              Loading messages...
-            </p>
-          )}
-          {!isLoading && filteredContacts.length === 0 && (
-            <p className="text-sm text-gray-500 col-span-full">
-              No messages found.
-            </p>
-          )}
+        {isLoading && contacts.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <div className="flex flex-col items-center gap-3">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <p className="text-gray-600">Loading messages...</p>
+            </div>
+          </div>
+        ) : !isLoading && filteredContacts.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <div className="flex flex-col items-center gap-3">
+              <Mail className="w-12 h-12 text-gray-400" />
+              <p className="text-gray-600">No messages found.</p>
+              <p className="text-sm text-gray-500">Try adjusting your filters or check back later for new messages.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {filteredContacts.map((contact) => {
             const created = new Date(contact.createdAt);
 
@@ -473,6 +479,7 @@ export default function ContactsManagement() {
             );
           })}
         </div>
+        )}
       </div>
 
       <Dialog

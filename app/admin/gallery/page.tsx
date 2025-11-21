@@ -70,6 +70,7 @@ export default function GalleryManagement() {
     altText: "",
     tags: "",
   })
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
 
@@ -236,6 +237,8 @@ export default function GalleryManagement() {
         return
       }
 
+      setIsSubmitting(true)
+
       const payload = editingImage ? { ...form, id: editingImage.id } : form
 
       const response = await fetch("/api/admin/gallery", {
@@ -267,6 +270,8 @@ export default function GalleryManagement() {
         description: error?.message || "Please try again or check your connection.",
         variant: "destructive",
       })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -397,11 +402,18 @@ export default function GalleryManagement() {
         {/* Images Grid */}
         {isLoading ? (
           <div className="text-center py-12">
-            <p className="text-gray-600">Loading images...</p>
+            <div className="flex flex-col items-center gap-3">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <p className="text-gray-600">Loading images...</p>
+            </div>
           </div>
         ) : filteredImages.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-600">No images found.</p>
+            <div className="flex flex-col items-center gap-3">
+              <ImageIcon className="w-12 h-12 text-gray-400" />
+              <p className="text-gray-600">No images found.</p>
+              <p className="text-sm text-gray-500">Try adjusting your filters or add new images to get started.</p>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -659,8 +671,21 @@ export default function GalleryManagement() {
             </div>
             
             <DialogFooter>
-              <Button type="submit" className="ml-auto">
-                {editingImage ? "Save Changes" : "Create Image"}
+              <Button 
+                type="submit" 
+                className="ml-auto cursor-pointer"
+                disabled={isSubmitting || isUploadingImage}
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    {editingImage ? "Saving..." : "Creating..."}
+                  </>
+                ) : (
+                  <>
+                    {editingImage ? "Save Changes" : "Create Image"}
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </form>

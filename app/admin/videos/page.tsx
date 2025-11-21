@@ -77,6 +77,7 @@ function getVideoThumbnailUrl(youtubeUrl: string): string {
 
 export default function VideosManagement() {
   const { toast } = useToast()
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [videos, setVideos] = useState<VideoItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [search, setSearch] = useState("")
@@ -196,6 +197,8 @@ export default function VideosManagement() {
     event.preventDefault()
 
     try {
+      setIsSubmitting(true)
+
       const payload = { ...form }
 
       const endpoint = editingVideo
@@ -245,6 +248,8 @@ export default function VideosManagement() {
         description: error?.message || "Please try again.",
         variant: "destructive",
       })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -374,13 +379,23 @@ export default function VideosManagement() {
         </Card>
 
         {/* Videos Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {isLoading && videos.length === 0 && (
-            <p className="text-sm text-gray-500 col-span-full">Loading videos...</p>
-          )}
-          {!isLoading && filteredVideos.length === 0 && (
-            <p className="text-sm text-gray-500 col-span-full">No videos found. Try creating a new one.</p>
-          )}
+        {isLoading && videos.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <div className="flex flex-col items-center gap-3">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <p className="text-gray-600">Loading videos...</p>
+            </div>
+          </div>
+        ) : !isLoading && filteredVideos.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <div className="flex flex-col items-center gap-3">
+              <Video className="w-12 h-12 text-gray-400" />
+              <p className="text-gray-600">No videos found.</p>
+              <p className="text-sm text-gray-500">Try adjusting your filters or create a new video to get started.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredVideos.map((video) => {
             const thumbnail = getVideoThumbnailUrl(video.youtubeUrl)
 
@@ -521,6 +536,7 @@ export default function VideosManagement() {
             )
           })}
         </div>
+        )}
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -611,8 +627,21 @@ export default function VideosManagement() {
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit" className="ml-auto">
-                {editingVideo ? "Save Changes" : "Create Video"}
+              <Button 
+                type="submit" 
+                className="ml-auto cursor-pointer"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    {editingVideo ? "Saving..." : "Creating..."}
+                  </>
+                ) : (
+                  <>
+                    {editingVideo ? "Save Changes" : "Create Video"}
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </form>

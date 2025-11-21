@@ -51,6 +51,7 @@ interface TeamMember {
 export default function TeamManagement() {
   const { toast } = useToast();
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -291,6 +292,8 @@ export default function TeamManagement() {
         return;
       }
 
+      setIsSubmitting(true);
+
       const payload = { ...form };
 
       const endpoint = editingMember
@@ -340,6 +343,8 @@ export default function TeamManagement() {
         description: error?.message || "Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -478,17 +483,23 @@ export default function TeamManagement() {
         </Card>
 
         {/* Team Members Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {isLoading && members.length === 0 && (
-            <p className="text-sm text-gray-500 col-span-full">
-              Loading team members...
-            </p>
-          )}
-          {!isLoading && filteredMembers.length === 0 && (
-            <p className="text-sm text-gray-500 col-span-full">
-              No team members found. Try creating a new one.
-            </p>
-          )}
+        {isLoading && members.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <div className="flex flex-col items-center gap-3">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <p className="text-gray-600">Loading team members...</p>
+            </div>
+          </div>
+        ) : !isLoading && filteredMembers.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <div className="flex flex-col items-center gap-3">
+              <Users className="w-12 h-12 text-gray-400" />
+              <p className="text-gray-600">No team members found.</p>
+              <p className="text-sm text-gray-500">Try adjusting your filters or create a new team member to get started.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredMembers.map((member) => (
             <Card
               key={member.id}
@@ -628,6 +639,7 @@ export default function TeamManagement() {
             </Card>
           ))}
         </div>
+        )}
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -787,8 +799,21 @@ export default function TeamManagement() {
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit" className="ml-auto">
-                {editingMember ? "Save Changes" : "Create Team Member"}
+              <Button 
+                type="submit" 
+                className="ml-auto cursor-pointer"
+                disabled={isSubmitting || isUploadingImage}
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    {editingMember ? "Saving..." : "Creating..."}
+                  </>
+                ) : (
+                  <>
+                    {editingMember ? "Save Changes" : "Create Team Member"}
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </form>

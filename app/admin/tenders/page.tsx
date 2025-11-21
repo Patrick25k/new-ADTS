@@ -72,6 +72,7 @@ function getDaysLeft(deadline: string | null): number | null {
 export default function TendersManagement() {
   const { toast } = useToast();
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [tenders, setTenders] = useState<TenderItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -325,6 +326,8 @@ export default function TendersManagement() {
         return;
       }
 
+      setIsSubmitting(true);
+
       const payload = { ...form };
 
       const endpoint = editingTender
@@ -374,6 +377,8 @@ export default function TendersManagement() {
         description: error?.message || "Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -512,17 +517,23 @@ export default function TendersManagement() {
         </Card>
 
         {/* Tenders Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {isLoading && tenders.length === 0 && (
-            <p className="text-sm text-gray-500 col-span-full">
-              Loading tenders...
-            </p>
-          )}
-          {!isLoading && filteredTenders.length === 0 && (
-            <p className="text-sm text-gray-500 col-span-full">
-              No tenders found. Try creating a new one.
-            </p>
-          )}
+        {isLoading && tenders.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <div className="flex flex-col items-center gap-3">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <p className="text-gray-600">Loading tenders...</p>
+            </div>
+          </div>
+        ) : !isLoading && filteredTenders.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <div className="flex flex-col items-center gap-3">
+              <FileText className="w-12 h-12 text-gray-400" />
+              <p className="text-gray-600">No tenders found.</p>
+              <p className="text-sm text-gray-500">Try adjusting your filters or create a new tender to get started.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {filteredTenders.map((tender) => {
             const daysLeft = getDaysLeft(tender.deadline);
 
@@ -709,6 +720,7 @@ export default function TendersManagement() {
             );
           })}
         </div>
+        )}
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -911,8 +923,21 @@ export default function TendersManagement() {
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit" className="ml-auto">
-                {editingTender ? "Save Changes" : "Create Tender"}
+              <Button 
+                type="submit" 
+                className="ml-auto cursor-pointer"
+                disabled={isSubmitting || isUploadingDocument}
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    {editingTender ? "Saving..." : "Creating..."}
+                  </>
+                ) : (
+                  <>
+                    {editingTender ? "Save Changes" : "Create Tender"}
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </form>
