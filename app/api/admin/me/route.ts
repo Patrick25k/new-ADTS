@@ -19,7 +19,7 @@ export async function GET() {
       authenticated: true,
       user: {
         email: payload.email,
-        fullName: payload.name ?? null,
+        fullName: payload.name || "Admin User",
         role: payload.role ?? 'admin',
       },
     })

@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (data?.authenticated && data.user?.email) {
         setIsAuthenticated(true)
-        setUser({ email: data.user.email, fullName: data.user.fullName })
+        setUser({ email: data.user.email, fullName: data.user.fullName || "Admin User" })
       } else {
         setIsAuthenticated(false)
         setUser(null)
@@ -87,7 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Set cookie with authentication token
       if (data?.success && data.user?.email) {
         setIsAuthenticated(true)
-        setUser({ email: data.user.email, fullName: data.user.fullName })
+        setUser({ email: data.user.email, fullName: data.user.fullName || "Admin User" })
         return true
       }
 

@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       success: true,
       user: {
         email: user.email,
-        fullName: user.full_name,
+        fullName: user.full_name || "Admin User",
         role: user.role,
       },
     })

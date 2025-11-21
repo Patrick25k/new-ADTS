@@ -17,6 +17,9 @@ export async function GET(_request: NextRequest) {
         status,
         featured,
         duration,
+        views,
+        likes,
+        comments_count,
         published_at,
         created_at
       FROM videos
@@ -38,6 +41,9 @@ export async function GET(_request: NextRequest) {
         status: (row.status as string) ?? 'Draft',
         featured: Boolean(row.featured),
         duration: (row.duration as string) ?? '',
+        views: (row.views as number) ?? 0,
+        likes: (row.likes as number) ?? 0,
+        comments: (row.comments_count as number) ?? 0,
         date: rawDate
           ? new Date(rawDate).toLocaleDateString('en-US', {
               year: 'numeric',

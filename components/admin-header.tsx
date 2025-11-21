@@ -16,7 +16,7 @@ export function AdminHeader({ title, description, action }: AdminHeaderProps) {
   const { user } = useAuth()
 
   const email = user?.email ?? "admin@adtsrwanda.org"
-  const name = user?.fullName ?? "Jean D Amour"
+  const name = user?.fullName || "Admin"
   const initials = name
     .split(/[._-]/)
     .filter(Boolean)

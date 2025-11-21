@@ -1,5 +1,7 @@
 import { Play } from "lucide-react";
 import Image from "next/image";
+import { sql, ensureVideosTables } from "@/lib/db";
+import VideoNavigator from "@/components/VideoNavigator";
 
 function extractYouTubeId(url: string): string | null {
   if (!url) return null;
@@ -22,6 +24,12 @@ function extractYouTubeId(url: string): string | null {
   }
 }
 
+function getVideoThumbnailUrl(youtubeUrl: string): string {
+  const id = extractYouTubeId(youtubeUrl)
+  if (!id) return ""
+  return `https://img.youtube.com/vi/${id}/hqdefault.jpg`
+}
+
 interface PublicVideoItem {
   id: string;
   title: string;
@@ -31,41 +39,64 @@ interface PublicVideoItem {
   status: string;
   featured: boolean;
   duration: string;
+  views: number;
+  likes: number;
+  comments: number;
   date: string;
 }
 
 export default async function Videos() {
-  const fallbackYoutubeId = "rwVO60Mck7s";
-
   let videos: PublicVideoItem[] = [];
-  let youtubeId = fallbackYoutubeId;
-  let featuredTitle = "ADTS Rwanda — Featured Video";
-  let featuredDescription = "Watch this video to learn more about ADTS Rwanda's work and impact.";
 
   try {
-    const baseUrl =
-      process.env.NEXT_PUBLIC_SITE_URL ||
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+    await ensureVideosTables();
 
-    const response = await fetch(`${baseUrl}/api/videos`, {
-      cache: "no-store",
-    });
+    const rows = await sql`
+      SELECT
+        id,
+        title,
+        description,
+        youtube_url,
+        category,
+        status,
+        featured,
+        duration,
+        views,
+        likes,
+        comments_count,
+        published_at,
+        created_at
+      FROM videos
+      WHERE status = 'Published'
+      ORDER BY COALESCE(published_at, created_at) DESC
+    `;
 
-    if (response.ok) {
-      const data = await response.json();
-      videos = (data.videos ?? []) as PublicVideoItem[];
+    videos = (rows as any[]).map((row) => {
+      const publishedAt = (row.published_at as string) ?? null
+      const createdAt = row.created_at as string
+      const rawDate = publishedAt ?? createdAt
 
-      const featured = videos.find((v) => v.featured) ?? videos[0];
-
-      if (featured) {
-        const id = extractYouTubeId(featured.youtubeUrl);
-        if (id) {
-          youtubeId = id;
-          featuredTitle = featured.title || featuredTitle;
-          featuredDescription = featured.description || featuredDescription;
-        }
+      return {
+        id: row.id as string,
+        title: row.title as string,
+        description: (row.description as string) ?? '',
+        youtubeUrl: (row.youtube_url as string) ?? '',
+        category: (row.category as string) ?? '',
+        status: (row.status as string) ?? 'Draft',
+        featured: Boolean(row.featured),
+        duration: (row.duration as string) ?? '',
+        views: (row.views as number) ?? 0,
+        likes: (row.likes as number) ?? 0,
+        comments: (row.comments_count as number) ?? 0,
+        date: rawDate
+          ? new Date(rawDate).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })
+          : '',
       }
-    }
+    });
   } catch (error) {
     console.error("Failed to load public videos", error);
   }
@@ -100,25 +131,11 @@ export default async function Videos() {
               <h2 className="text-4xl font-bold mb-4">OUR FEATURED VIDEOS</h2>
             </div>
 
-            <div className="aspect-video w-full rounded-lg overflow-hidden shadow-lg">
-              <iframe
-                className="w-full h-full"
-                src={`https://www.youtube.com/embed/${youtubeId}`}
-                title="ADTS Rwanda - Video"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
-            <h2 className="text-2xl font-semibold mt-6">
-              {featuredTitle}
-            </h2>
-            <p className="text-foreground/80 mt-2">
-              {featuredDescription}
-            </p>
+            <VideoNavigator videos={videos} />
           </div>
         </div>
       </section>
+
 
       {/* Call to Action */}
       <section className="py-20 bg-accent/30">
