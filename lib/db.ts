@@ -196,3 +196,28 @@ export async function ensureVolunteersTables() {
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`;
 }
+
+export async function ensureGalleryTables() {
+  // Gallery depend on core admin tables and extensions
+  await ensureAdminTables()
+
+  await sql`CREATE TABLE IF NOT EXISTS gallery_images (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title TEXT NOT NULL,
+    description TEXT,
+    image_url TEXT NOT NULL,
+    category TEXT,
+    photographer TEXT,
+    featured BOOLEAN NOT NULL DEFAULT FALSE,
+    status TEXT NOT NULL DEFAULT 'Published',
+    file_size TEXT,
+    dimensions TEXT,
+    views INTEGER NOT NULL DEFAULT 0,
+    downloads INTEGER NOT NULL DEFAULT 0,
+    alt_text TEXT,
+    tags TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by UUID REFERENCES admin_users(id)
+  )`;
+}

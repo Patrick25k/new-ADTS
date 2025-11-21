@@ -1,3 +1,6 @@
+"use client"
+
+import { useState, useEffect } from "react";
 import { Calendar, FileText, Download } from "lucide-react";
 import Image from "next/image";
 
@@ -20,25 +23,29 @@ interface PublicTender {
   createdAt: string;
 }
 
-export default async function Tender() {
-  let tenders: PublicTender[] = [];
+export default function Tender() {
+  const [tenders, setTenders] = useState<PublicTender[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  try {
-    const baseUrl =
-      process.env.NEXT_PUBLIC_SITE_URL ||
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
-
-    const response = await fetch(`${baseUrl}/api/tenders`, {
-      cache: "no-store",
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      tenders = (data.tenders ?? []) as PublicTender[];
+  useEffect(() => {
+    async function loadTenders() {
+      try {
+        setIsLoading(true);
+        
+        const response = await fetch("/api/tenders");
+        if (!response.ok) throw new Error("Failed to load tenders");
+        
+        const data = await response.json();
+        setTenders(data.tenders || []);
+      } catch (error) {
+        console.error("Failed to load tenders", error);
+      } finally {
+        setIsLoading(false);
+      }
     }
-  } catch (error) {
-    console.error("Failed to load tenders", error);
-  }
+
+    loadTenders();
+  }, []);
 
   const openTenders = tenders.filter((t) => t.status === "Open");
   const displayTenders = openTenders.length > 0 ? openTenders : tenders;
@@ -106,7 +113,11 @@ export default async function Tender() {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl font-bold mb-12">Current Tenders</h2>
-            {displayTenders.length === 0 ? (
+            {isLoading ? (
+              <p className="text-sm text-foreground/60">
+                Loading tenders...
+              </p>
+            ) : displayTenders.length === 0 ? (
               <p className="text-sm text-foreground/60">
                 There are currently no active tenders. Please check back later.
               </p>

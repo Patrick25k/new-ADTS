@@ -3,33 +3,75 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { galleryImages } from "@/lib/galleryImages";
+
+interface GalleryImage {
+  id: string
+  title: string
+  description: string
+  imageUrl: string
+  category: string
+  photographer: string
+  featured: boolean
+  status: string
+  fileSize: string
+  dimensions: string
+  views: number
+  downloads: number
+  altText: string
+  tags: string
+  createdAt: string
+  updatedAt: string
+}
 
 type Img = { src: string; alt: string };
 
 export default function GalleryPage() {
   const itemsPerPage = 6; // 2 rows x 3 columns on large screens
   const [page, setPage] = useState(0);
-  const pageCount = Math.max(1, Math.ceil(galleryImages.length / itemsPerPage));
+  const [images, setImages] = useState<GalleryImage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const pageCount = Math.max(1, Math.ceil(images.length / itemsPerPage));
   const [modalIndex, setModalIndex] = useState<number | null>(null);
 
   const start = page * itemsPerPage;
-  const pageImages: Img[] = galleryImages.slice(start, start + itemsPerPage);
+  const pageImages: Img[] = images.slice(start, start + itemsPerPage).map(img => ({
+    src: img.imageUrl,
+    alt: img.altText || img.title
+  }));
 
-  const currentImage = modalIndex !== null ? galleryImages[modalIndex] : null;
+  const currentImage = modalIndex !== null ? images[modalIndex] : null;
+
+  useEffect(() => {
+    async function loadImages() {
+      try {
+        setIsLoading(true);
+        const response = await fetch("/api/gallery");
+        if (!response.ok) throw new Error("Failed to load images");
+        
+        const data = await response.json();
+        setImages(data.images || []);
+      } catch (error) {
+        console.error("Failed to load gallery images", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadImages();
+  }, []);
 
   // Modal (lightbox) helpers
-  const openModal = (index: number) => setModalIndex(index);
+  const openModal = (index: number) => setModalIndex(start + index);
   const closeModal = () => setModalIndex(null);
   const showPrev = () =>
     setModalIndex((i) => {
       if (i === null) return i;
-      return (i - 1 + galleryImages.length) % galleryImages.length;
+      return (i - 1 + images.length) % images.length;
     });
   const showNext = () =>
     setModalIndex((i) => {
       if (i === null) return i;
-      return (i + 1) % galleryImages.length;
+      return (i + 1) % images.length;
     });
 
   // Keyboard support and preloading adjacent images
@@ -45,15 +87,15 @@ export default function GalleryPage() {
     window.addEventListener("keydown", onKey);
 
     // Preload prev/next images for smoother navigation
-    const prev = (modalIndex - 1 + galleryImages.length) % galleryImages.length;
-    const next = (modalIndex + 1) % galleryImages.length;
+    const prev = (modalIndex - 1 + images.length) % images.length;
+    const next = (modalIndex + 1) % images.length;
     const pImg = document.createElement("img");
     const nImg = document.createElement("img");
-    pImg.src = galleryImages[prev].src;
-    nImg.src = galleryImages[next].src;
+    pImg.src = images[prev]?.imageUrl || "";
+    nImg.src = images[next]?.imageUrl || "";
 
     return () => window.removeEventListener("keydown", onKey);
-  }, [modalIndex, galleryImages]);
+  }, [modalIndex, images]);
 
   return (
     <div className="flex flex-col">
@@ -111,27 +153,37 @@ export default function GalleryPage() {
               </button>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {pageImages.map((image: Img, index: number) => (
-                  <figure
-                    key={start + index}
-                    className="relative aspect-[4/3] overflow-hidden rounded-lg group cursor-zoom-in hover:shadow-xl transition-shadow"
-                    onClick={() => openModal(start + index)}
-                  >
-                    <img
-                      src={
-                        image.src ||
-                        "/images/image_22.jpeg"
-                      }
-                      alt={image.alt}
-                      className="w-full h-full object-cover"
-                    />
-                    <figcaption className="absolute inset-0 bg-gradient-to-t from-foreground/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end pointer-events-none group-hover:pointer-events-auto">
-                      <p className="text-background p-4 text-sm font-medium">
-                        {image.alt}
-                      </p>
-                    </figcaption>
-                  </figure>
-                ))}
+                {isLoading ? (
+                  <div className="col-span-full text-center py-12">
+                    <p className="text-muted-foreground">Loading gallery...</p>
+                  </div>
+                ) : pageImages.length === 0 ? (
+                  <div className="col-span-full text-center py-12">
+                    <p className="text-muted-foreground">No images available in the gallery.</p>
+                  </div>
+                ) : (
+                  pageImages.map((image: Img, index: number) => (
+                    <figure
+                      key={start + index}
+                      className="relative aspect-[4/3] overflow-hidden rounded-lg group cursor-zoom-in hover:shadow-xl transition-shadow"
+                      onClick={() => openModal(index)}
+                    >
+                      <img
+                        src={
+                          image.src ||
+                          "/images/image_22.jpeg"
+                        }
+                        alt={image.alt}
+                        className="w-full h-full object-cover"
+                      />
+                      <figcaption className="absolute inset-0 bg-gradient-to-t from-foreground/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end pointer-events-none group-hover:pointer-events-auto">
+                        <p className="text-background p-4 text-sm font-medium">
+                          {image.alt}
+                        </p>
+                      </figcaption>
+                    </figure>
+                  ))
+                )}
               </div>
 
               {/* Page indicator centered below grid */}
@@ -176,10 +228,21 @@ export default function GalleryPage() {
 
             <div className="bg-black rounded">
               <img
-                src={currentImage.src}
-                alt={currentImage.alt}
+                src={currentImage.imageUrl}
+                alt={currentImage.altText || currentImage.title}
                 className="w-full h-[70vh] object-contain mx-auto"
               />
+              {currentImage.title && (
+                <div className="text-white text-center p-4">
+                  <h3 className="text-lg font-semibold">{currentImage.title}</h3>
+                  {currentImage.description && (
+                    <p className="text-sm text-gray-300 mt-1">{currentImage.description}</p>
+                  )}
+                  {currentImage.photographer && (
+                    <p className="text-xs text-gray-400 mt-2">Photo by: {currentImage.photographer}</p>
+                  )}
+                </div>
+              )}
             </div>
 
             <button
