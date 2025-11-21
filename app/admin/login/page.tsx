@@ -54,10 +54,10 @@ export default function AdminLogin() {
   return (
     <div className="min-h-screen flex">
       {/* Left Side - Image/Branding (large screens) */}
-      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-primary to-secondary relative overflow-hidden">
+      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-black to-black relative overflow-hidden">
         <div className="absolute inset-0">
           <Image
-            src="/community-gathering-rwanda-partnership.jpg"
+            src="/images/image_8.jpeg"
             alt="ADTS Rwanda Community"
             fill
             className="object-cover opacity-20"
@@ -115,7 +115,7 @@ export default function AdminLogin() {
           <div className="mb-8">
             <Link href="/" className="flex items-center gap-3 mb-8">
               <Image
-                src="/adts-rwanda-ngo-logo-with-globe-and-people.jpg"
+                src="/images/ADTS LOGO.jpg"
                 alt="ADTS Rwanda Logo"
                 width={48}
                 height={48}

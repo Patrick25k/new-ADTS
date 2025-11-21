@@ -1,63 +1,63 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { FileText, Download, Calendar } from "lucide-react";
 import Image from "next/image";
+import { useToast } from "@/components/ui/use-toast";
+
+interface PublicReport {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  year: string;
+  pages: number;
+  size: string;
+  documentUrl: string;
+}
 
 export default function Reports() {
-  const reports = [
-    {
-      title: "ADTS Rwanda Annual Report 2024",
-      year: "2024",
-      category: "Annual Report",
-      description:
-        "Comprehensive overview of ADTS Rwanda's programs, impact, financial performance, and strategic direction for 2024. Includes detailed program statistics, success stories, and audited financial statements.",
-      pages: "68 pages",
-      size: "5.2 MB",
-    },
-    {
-      title: "Ending Domestic Violence Program Evaluation Report",
-      year: "2023",
-      category: "Program Evaluation",
-      description:
-        "Independent evaluation of our EDV programs across five districts, assessing impact on family violence reduction, behavior change, and community mobilization effectiveness.",
-      pages: "45 pages",
-      size: "3.8 MB",
-    },
-    {
-      title: "Socio-Economic Empowerment Impact Assessment",
-      year: "2023",
-      category: "Impact Assessment",
-      description:
-        "Quantitative and qualitative assessment of VSL groups and cooperatives, measuring economic outcomes, women's empowerment indicators, and household poverty reduction.",
-      pages: "52 pages",
-      size: "4.1 MB",
-    },
-    {
-      title: "Training for Transformation: 25 Years of Community Mobilization",
-      year: "2023",
-      category: "Research Report",
-      description:
-        "Comprehensive study documenting the evolution, methodology, and impact of TFT programs across the Great Lakes region, including case studies and lessons learned.",
-      pages: "78 pages",
-      size: "6.5 MB",
-    },
-    {
-      title: "Teen Mothers Program Outcome Report",
-      year: "2023",
-      category: "Program Report",
-      description:
-        "Detailed report on vocational training, psychosocial support, and economic outcomes for 300+ teen mothers, including testimonies and recommendations for scaling.",
-      pages: "38 pages",
-      size: "2.9 MB",
-    },
-    {
-      title: "Gender Equality and GBV Prevention Policy Brief",
-      year: "2023",
-      category: "Policy Brief",
-      description:
-        "Evidence-based policy recommendations for strengthening GBV prevention and gender equality in Rwanda, based on ADTS's 23+ years of field experience.",
-      pages: "16 pages",
-      size: "1.2 MB",
-    },
-  ];
+  const { toast } = useToast();
+  const [reports, setReports] = useState<PublicReport[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadReports = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch("/api/reports");
+
+        if (!response.ok) {
+          throw new Error("Failed to load reports");
+        }
+
+        const data = await response.json();
+        const items: PublicReport[] = (data.reports ?? []).map((report: any) => ({
+          id: report.id as string,
+          title: (report.title as string) ?? "",
+          description: (report.description as string) ?? "",
+          category: (report.category as string) ?? "",
+          year: (report.year as string) ?? "",
+          pages: Number(report.pages ?? 0),
+          size: (report.size as string) ?? "",
+          documentUrl: (report.documentUrl as string) ?? "",
+        }));
+
+        setReports(items);
+      } catch (error) {
+        console.error("Failed to load reports", error);
+        toast({
+          title: "Failed to load reports",
+          description: "Please try again later.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadReports();
+  }, [toast]);
 
   return (
     <main className="min-h-screen">
@@ -120,10 +120,20 @@ export default function Reports() {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl font-bold mb-12">Available Reports</h2>
+            {isLoading && reports.length === 0 && (
+              <p className="text-sm text-foreground/60">
+                Loading reports...
+              </p>
+            )}
+            {!isLoading && reports.length === 0 && (
+              <p className="text-sm text-foreground/60">
+                No reports are available at the moment. Please check back later.
+              </p>
+            )}
             <div className="space-y-6">
-              {reports.map((report, index) => (
+              {reports.map((report) => (
                 <div
-                  key={index}
+                  key={report.id}
                   className="bg-background rounded-lg border p-6"
                 >
                   <div className="flex items-start gap-4">
@@ -137,7 +147,7 @@ export default function Reports() {
                         </span>
                         <span className="flex items-center gap-1 text-sm text-foreground/60">
                           <Calendar className="h-4 w-4" />
-                          {report.year}
+                          {report.year || ""}
                         </span>
                       </div>
                       <h3 className="text-xl font-semibold mb-2">
@@ -147,14 +157,25 @@ export default function Reports() {
                         {report.description}
                       </p>
                       <div className="flex items-center gap-4 text-sm text-foreground/60 mb-4">
-                        <span>{report.pages}</span>
+                        <span>
+                          {report.pages
+                            ? `${report.pages} pages`
+                            : "Pages: N/A"}
+                        </span>
                         <span>•</span>
-                        <span>{report.size}</span>
+                        <span>{report.size || "Size: N/A"}</span>
                       </div>
-                      <button className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity">
-                        <Download className="h-4 w-4" />
-                        Download Report
-                      </button>
+                      {report.documentUrl && (
+                        <a
+                          href={report.documentUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity"
+                        >
+                          <Download className="h-4 w-4" />
+                          Download Report
+                        </a>
+                      )}
                     </div>
                   </div>
                 </div>

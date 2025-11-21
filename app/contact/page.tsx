@@ -4,7 +4,6 @@ import type React from "react";
 import Image from "next/image";
 
 import { useState } from "react";
-import emailjs from "@emailjs/browser";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -84,61 +83,20 @@ export default function ContactPage() {
     setStatusMessage("");
 
     try {
-      const serviceId = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
-      const templateId = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
-      const publicKey =
-        process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY ||
-        process.env.NEXT_PUBLIC_EMAILJS_USER_ID;
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
 
-      if (!serviceId || !templateId || !publicKey) {
-        console.warn("EmailJS environment variables are not set");
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        const errorMessage =
+          (data && data.error) ||
+          "Failed to send message. Please try again later.";
         setSubmitStatus("error");
-        setStatusMessage(
-          "Sorry, email not sent try again later!"
-        );
+        setStatusMessage(errorMessage);
         return;
-      }
-
-      // Admin notification params (include reply_to so admin can reply to the sender)
-      // include both sets of keys: the EmailJS template in your dashboard is using {{name}} and {{email}}
-      // so send those names (and keep from_name/from_email for compatibility)
-      const templateParams = {
-        name: formData.name,
-        email: formData.email,
-        from_name: formData.name,
-        from_email: formData.email,
-        subject: formData.subject,
-        message: formData.message,
-        reply_to: formData.email,
-      };
-
-      const result = await emailjs.send(
-        serviceId,
-        templateId,
-        templateParams,
-        publicKey
-      );
-      // Optionally send an auto-reply if an auto-reply template id is configured
-      const autoTemplateId =
-        process.env.NEXT_PUBLIC_EMAILJS_AUTOREPLY_TEMPLATE_ID;
-      if (autoTemplateId) {
-        try {
-          // auto-reply template variables (match template fields you create)
-          const autoParams = {
-            name: formData.name,
-            email: formData.email,
-            subject: `Re: ${formData.subject}`,
-            message: `Hi ${formData.name},\n\nThank you for contacting ADTS Rwanda. We received your message and will get back to you soon.\n\n--- Your message ---\n${formData.message}`,
-          };
-          const autoResult = await emailjs.send(
-            serviceId,
-            autoTemplateId,
-            autoParams,
-            publicKey
-          );
-        } catch (autoErr) {
-          console.warn("Auto-reply failed:", autoErr);
-        }
       }
 
       setSubmitStatus("success");
@@ -147,10 +105,10 @@ export default function ContactPage() {
       );
       setFormData({ name: "", email: "", subject: "", message: "" });
     } catch (error) {
-      console.error("💥 EmailJS error:", error);
+      console.error("Contact form submit error:", error);
       setSubmitStatus("error");
       setStatusMessage(
-        "Failed to send message via EmailJS. Please try again or contact us directly."
+        "Failed to send message. Please try again later or contact us directly."
       );
     } finally {
       console.log("🏁 Form submission completed");
@@ -410,7 +368,7 @@ export default function ContactPage() {
                   )}
 
                   {/* Visible debug banner: shows whether EmailJS envs were inlined at build time */}
-                  {!_emailjs_all_set && (
+                  {false && !_emailjs_all_set && (
                     <div className="mb-4 p-3 rounded border bg-yellow-50 border-yellow-200 text-yellow-800">
                       Sorry, mail not sent try again later!
                     </div>

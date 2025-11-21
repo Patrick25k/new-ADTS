@@ -1,15 +1,18 @@
-import { AdminHeader } from "@/components/admin-header"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { 
-  Eye, 
-  Trash2, 
-  Check, 
-  X, 
-  Search, 
-  Filter, 
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AdminHeader } from "@/components/admin-header";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  Eye,
+  Trash2,
+  Check,
+  X,
+  Search,
+  Filter,
   Calendar,
   Phone,
   Mail,
@@ -20,108 +23,358 @@ import {
   Heart,
   Star,
   MapPin,
-  Award
-} from "lucide-react"
+  Award,
+} from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+
+type VolunteerStatus = "Pending" | "Approved" | "Rejected" | "Active";
+
+interface VolunteerItem {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  location: string;
+  age: number | null;
+  profession: string;
+  experience: string;
+  skills: string[];
+  availability: string;
+  preferredPrograms: string[];
+  languages: string[];
+  motivation: string;
+  status: VolunteerStatus;
+  rating: number | null;
+  hoursCommitted: number;
+  references: number;
+  background: string;
+  appliedAt: string;
+}
 
 export default function VolunteersManagement() {
-  const volunteers = [
-    {
-      id: 1,
-      name: "Alice Mukamana",
-      email: "alice.mukamana@gmail.com",
-      phone: "+250 788 111 222",
-      location: "Kigali, Rwanda",
-      age: 28,
-      profession: "Teacher",
-      experience: "3 years",
-      skills: ["Teaching", "Community Outreach", "Event Planning", "Public Speaking"],
-      availability: "Weekends",
-      preferredPrograms: ["Education", "Youth Development"],
-      languages: ["English", "Kinyarwanda", "French"],
-      motivation: "I want to contribute to community development and help children access quality education.",
-      date: "2024-03-15",
-      status: "Pending",
-      rating: 4.8,
-      hoursCommitted: 20,
-      references: 2,
-      background: "Verified"
-    },
-    {
-      id: 2,
-      name: "David Niyonzima",
-      email: "david.niyonzima@yahoo.com",
-      phone: "+250 788 222 333",
-      location: "Nyarugunga, Rwanda",
-      age: 35,
-      profession: "Nurse",
-      experience: "8 years",
-      skills: ["Healthcare", "Counseling", "First Aid", "Mental Health Support"],
-      availability: "Flexible",
-      preferredPrograms: ["Health", "Child Protection"],
-      languages: ["English", "Kinyarwanda"],
-      motivation: "Healthcare is my passion and I believe everyone deserves access to quality medical care.",
-      date: "2024-03-12",
-      status: "Approved",
-      rating: 4.9,
-      hoursCommitted: 30,
-      references: 3,
-      background: "Verified"
-    },
-    {
-      id: 3,
-      name: "Grace Uwase",
-      email: "grace.uwase@outlook.com",
-      phone: "+250 788 333 444",
-      location: "Kigali, Rwanda",
-      age: 24,
-      profession: "Administrative Assistant",
-      experience: "2 years",
-      skills: ["Administration", "Data Entry", "Microsoft Office", "Communication"],
-      availability: "Weekdays",
-      preferredPrograms: ["Administration", "Data Management"],
-      languages: ["English", "Kinyarwanda"],
-      motivation: "I want to use my administrative skills to support meaningful community programs.",
-      date: "2024-03-10",
-      status: "Approved",
-      rating: 4.7,
-      hoursCommitted: 25,
-      references: 2,
-      background: "Pending"
-    },
-    {
-      id: 4,
-      name: "Jean Baptiste Habimana",
-      email: "jb.habimana@gmail.com",
-      phone: "+250 788 444 555",
-      location: "Gasabo, Rwanda",
-      age: 42,
-      profession: "Engineer",
-      experience: "15 years",
-      skills: ["Project Management", "Technical Training", "Leadership", "Problem Solving"],
-      availability: "Evenings & Weekends",
-      preferredPrograms: ["Infrastructure", "Technical Training"],
-      languages: ["English", "Kinyarwanda", "French"],
-      motivation: "I want to share my technical expertise to help build sustainable community infrastructure.",
-      date: "2024-03-08",
-      status: "Rejected",
-      rating: 4.5,
-      hoursCommitted: 15,
-      references: 4,
-      background: "Verified"
-    },
-  ]
+  const { toast } = useToast();
 
-  const stats = [
-    { label: "Total Volunteers", value: "45", change: "+8", icon: Users, color: "text-blue-600", bgColor: "bg-blue-50" },
-    { label: "Pending Applications", value: "12", change: "+3", icon: Clock, color: "text-orange-600", bgColor: "bg-orange-50" },
-    { label: "Active Volunteers", value: "28", change: "+5", icon: Heart, color: "text-green-600", bgColor: "bg-green-50" },
-    { label: "Total Hours", value: "1,240", change: "+180", icon: TrendingUp, color: "text-purple-600", bgColor: "bg-purple-50" },
-  ]
+  const [volunteers, setVolunteers] = useState<VolunteerItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<
+    "all" | "pending" | "approved" | "active"
+  >("all");
+
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingVolunteer, setEditingVolunteer] = useState<VolunteerItem | null>(
+    null,
+  );
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    location: "",
+    age: "",
+    profession: "",
+    experience: "",
+    skills: "",
+    availability: "",
+    preferredPrograms: "",
+    languages: "",
+    motivation: "",
+    status: "Pending" as VolunteerStatus,
+    rating: "",
+    hoursCommitted: "",
+    references: "",
+    background: "",
+  });
+
+  const loadVolunteers = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch("/api/admin/volunteers", {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to load volunteers");
+      }
+
+      const data = await response.json();
+      setVolunteers(data.volunteers ?? []);
+    } catch (error) {
+      console.error("Failed to load volunteers", error);
+      toast({
+        title: "Failed to load volunteers",
+        description: "Please try again or check your connection.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    loadVolunteers();
+  }, [loadVolunteers]);
+
+  const filteredVolunteers = useMemo(() => {
+    return volunteers.filter((volunteer) => {
+      const matchesSearch =
+        !search ||
+        volunteer.name.toLowerCase().includes(search.toLowerCase()) ||
+        volunteer.email.toLowerCase().includes(search.toLowerCase()) ||
+        volunteer.profession.toLowerCase().includes(search.toLowerCase()) ||
+        volunteer.location.toLowerCase().includes(search.toLowerCase());
+
+      const matchesFilter = (() => {
+        if (filter === "all") return true;
+        if (filter === "pending") return volunteer.status === "Pending";
+        if (filter === "approved") return volunteer.status === "Approved";
+        if (filter === "active") return volunteer.status === "Active";
+        return true;
+      })();
+
+      return matchesSearch && matchesFilter;
+    });
+  }, [volunteers, search, filter]);
+
+  const stats = useMemo(() => {
+    const total = volunteers.length;
+    const pending = volunteers.filter((v) => v.status === "Pending").length;
+    const active = volunteers.filter((v) => v.status === "Active").length;
+    const totalHours = volunteers.reduce(
+      (sum, v) => sum + (v.hoursCommitted ?? 0),
+      0,
+    );
+
+    return [
+      {
+        label: "Total Volunteers",
+        value: String(total),
+        change: "",
+        icon: Users,
+        color: "text-blue-600",
+        bgColor: "bg-blue-50",
+      },
+      {
+        label: "Pending Applications",
+        value: String(pending),
+        change: "",
+        icon: Clock,
+        color: "text-orange-600",
+        bgColor: "bg-orange-50",
+      },
+      {
+        label: "Active Volunteers",
+        value: String(active),
+        change: "",
+        icon: Heart,
+        color: "text-green-600",
+        bgColor: "bg-green-50",
+      },
+      {
+        label: "Total Hours",
+        value: String(totalHours),
+        change: "",
+        icon: TrendingUp,
+        color: "text-purple-600",
+        bgColor: "bg-purple-50",
+      },
+    ];
+  }, [volunteers]);
+
+  const openNewDialog = () => {
+    setEditingVolunteer(null);
+    setForm({
+      name: "",
+      email: "",
+      phone: "",
+      location: "",
+      age: "",
+      profession: "",
+      experience: "",
+      skills: "",
+      availability: "",
+      preferredPrograms: "",
+      languages: "",
+      motivation: "",
+      status: "Pending",
+      rating: "",
+      hoursCommitted: "",
+      references: "",
+      background: "",
+    });
+    setIsDialogOpen(true);
+  };
+
+  const openEditDialog = (volunteer: VolunteerItem) => {
+    setEditingVolunteer(volunteer);
+    setForm({
+      name: volunteer.name,
+      email: volunteer.email,
+      phone: volunteer.phone,
+      location: volunteer.location,
+      age: volunteer.age ? String(volunteer.age) : "",
+      profession: volunteer.profession,
+      experience: volunteer.experience,
+      skills: volunteer.skills.join("\n"),
+      availability: volunteer.availability,
+      preferredPrograms: volunteer.preferredPrograms.join("\n"),
+      languages: volunteer.languages.join("\n"),
+      motivation: volunteer.motivation,
+      status: volunteer.status,
+      rating: volunteer.rating ? String(volunteer.rating) : "",
+      hoursCommitted: volunteer.hoursCommitted
+        ? String(volunteer.hoursCommitted)
+        : "",
+      references: volunteer.references ? String(volunteer.references) : "",
+      background: volunteer.background,
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleFormChange = (
+    field: keyof typeof form,
+    value: string,
+  ) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    try {
+      const endpoint = editingVolunteer
+        ? "/api/admin/volunteers"
+        : "/api/admin/volunteers";
+      const method = editingVolunteer ? "PUT" : "POST";
+
+      const payload = {
+        ...(editingVolunteer ? { id: editingVolunteer.id } : {}),
+        ...form,
+      };
+
+      const response = await fetch(endpoint, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error || "Failed to save volunteer");
+      }
+
+      const data = await response.json();
+      const saved: VolunteerItem = data.volunteer;
+
+      setVolunteers((prev) => {
+        if (editingVolunteer) {
+          return prev.map((v) => (v.id === saved.id ? saved : v));
+        }
+        return [saved, ...prev];
+      });
+
+      toast({
+        title: editingVolunteer ? "Volunteer updated" : "Volunteer created",
+        description: editingVolunteer
+          ? "The volunteer has been updated."
+          : "The volunteer has been added.",
+      });
+
+      setIsDialogOpen(false);
+      setEditingVolunteer(null);
+
+      await loadVolunteers();
+    } catch (error: any) {
+      console.error("Failed to save volunteer", error);
+      toast({
+        title: "Failed to save volunteer",
+        description: error?.message || "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const updateVolunteerStatus = async (
+    volunteer: VolunteerItem,
+    status: VolunteerStatus,
+  ) => {
+    try {
+      const response = await fetch("/api/admin/volunteers", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ id: volunteer.id, status }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error || "Failed to update volunteer");
+      }
+
+      const data = await response.json();
+      const updated: VolunteerItem = data.volunteer;
+
+      setVolunteers((prev) =>
+        prev.map((v) => (v.id === updated.id ? updated : v)),
+      );
+    } catch (error: any) {
+      console.error("Failed to update volunteer", error);
+      toast({
+        title: "Failed to update volunteer",
+        description: error?.message || "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDelete = async (volunteer: VolunteerItem) => {
+    if (
+      !confirm(`Delete volunteer "${volunteer.name}"? This cannot be undone.`)
+    ) {
+      return;
+    }
+
+    try {
+      const url = `/api/admin/volunteers?id=${encodeURIComponent(volunteer.id)}`;
+      const response = await fetch(url, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error || "Failed to delete volunteer");
+      }
+
+      setVolunteers((prev) => prev.filter((v) => v.id !== volunteer.id));
+
+      toast({
+        title: "Volunteer deleted",
+        description: "The volunteer has been removed.",
+      });
+    } catch (error: any) {
+      console.error("Failed to delete volunteer", error);
+      toast({
+        title: "Failed to delete volunteer",
+        description: error?.message || "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50/50">
-      <AdminHeader 
-        title="Volunteer Management" 
+      <AdminHeader
+        title="Volunteer Management"
         description="Review and manage volunteer applications"
         action={
           <div className="flex items-center gap-3">
@@ -129,7 +382,11 @@ export default function VolunteersManagement() {
               <Filter className="w-4 h-4" />
               Filter
             </Button>
-            <Button className="gap-2 bg-primary hover:bg-primary/90">
+            <Button
+              type="button"
+              className="gap-2 bg-primary hover:bg-primary/90"
+              onClick={openNewDialog}
+            >
               <Users className="w-4 h-4" />
               Invite Volunteers
             </Button>
@@ -137,17 +394,26 @@ export default function VolunteersManagement() {
         }
       />
 
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6 max-w-7xl mx-auto">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((stat, index) => (
-            <Card key={index} className="bg-white hover:shadow-lg transition-shadow">
+            <Card
+              key={index}
+              className="bg-white hover:shadow-lg transition-shadow"
+            >
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">{stat.label}</p>
-                    <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
-                    <p className="text-sm text-green-600 mt-1">{stat.change} this month</p>
+                    <p className="text-sm font-medium text-gray-600">
+                      {stat.label}
+                    </p>
+                    <p className="text-2xl font-bold text-gray-900 mt-1">
+                      {stat.value}
+                    </p>
+                    <p className="text-sm text-green-600 mt-1">
+                      {stat.change} this month
+                    </p>
                   </div>
                   <div className={`p-3 rounded-lg ${stat.bgColor}`}>
                     <stat.icon className={`w-6 h-6 ${stat.color}`} />
@@ -167,13 +433,39 @@ export default function VolunteersManagement() {
                 <Input
                   placeholder="Search volunteers..."
                   className="pl-10"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
                 />
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm">All</Button>
-                <Button variant="outline" size="sm">Pending</Button>
-                <Button variant="outline" size="sm">Approved</Button>
-                <Button variant="outline" size="sm">Active</Button>
+                <Button
+                  variant={filter === "all" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilter("all")}
+                >
+                  All
+                </Button>
+                <Button
+                  variant={filter === "pending" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilter("pending")}
+                >
+                  Pending
+                </Button>
+                <Button
+                  variant={filter === "approved" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilter("approved")}
+                >
+                  Approved
+                </Button>
+                <Button
+                  variant={filter === "active" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilter("active")}
+                >
+                  Active
+                </Button>
               </div>
             </div>
           </CardContent>
@@ -181,156 +473,430 @@ export default function VolunteersManagement() {
 
         {/* Volunteers Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {volunteers.map((volunteer) => (
-            <Card key={volunteer.id} className="bg-white hover:shadow-lg transition-all duration-200 group">
-              <div className="relative">
-                <div className="h-24 bg-gradient-to-r from-green-100 to-blue-100 rounded-t-lg flex items-center justify-center">
-                  <Heart className="w-12 h-12 text-green-500" />
+          {isLoading && volunteers.length === 0 && (
+            <p className="text-sm text-gray-500 col-span-full">
+              Loading volunteers...
+            </p>
+          )}
+          {!isLoading && filteredVolunteers.length === 0 && (
+            <p className="text-sm text-gray-500 col-span-full">
+              No volunteers found.
+            </p>
+          )}
+          {filteredVolunteers.map((volunteer) => {
+            const applied = new Date(volunteer.appliedAt);
+
+            return (
+              <Card
+                key={volunteer.id}
+                className="bg-white hover:shadow-lg transition-all duration-200 group"
+              >
+                <div className="relative">
+                  <div className="h-24 bg-gradient-to-r from-green-100 to-blue-100 rounded-t-lg flex items-center justify-center">
+                    <Heart className="w-12 h-12 text-green-500" />
+                  </div>
+                  <Badge
+                    variant="secondary"
+                    className={`absolute top-3 right-3 ${
+                      volunteer.status === "Pending"
+                        ? "bg-yellow-100 text-yellow-700 border border-yellow-200"
+                        : volunteer.status === "Approved"
+                          ? "bg-green-100 text-green-700 border border-green-200"
+                          : volunteer.status === "Active"
+                            ? "bg-blue-100 text-blue-700 border border-blue-200"
+                            : "bg-red-100 text-red-700 border border-red-200"
+                    }`}
+                  >
+                    {volunteer.status}
+                  </Badge>
+                  <div className="absolute top-3 left-3 flex items-center gap-1">
+                    <Star className="w-3 h-3 text-yellow-500 fill-current" />
+                    <span className="text-xs font-medium text-gray-700">
+                      {volunteer.rating ?? "-"}
+                    </span>
+                  </div>
                 </div>
-                <Badge 
-                  variant="secondary" 
-                  className={`absolute top-3 right-3 ${
-                    volunteer.status === 'Pending' 
-                      ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' 
-                      : volunteer.status === 'Approved'
-                        ? 'bg-green-100 text-green-700 border border-green-200'
-                        : 'bg-red-100 text-red-700 border border-red-200'
-                  }`}
-                >
-                  {volunteer.status}
-                </Badge>
-                <div className="absolute top-3 left-3 flex items-center gap-1">
-                  <Star className="w-3 h-3 text-yellow-500 fill-current" />
-                  <span className="text-xs font-medium text-gray-700">{volunteer.rating}</span>
-                </div>
-              </div>
-              
-              <CardContent className="p-6">
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <Badge variant="outline" className="text-xs">
-                        {volunteer.profession}
-                      </Badge>
-                      <Badge 
-                        variant="outline" 
-                        className={`text-xs ${
-                          volunteer.background === 'Verified' ? 'border-green-200 text-green-700 bg-green-50' :
-                          'border-orange-200 text-orange-700 bg-orange-50'
-                        }`}
-                      >
-                        {volunteer.background}
-                      </Badge>
-                    </div>
-                    <h3 className="font-bold text-lg text-gray-900 group-hover:text-primary transition-colors">
-                      {volunteer.name}
-                    </h3>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {volunteer.experience} experience • Age {volunteer.age}
-                    </p>
-                  </div>
 
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Mail className="w-4 h-4 text-gray-400" />
-                      <span className="truncate">{volunteer.email}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Phone className="w-4 h-4 text-gray-400" />
-                      <span>{volunteer.phone}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <MapPin className="w-4 h-4 text-gray-400" />
-                      <span>{volunteer.location}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Clock className="w-4 h-4 text-gray-400" />
-                      <span>Available: {volunteer.availability}</span>
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <p className="text-xs font-medium text-gray-700 mb-2">Motivation:</p>
-                    <p className="text-sm text-gray-600 line-clamp-2">
-                      {volunteer.motivation}
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-gray-700">Skills:</p>
-                    <div className="flex flex-wrap gap-1">
-                      {volunteer.skills.slice(0, 3).map((skill, index) => (
-                        <Badge key={index} variant="secondary" className="text-xs bg-blue-50 text-blue-700">
-                          {skill}
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <Badge variant="outline" className="text-xs">
+                          {volunteer.profession}
                         </Badge>
-                      ))}
-                      {volunteer.skills.length > 3 && (
-                        <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700">
-                          +{volunteer.skills.length - 3} more
+                        <Badge
+                          variant="outline"
+                          className={`text-xs ${
+                            volunteer.background === "Verified"
+                              ? "border-green-200 text-green-700 bg-green-50"
+                              : "border-orange-200 text-orange-700 bg-orange-50"
+                          }`}
+                        >
+                          {volunteer.background || "Pending"}
                         </Badge>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-gray-700">Preferred Programs:</p>
-                    <div className="flex flex-wrap gap-1">
-                      {volunteer.preferredPrograms.map((program, index) => (
-                        <Badge key={index} variant="secondary" className="text-xs bg-purple-50 text-purple-700">
-                          {program}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between text-sm text-gray-500">
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        <span>{volunteer.hoursCommitted}h/month</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Award className="w-4 h-4" />
-                        <span>{volunteer.references} refs</span>
+                      <h3 className="font-bold text-lg text-gray-900 group-hover:text-primary transition-colors">
+                        {volunteer.name}
+                      </h3>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {volunteer.experience} experience • Age {volunteer.age ?? "-"}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Mail className="w-4 h-4 text-gray-400" />
+                        <span className="truncate">{volunteer.email}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Phone className="w-4 h-4 text-gray-400" />
+                        <span>{volunteer.phone}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <MapPin className="w-4 h-4 text-gray-400" />
+                        <span>{volunteer.location}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Clock className="w-4 h-4 text-gray-400" />
+                        <span>Available: {volunteer.availability}</span>
                       </div>
                     </div>
-                    <span className="text-xs text-gray-400">Applied {new Date(volunteer.date).toLocaleDateString()}</span>
-                  </div>
 
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" className="text-primary border-primary/20 hover:bg-primary/5">
-                        <Eye className="w-4 h-4 mr-1" />
-                        View
-                      </Button>
-                      {volunteer.status === 'Pending' && (
-                        <>
-                          <Button variant="outline" size="sm" className="text-green-700 border-green-200 hover:bg-green-50">
-                            <Check className="w-4 h-4 mr-1" />
-                            Approve
-                          </Button>
-                          <Button variant="outline" size="sm" className="text-red-700 border-red-200 hover:bg-red-50">
-                            <X className="w-4 h-4 mr-1" />
-                            Reject
-                          </Button>
-                        </>
-                      )}
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="text-xs font-medium text-gray-700 mb-2">
+                        Motivation:
+                      </p>
+                      <p className="text-sm text-gray-600 line-clamp-2">
+                        {volunteer.motivation}
+                      </p>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700 hover:bg-gray-100">
-                        <Share2 className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 hover:bg-red-50">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-gray-700">Skills:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {volunteer.skills.slice(0, 3).map((skill, index) => (
+                          <Badge
+                            key={index}
+                            variant="secondary"
+                            className="text-xs bg-blue-50 text-blue-700"
+                          >
+                            {skill}
+                          </Badge>
+                        ))}
+                        {volunteer.skills.length > 3 && (
+                          <Badge
+                            variant="secondary"
+                            className="text-xs bg-blue-50 text-blue-700"
+                          >
+                            +{volunteer.skills.length - 3} more
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-gray-700">
+                        Preferred Programs:
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {volunteer.preferredPrograms.map((program, index) => (
+                          <Badge
+                            key={index}
+                            variant="secondary"
+                            className="text-xs bg-purple-50 text-purple-700"
+                          >
+                            {program}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-sm text-gray-500">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-4 h-4" />
+                          <span>{volunteer.hoursCommitted}h/month</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Award className="w-4 h-4" />
+                          <span>{volunteer.references} refs</span>
+                        </div>
+                      </div>
+                      <span className="text-xs text-gray-400">
+                        Applied {applied.toLocaleDateString()}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-primary border-primary/20 hover:bg-primary/5"
+                          onClick={() => openEditDialog(volunteer)}
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          View
+                        </Button>
+                        {volunteer.status === "Pending" && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-green-700 border-green-200 hover:bg-green-50"
+                              onClick={() =>
+                                updateVolunteerStatus(volunteer, "Approved")
+                              }
+                            >
+                              <Check className="w-4 h-4 mr-1" />
+                              Approve
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-red-700 border-red-200 hover:bg-red-50"
+                              onClick={() =>
+                                updateVolunteerStatus(volunteer, "Rejected")
+                              }
+                            >
+                              <X className="w-4 h-4 mr-1" />
+                              Reject
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                        >
+                          <Share2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => handleDelete(volunteer)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </div>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingVolunteer ? "Edit Volunteer" : "Invite Volunteer"}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Full Name</label>
+                <Input
+                  value={form.name}
+                  onChange={(event) =>
+                    handleFormChange("name", event.target.value)
+                  }
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Email</label>
+                <Input
+                  type="email"
+                  value={form.email}
+                  onChange={(event) =>
+                    handleFormChange("email", event.target.value)
+                  }
+                  required
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Phone</label>
+                <Input
+                  value={form.phone}
+                  onChange={(event) =>
+                    handleFormChange("phone", event.target.value)
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Location</label>
+                <Input
+                  value={form.location}
+                  onChange={(event) =>
+                    handleFormChange("location", event.target.value)
+                  }
+                  placeholder="Kigali, Rwanda"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Age</label>
+                <Input
+                  type="number"
+                  value={form.age}
+                  onChange={(event) =>
+                    handleFormChange("age", event.target.value)
+                  }
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Profession</label>
+                <Input
+                  value={form.profession}
+                  onChange={(event) =>
+                    handleFormChange("profession", event.target.value)
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Experience</label>
+                <Input
+                  value={form.experience}
+                  onChange={(event) =>
+                    handleFormChange("experience", event.target.value)
+                  }
+                  placeholder="e.g. 3 years"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Skills (one per line)</label>
+              <Textarea
+                value={form.skills}
+                onChange={(event) =>
+                  handleFormChange("skills", event.target.value)
+                }
+                rows={3}
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Availability</label>
+                <Input
+                  value={form.availability}
+                  onChange={(event) =>
+                    handleFormChange("availability", event.target.value)
+                  }
+                  placeholder="Weekends, Weekdays, ..."
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Hours / Month</label>
+                <Input
+                  type="number"
+                  value={form.hoursCommitted}
+                  onChange={(event) =>
+                    handleFormChange("hoursCommitted", event.target.value)
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">References</label>
+                <Input
+                  type="number"
+                  value={form.references}
+                  onChange={(event) =>
+                    handleFormChange("references", event.target.value)
+                  }
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Preferred Programs (one per line)
+              </label>
+              <Textarea
+                value={form.preferredPrograms}
+                onChange={(event) =>
+                  handleFormChange("preferredPrograms", event.target.value)
+                }
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Languages (one per line)</label>
+              <Textarea
+                value={form.languages}
+                onChange={(event) =>
+                  handleFormChange("languages", event.target.value)
+                }
+                rows={2}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Motivation</label>
+              <Textarea
+                value={form.motivation}
+                onChange={(event) =>
+                  handleFormChange("motivation", event.target.value)
+                }
+                rows={4}
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Status</label>
+                <select
+                  className="w-full border rounded-md px-3 py-2 text-sm"
+                  value={form.status}
+                  onChange={(event) =>
+                    handleFormChange(
+                      "status",
+                      event.target.value as VolunteerStatus,
+                    )
+                  }
+                >
+                  <option value="Pending">Pending</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Active">Active</option>
+                  <option value="Rejected">Rejected</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Rating</label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  value={form.rating}
+                  onChange={(event) =>
+                    handleFormChange("rating", event.target.value)
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Background Status</label>
+                <Input
+                  value={form.background}
+                  onChange={(event) =>
+                    handleFormChange("background", event.target.value)
+                  }
+                  placeholder="Verified, Pending, ..."
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit" className="ml-auto">
+                {editingVolunteer ? "Save Changes" : "Create Volunteer"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
-  )
+  );
 }

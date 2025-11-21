@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { sql, ensureContactsTables } from '@/lib/db'
 import nodemailer from 'nodemailer'
 
 // Create transporter for sending emails
@@ -43,6 +44,13 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    // Persist message to database for admin contacts module
+    await ensureContactsTables()
+    await sql`
+      INSERT INTO contact_messages (name, email, subject, message)
+      VALUES (${name}, ${email}, ${subject}, ${message})
+    `
 
     // Create email transporter
     let transporter

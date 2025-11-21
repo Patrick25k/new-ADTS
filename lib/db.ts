@@ -146,3 +146,53 @@ export async function ensureVideosTables() {
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`;
 }
+
+export async function ensureContactsTables() {
+  // Contact messages depend on core admin tables and extensions
+  await ensureAdminTables()
+
+  await sql`CREATE TABLE IF NOT EXISTS contact_messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    phone TEXT,
+    subject TEXT NOT NULL,
+    message TEXT NOT NULL,
+    category TEXT,
+    location TEXT,
+    organization TEXT,
+    status TEXT NOT NULL DEFAULT 'Unread',
+    priority TEXT NOT NULL DEFAULT 'Medium',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`;
+}
+
+export async function ensureVolunteersTables() {
+  // Volunteers depend on core admin tables and extensions
+  await ensureAdminTables()
+
+  await sql`CREATE TABLE IF NOT EXISTS volunteers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    phone TEXT,
+    location TEXT,
+    age INTEGER,
+    profession TEXT,
+    experience TEXT,
+    skills TEXT,
+    availability TEXT,
+    preferred_programs TEXT,
+    languages TEXT,
+    motivation TEXT,
+    status TEXT NOT NULL DEFAULT 'Pending',
+    rating NUMERIC,
+    hours_committed INTEGER NOT NULL DEFAULT 0,
+    references_count INTEGER NOT NULL DEFAULT 0,
+    background_status TEXT,
+    applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`;
+}
