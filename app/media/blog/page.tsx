@@ -1,17 +1,23 @@
-import { Calendar, User, ArrowRight } from "lucide-react"
+"use client"
+
+import { useState, useEffect } from "react"
+import { Calendar, User, ArrowRight, ChevronDown } from "lucide-react"
 import Image from "next/image"
 
 interface BlogPost {
+  id: string
   title: string
   date: string
   author: string
   category: string
   excerpt: string
   image: string
+  featured: boolean
 }
 
 const staticBlogPosts: BlogPost[] = [
     {
+      id: "1",
       title: "25 Years of Transformation: Reflecting on ADTS Rwanda's Journey",
       date: "March 15, 2024",
       author: "ADTS Rwanda Team",
@@ -19,8 +25,10 @@ const staticBlogPosts: BlogPost[] = [
       excerpt:
         "As we celebrate over two decades of service, we reflect on the journey from post-genocide recovery to sustainable community transformation. Discover the milestones, challenges, and triumphs that have shaped ADTS Rwanda.",
       image: "/images/image1.jpg",
+      featured: true,
     },
     {
+      id: "2",
       title: "The Power of Training for Transformation: A Methodology That Changes Lives",
       date: "February 28, 2024",
       author: "Program Team",
@@ -28,8 +36,10 @@ const staticBlogPosts: BlogPost[] = [
       excerpt:
         "Training for Transformation (TFT) is more than a training program—it's a philosophy of empowerment. Learn how this Paulo Freire-inspired approach has trained 6,732 community mobilizers and transformed countless communities.",
       image: "/images/image3.jpg",
+      featured: false,
     },
     {
+      id: "3",
       title: "Breaking the Cycle: How VSL Groups Are Lifting Women Out of Poverty",
       date: "February 10, 2024",
       author: "Economic Empowerment Team",
@@ -37,8 +47,10 @@ const staticBlogPosts: BlogPost[] = [
       excerpt:
         "Voluntary Savings and Loan groups have created 51,259 members, with 82% being women. Discover how this simple yet powerful model is transforming economic realities for Rwanda's poorest women.",
       image: "/images/image_37.jpeg",
+      featured: false,
     },
     {
+      id: "4",
       title: "Ending Domestic Violence: A Community-Led Approach",
       date: "January 25, 2024",
       author: "EDV Program Team",
@@ -46,8 +58,10 @@ const staticBlogPosts: BlogPost[] = [
       excerpt:
         "Domestic violence doesn't end with laws and policies alone—it requires community mobilization, behavior change, and grassroots action. Learn how our EDV working groups are creating peaceful families across Rwanda.",
       image: "/images/image4.jpg",
+      featured: false,
     },
     {
+      id: "5",
       title: "Teen Mothers: From Stigma to Success",
       date: "January 10, 2024",
       author: "Youth Programs Team",
@@ -55,8 +69,10 @@ const staticBlogPosts: BlogPost[] = [
       excerpt:
         "Teen pregnancy often leads to rejection, poverty, and lost opportunities. But it doesn't have to. Discover how our teen mothers' program is restoring hope and creating pathways to success for 300+ young mothers.",
       image: "/images/image_9.jpeg",
+      featured: false,
     },
     {
+      id: "6",
       title: "The Role of Gender Focal Points in Preventing GBV",
       date: "December 20, 2023",
       author: "Gender Team",
@@ -64,39 +80,65 @@ const staticBlogPosts: BlogPost[] = [
       excerpt:
         "Gender focal points are unsung heroes in the fight against gender-based violence. Learn how these trained community members are monitoring, preventing, and responding to GBV at the grassroots level.",
       image: "/images/image6.jpg",
+      featured: false,
     },
-  ]
+]
 
-export default async function Blog() {
-  let blogPosts: BlogPost[] = staticBlogPosts
+export default function Blog() {
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [showMore, setShowMore] = useState(false)
+  const POSTS_PER_PAGE = 6 // 2 rows × 3 columns
 
-  try {
-    const baseUrl =
-      process.env.NEXT_PUBLIC_SITE_URL ||
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
+  useEffect(() => {
+    const loadBlogs = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        
+        const response = await fetch("/api/blogs", {
+          cache: "no-store",
+        })
 
-    const response = await fetch(`${baseUrl}/api/blogs`, {
-      cache: "no-store",
-    })
+        if (!response.ok) {
+          throw new Error(`Failed to load blogs: ${response.status}`)
+        }
 
-    if (response.ok) {
-      const data = await response.json()
-      const dynamicPosts = (data.blogs ?? []).map((post: any) => ({
-        title: post.title as string,
-        date: (post.date as string) ?? "",
-        author: (post.authorName as string) || "ADTS Rwanda Team",
-        category: (post.category as string) || "Blog",
-        excerpt: (post.excerpt as string) ?? "",
-        image: (post.coverImageUrl as string) || "/placeholder.svg",
-      })) as BlogPost[]
+        const data = await response.json()
+        const dynamicPosts = (data.blogs ?? []).map((post: any) => ({
+          id: post.id as string,
+          title: post.title as string,
+          date: (post.date as string) ?? "",
+          author: (post.authorName as string) || "ADTS Rwanda Team",
+          category: (post.category as string) || "Blog",
+          excerpt: (post.excerpt as string) ?? "",
+          image: (post.coverImageUrl as string) || "/placeholder.svg",
+          featured: Boolean(post.featured),
+        })) as BlogPost[]
 
-      if (dynamicPosts.length > 0) {
-        blogPosts = dynamicPosts
+        setBlogPosts(dynamicPosts)
+      } catch (error) {
+        console.error("Failed to load public blogs", error)
+        setError("Failed to load blog posts")
+      } finally {
+        setIsLoading(false)
       }
     }
-  } catch (error) {
-    console.error("Failed to load public blogs", error)
-  }
+
+    loadBlogs()
+  }, [])
+
+  // Separate featured and regular posts
+  const featuredPosts = blogPosts.filter(post => post.featured)
+  const regularPosts = blogPosts.filter(post => !post.featured)
+  
+  // Pagination for recent posts
+  const displayedPosts = showMore ? regularPosts : regularPosts.slice(0, POSTS_PER_PAGE)
+  const hasMorePosts = regularPosts.length > POSTS_PER_PAGE
+
+  // If no featured posts, use the most recent regular post as featured
+  const mainFeaturedPost = featuredPosts.length > 0 ? featuredPosts[0] : (blogPosts.length > 0 ? blogPosts[0] : null)
 
   return (
     <main className="min-h-screen">
@@ -117,86 +159,134 @@ export default async function Blog() {
       </section>
 
       {/* Featured Post */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="max-w-5xl mx-auto">
-            <div className="mb-4 text-sm font-semibold text-primary">Featured Post</div>
-            <div className="grid md:grid-cols-2 gap-8 items-center">
-              <div className="aspect-video rounded-lg overflow-hidden bg-accent">
-                <img
-                  src={blogPosts[0].image || "/placeholder.svg"}
-                  alt={blogPosts[0].title}
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-              <div>
-                <div className="flex items-center gap-4 text-sm text-foreground/60 mb-3">
-                  <span className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    {blogPosts[0].date}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <User className="h-4 w-4" />
-                    {blogPosts[0].author}
-                  </span>
+      {!isLoading && !error && mainFeaturedPost && (
+        <section className="py-20">
+          <div className="container mx-auto px-4">
+            <div className="max-w-5xl mx-auto">
+              <div className="mb-4 text-sm font-semibold text-primary">Featured Post</div>
+              <div className="grid md:grid-cols-2 gap-8 items-center">
+                <div className="aspect-video rounded-lg overflow-hidden bg-accent">
+                  <img
+                    src={mainFeaturedPost.image || "/placeholder.svg"}
+                    alt={mainFeaturedPost.title}
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                  />
                 </div>
-                <div className="inline-block px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full mb-3">
-                  {blogPosts[0].category}
+                <div>
+                  <div className="flex items-center gap-4 text-sm text-foreground/60 mb-3">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      {mainFeaturedPost.date}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <User className="h-4 w-4" />
+                      {mainFeaturedPost.author}
+                    </span>
+                  </div>
+                  <div className="inline-block px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full mb-3">
+                    {mainFeaturedPost.category}
+                  </div>
+                  <h2 className="text-3xl font-bold mb-4">{mainFeaturedPost.title}</h2>
+                  <p className="text-foreground/70 mb-6">{mainFeaturedPost.excerpt}</p>
+                  <a
+                    href={`/media/blog/${mainFeaturedPost.id}`}
+                    className="inline-flex items-center gap-2 text-primary font-semibold hover:gap-3 transition-all"
+                  >
+                    Read More <ArrowRight className="h-4 w-4" />
+                  </a>
                 </div>
-                <h2 className="text-3xl font-bold mb-4">{blogPosts[0].title}</h2>
-                <p className="text-foreground/70 mb-6">{blogPosts[0].excerpt}</p>
-                <a
-                  href="#"
-                  className="inline-flex items-center gap-2 text-primary font-semibold hover:gap-3 transition-all"
-                >
-                  Read More <ArrowRight className="h-4 w-4" />
-                </a>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Blog Posts Grid */}
       <section className="py-20 bg-accent/30">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <h2 className="text-3xl font-bold mb-12">Recent Posts</h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {blogPosts.slice(1).map((post, index) => (
-                <div
-                  key={index}
-                  className="bg-background rounded-lg border overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col"
+            {isLoading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-foreground/60">Loading posts...</p>
+              </div>
+            ) : error ? (
+              <div className="text-center py-12">
+                <p className="text-red-600 mb-4">{error}</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"
                 >
-                  <div className="aspect-video bg-accent overflow-hidden">
-                    <img
-                      src={post.image || "/placeholder.svg"}
-                      alt={post.title}
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                  <div className="p-4 flex-1 flex flex-col">
-                    <div className="flex items-center gap-3 text-xs text-foreground/60 mb-2">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {post.date}
-                      </span>
-                    </div>
-                    <div className="inline-block px-2 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full mb-2">
-                      {post.category}
-                    </div>
-                    <h3 className="text-lg font-semibold mb-2 line-clamp-2">{post.title}</h3>
-                    <p className="text-foreground/70 text-sm mb-3 line-clamp-2">{post.excerpt}</p>
-                    <a
-                      href="#"
-                      className="mt-auto inline-flex items-center gap-2 text-primary text-sm font-semibold hover:gap-3 transition-all"
+                  Try Again
+                </button>
+              </div>
+            ) : blogPosts.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-foreground/60 mb-4">No blog posts available yet.</p>
+                <p className="text-sm text-foreground/50">Check back soon for new content!</p>
+              </div>
+            ) : (
+              <>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {displayedPosts.map((post) => (
+                    <div
+                      key={post.id}
+                      className="bg-background rounded-lg border overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col"
                     >
-                      Read More <ArrowRight className="h-4 w-4" />
-                    </a>
-                  </div>
+                      <div className="aspect-video bg-accent overflow-hidden">
+                        <img
+                          src={post.image || "/placeholder.svg"}
+                          alt={post.title}
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                      <div className="p-4 flex-1 flex flex-col">
+                        <div className="flex items-center gap-3 text-xs text-foreground/60 mb-2">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {post.date}
+                          </span>
+                        </div>
+                        <div className="inline-block px-2 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full mb-2">
+                          {post.category}
+                        </div>
+                        <h3 className="text-lg font-semibold mb-2 line-clamp-2">{post.title}</h3>
+                        <p className="text-foreground/70 text-sm mb-3 line-clamp-2">{post.excerpt}</p>
+                        <a
+                          href={`/media/blog/${post.id}`}
+                          className="mt-auto inline-flex items-center gap-2 text-primary text-sm font-semibold hover:gap-3 transition-all"
+                        >
+                          Read More <ArrowRight className="h-4 w-4" />
+                        </a>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+                
+                {/* Show More Button */}
+                {hasMorePosts && (
+                  <div className="text-center pt-8">
+                    <button
+                      onClick={() => setShowMore(!showMore)}
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-primary/10 text-primary rounded-lg font-semibold hover:bg-primary/20 transition-colors"
+                    >
+                      {showMore ? (
+                        <>
+                          <ChevronDown className="h-4 w-4 rotate-180" />
+                          Show Less Posts
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="h-4 w-4" />
+                          Show More Posts ({regularPosts.length - POSTS_PER_PAGE} more)
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       </section>

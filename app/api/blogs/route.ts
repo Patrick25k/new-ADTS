@@ -14,6 +14,7 @@ export async function GET(_request: NextRequest) {
         p.excerpt,
         p.category,
         p.cover_image_url,
+        p.featured,
         p.published_at,
         p.created_at,
         a.full_name AS author_name
@@ -34,6 +35,7 @@ export async function GET(_request: NextRequest) {
         excerpt: (row.excerpt as string) ?? '',
         category: (row.category as string) ?? '',
         coverImageUrl: (row.cover_image_url as string) ?? '',
+        featured: Boolean(row.featured),
         publishedAt,
         createdAt,
         date: rawDate
@@ -47,12 +49,17 @@ export async function GET(_request: NextRequest) {
       }
     })
 
-    return NextResponse.json({ blogs })
+    const response = NextResponse.json({ blogs })
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+    
+    return response
   } catch (error) {
     console.error('Public blogs list error:', error)
     return NextResponse.json(
       { error: 'Failed to load blog posts' },
-      { status: 500 },
+      { status: 500 }
     )
   }
 }
