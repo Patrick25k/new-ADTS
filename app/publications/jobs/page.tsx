@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Briefcase, MapPin, Calendar } from "lucide-react";
+import { Briefcase, MapPin, Calendar, ChevronDown } from "lucide-react";
 import Image from "next/image";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -24,6 +24,7 @@ export default function Jobs() {
   const { toast } = useToast();
   const [jobs, setJobs] = useState<PublicJob[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showMore, setShowMore] = useState(false);
 
   useEffect(() => {
     const loadJobs = async () => {
@@ -150,7 +151,7 @@ export default function Jobs() {
               </p>
             )}
             <div className="space-y-6">
-              {openJobs.map((job) => (
+              {openJobs.slice(0, showMore ? openJobs.length : 2).map((job) => (
                 <div
                   key={job.id}
                   className="bg-background rounded-lg border p-6"
@@ -208,12 +209,37 @@ export default function Jobs() {
                     </div>
                   </div>
                   {job.status === "Open" && (
-                    <button className="px-6 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity">
+                    <a
+                      href="/contact"
+                      className="inline-block px-6 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity"
+                    >
                       Apply Now
-                    </button>
+                    </a>
                   )}
                 </div>
               ))}
+              
+              {/* Show More/Less Button */}
+              {openJobs.length > 2 && (
+                <div className="text-center pt-4">
+                  <button
+                    onClick={() => setShowMore(!showMore)}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-primary/10 text-primary rounded-lg font-semibold hover:bg-primary/20 transition-colors"
+                  >
+                    {showMore ? (
+                      <>
+                        <ChevronDown className="h-4 w-4 rotate-180" />
+                        Show Less Jobs
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="h-4 w-4" />
+                        Show More Jobs ({openJobs.length - 2} more)
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

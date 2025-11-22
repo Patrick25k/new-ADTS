@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react";
-import { Calendar, FileText, Download } from "lucide-react";
+import { Calendar, FileText, Download, ChevronDown } from "lucide-react";
 import Image from "next/image";
 
 interface PublicTender {
@@ -26,6 +26,7 @@ interface PublicTender {
 export default function Tender() {
   const [tenders, setTenders] = useState<PublicTender[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showMore, setShowMore] = useState(false);
 
   useEffect(() => {
     async function loadTenders() {
@@ -123,7 +124,7 @@ export default function Tender() {
               </p>
             ) : (
               <div className="space-y-6">
-                {displayTenders.map((tender) => (
+                {displayTenders.slice(0, showMore ? displayTenders.length : 2).map((tender) => (
                   <div
                     key={tender.id}
                     className="bg-background rounded-lg border p-6"
@@ -181,6 +182,28 @@ export default function Tender() {
                     )}
                   </div>
                 ))}
+                
+                {/* Show More/Less Button */}
+                {displayTenders.length > 2 && (
+                  <div className="text-center pt-4">
+                    <button
+                      onClick={() => setShowMore(!showMore)}
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-primary/10 text-primary rounded-lg font-semibold hover:bg-primary/20 transition-colors"
+                    >
+                      {showMore ? (
+                        <>
+                          <ChevronDown className="h-4 w-4 rotate-180" />
+                          Show Less Tenders
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="h-4 w-4" />
+                          Show More Tenders ({displayTenders.length - 2} more)
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

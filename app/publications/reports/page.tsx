@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FileText, Download, Calendar } from "lucide-react";
+import { FileText, Download, Calendar, ChevronDown } from "lucide-react";
 import Image from "next/image";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -20,6 +20,7 @@ export default function Reports() {
   const { toast } = useToast();
   const [reports, setReports] = useState<PublicReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showMore, setShowMore] = useState(false);
 
   useEffect(() => {
     const loadReports = async () => {
@@ -131,7 +132,7 @@ export default function Reports() {
               </p>
             )}
             <div className="space-y-6">
-              {reports.map((report) => (
+              {reports.slice(0, showMore ? reports.length : 2).map((report) => (
                 <div
                   key={report.id}
                   className="bg-background rounded-lg border p-6"
@@ -180,6 +181,28 @@ export default function Reports() {
                   </div>
                 </div>
               ))}
+              
+              {/* Show More/Less Button */}
+              {reports.length > 2 && (
+                <div className="text-center pt-4">
+                  <button
+                    onClick={() => setShowMore(!showMore)}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-primary/10 text-primary rounded-lg font-semibold hover:bg-primary/20 transition-colors"
+                  >
+                    {showMore ? (
+                      <>
+                        <ChevronDown className="h-4 w-4 rotate-180" />
+                        Show Less Reports
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="h-4 w-4" />
+                        Show More Reports ({reports.length - 2} more)
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
