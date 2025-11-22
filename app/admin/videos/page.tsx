@@ -143,7 +143,7 @@ export default function VideosManagement() {
           : video.status === statusFilter
 
       return matchesSearch && matchesStatus
-    })
+    }).sort((a, b) => new Date(b.createdAt || '0').getTime() - new Date(a.createdAt || '0').getTime()).slice(0, 8)
   }, [videos, search, statusFilter])
 
   const stats = useMemo(() => {
@@ -395,7 +395,11 @@ export default function VideosManagement() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div>
+            <div className="mb-4 text-sm text-gray-600">
+              Showing {filteredVideos.length} of {videos.length} videos (most recent)
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
           {filteredVideos.map((video) => {
             const thumbnail = getVideoThumbnailUrl(video.youtubeUrl)
 
@@ -516,26 +520,14 @@ export default function VideosManagement() {
                           Edit
                         </Button>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700 hover:bg-gray-100">
-                          <Share2 className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => handleDelete(video)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             )
           })}
-        </div>
+            </div>
+          </div>
         )}
       </div>
 

@@ -125,7 +125,7 @@ export default function TeamManagement() {
       })();
 
       return matchesSearch && matchesStatus;
-    });
+    }).sort((a, b) => new Date(b.createdAt || b.joinDate || '0').getTime() - new Date(a.createdAt || a.joinDate || '0').getTime()).slice(0, 8);
   }, [members, search, statusFilter]);
 
   const stats = useMemo(() => {
@@ -499,7 +499,11 @@ export default function TeamManagement() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div>
+            <div className="mb-4 text-sm text-gray-600">
+              Showing {filteredMembers.length} of {members.length} team members (most recent)
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
           {filteredMembers.map((member) => (
             <Card
               key={member.id}
@@ -638,7 +642,8 @@ export default function TeamManagement() {
               </CardContent>
             </Card>
           ))}
-        </div>
+            </div>
+          </div>
         )}
       </div>
 

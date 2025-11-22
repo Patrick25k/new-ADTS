@@ -22,7 +22,8 @@ import {
   Share2,
   Upload,
   Edit,
-  X
+  X,
+  FolderOpen
 } from "lucide-react"
 import Image from "next/image"
 
@@ -61,18 +62,16 @@ export default function GalleryManagement() {
     title: "",
     description: "",
     imageUrl: "",
-    category: "",
-    photographer: "",
     status: "Draft" as ImageStatus,
     featured: false,
-    fileSize: "",
-    dimensions: "",
-    altText: "",
-    tags: "",
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const [uploadMode, setUploadMode] = useState<"single" | "folder">("single")
+  const [folderFiles, setFolderFiles] = useState<FileList | null>(null)
+  const [isUploadingFolder, setIsUploadingFolder] = useState(false)
+  const [folderProgress, setFolderProgress] = useState({ current: 0, total: 0 })
 
   const loadImages = useCallback(async () => {
     try {
@@ -120,23 +119,20 @@ export default function GalleryManagement() {
         : image.status === statusFilter
 
     return matchesSearch && matchesStatus
-  })
+  }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 8)
 
   const resetForm = () => {
     setForm({
       title: "",
       description: "",
       imageUrl: "",
-      category: "",
-      photographer: "",
       status: "Published" as ImageStatus,
       featured: false,
-      fileSize: "",
-      dimensions: "",
-      altText: "",
-      tags: "",
     })
-    setEditingImage(null)
+    setImageFile(null)
+    setFolderFiles(null)
+    setUploadMode("single")
+    setFolderProgress({ current: 0, total: 0 })
   }
 
   const handleFormChange = (
@@ -202,6 +198,99 @@ export default function GalleryManagement() {
     }
   }
 
+  const handleFolderUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const files = event.target.files
+    if (!files || files.length === 0) {
+      setFolderFiles(null)
+      return
+    }
+
+    setFolderFiles(files)
+    setFolderProgress({ current: 0, total: files.length })
+  }
+
+  const handleFolderBulkUpload = async () => {
+    if (!folderFiles || folderFiles.length === 0) return
+
+    try {
+      setIsUploadingFolder(true)
+      
+      const imagePromises = Array.from(folderFiles).map(async (file, index) => {
+        try {
+          const formData = new FormData()
+          formData.append("file", file)
+
+          const response = await fetch("/api/admin/upload-image", {
+            method: "POST",
+            credentials: "include",
+            body: formData,
+          })
+
+          if (!response.ok) {
+            throw new Error(`Failed to upload ${file.name}`)
+          }
+
+          const data = await response.json()
+          
+          // Create image entry with filename as title and no description
+          const imagePayload = {
+            title: file.name.replace(/\.[^/.]+$/, ""), // Remove file extension
+            description: "",
+            imageUrl: data.url,
+            status: form.status,
+            featured: false,
+          }
+
+          const saveResponse = await fetch("/api/admin/gallery", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+            body: JSON.stringify(imagePayload),
+          })
+
+          if (!saveResponse.ok) {
+            throw new Error(`Failed to save ${file.name}`)
+          }
+
+          setFolderProgress(prev => ({ ...prev, current: index + 1 }))
+          return { success: true, file: file.name }
+        } catch (error) {
+          console.error(`Failed to process ${file.name}:`, error)
+          return { success: false, file: file.name, error }
+        }
+      })
+
+      const results = await Promise.all(imagePromises)
+      const successful = results.filter(r => r.success).length
+      const failed = results.filter(r => !r.success).length
+
+      await loadImages()
+      setIsDialogOpen(false)
+      resetForm()
+
+      toast({
+        title: "Folder upload completed",
+        description: `Successfully uploaded ${successful} images${failed > 0 ? `, ${failed} failed` : ""}`,
+        variant: failed > 0 ? "destructive" : "default",
+      })
+    } catch (error: any) {
+      console.error("Failed to upload folder", error)
+      toast({
+        title: "Failed to upload folder",
+        description: error?.message || "Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsUploadingFolder(false)
+      setFolderFiles(null)
+      setFolderProgress({ current: 0, total: 0 })
+    }
+  }
+
   const handleAddImage = () => {
     resetForm()
     setIsDialogOpen(true)
@@ -212,17 +301,12 @@ export default function GalleryManagement() {
       title: image.title,
       description: image.description,
       imageUrl: image.imageUrl,
-      category: image.category,
-      photographer: image.photographer,
       status: image.status,
       featured: image.featured,
-      fileSize: image.fileSize,
-      dimensions: image.dimensions,
-      altText: image.altText,
-      tags: image.tags,
     })
     setEditingImage(image)
     setIsDialogOpen(true)
+    setUploadMode("single")
   }
 
   const handleSaveImage = async (event: React.FormEvent) => {
@@ -416,7 +500,11 @@ export default function GalleryManagement() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div>
+            <div className="mb-4 text-sm text-gray-600">
+              Showing {filteredImages.length} of {images.length} images (most recent)
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredImages.map((image) => (
               <Card key={image.id} className="bg-white hover:shadow-lg transition-all duration-200 group overflow-hidden">
                 <div className="relative">
@@ -519,19 +607,148 @@ export default function GalleryManagement() {
                 </CardContent>
               </Card>
             ))}
+            </div>
           </div>
         )}
       </div>
 
       {/* Add/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingImage ? "Edit Image" : "Add New Image"}</DialogTitle>
+            <DialogTitle>
+              {editingImage ? "Edit Image" : uploadMode === "folder" ? "Upload Folder" : "Add New Image"}
+            </DialogTitle>
           </DialogHeader>
           
-          <form onSubmit={handleSaveImage} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {!editingImage && (
+            <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
+              <Button
+                type="button"
+                variant={uploadMode === "single" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setUploadMode("single")}
+                className="flex-1"
+              >
+                <ImageIcon className="w-4 h-4 mr-2" />
+                Single Image
+              </Button>
+              <Button
+                type="button"
+                variant={uploadMode === "folder" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setUploadMode("folder")}
+                className="flex-1"
+              >
+                <FolderOpen className="w-4 h-4 mr-2" />
+                Folder Upload
+              </Button>
+            </div>
+          )}
+          
+          {uploadMode === "folder" && !editingImage ? (
+            // Folder Upload Form
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Select Folder</label>
+                <div className="mt-1">
+                  <input
+                    type="file"
+                    {...({ webkitdirectory: "true", directory: "true" } as any)}
+                    multiple={true}
+                    onChange={handleFolderUpload}
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Select a folder containing images. All images will be uploaded with filenames as titles.
+                  </p>
+                </div>
+              </div>
+
+              {folderFiles && (
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <p className="text-sm font-medium text-gray-700">
+                    {folderFiles.length} images selected
+                  </p>
+                  <div className="mt-2 text-xs text-gray-600">
+                    First few files: {Array.from(folderFiles).slice(0, 3).map(f => f.name).join(", ")}
+                    {folderFiles.length > 3 && "..."}
+                  </div>
+                </div>
+              )}
+
+              {isUploadingFolder && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Uploading images...</span>
+                    <span>{folderProgress.current} / {folderProgress.total}</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${(folderProgress.current / folderProgress.total) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <input
+                    id="featured"
+                    type="checkbox"
+                    checked={form.featured}
+                    onChange={(event) => handleFormChange("featured", event.target.checked)}
+                    className="w-4 h-4 rounded border-gray-300"
+                  />
+                  <label htmlFor="featured" className="text-sm">
+                    Mark first image as featured
+                  </label>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Button
+                    type="button"
+                    variant={form.status === "Draft" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleFormChange("status", "Draft")}
+                  >
+                    Save as Draft
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={form.status === "Published" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleFormChange("status", "Published")}
+                  >
+                    Publish
+                  </Button>
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  className="ml-auto cursor-pointer"
+                  onClick={handleFolderBulkUpload}
+                  disabled={!folderFiles || isUploadingFolder}
+                >
+                  {isUploadingFolder ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Upload Folder
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            // Single Image Form
+            <form onSubmit={handleSaveImage} className="space-y-4">
               <div>
                 <label className="text-sm font-medium">Title *</label>
                 <Input
@@ -542,29 +759,18 @@ export default function GalleryManagement() {
                   required
                 />
               </div>
+              
               <div>
-                <label className="text-sm font-medium">Category</label>
-                <Input
-                  value={form.category}
-                  onChange={(event) => handleFormChange("category", event.target.value)}
-                  placeholder="Enter category"
+                <label className="text-sm font-medium">Description</label>
+                <Textarea
+                  value={form.description}
+                  onChange={(event) => handleFormChange("description", event.target.value)}
+                  placeholder="Enter image description"
                   className="mt-1"
+                  rows={3}
                 />
               </div>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium">Description</label>
-              <Textarea
-                value={form.description}
-                onChange={(event) => handleFormChange("description", event.target.value)}
-                placeholder="Enter image description"
-                className="mt-1"
-                rows={3}
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              
               <div>
                 <label className="text-sm font-medium">Image</label>
                 <div className="space-y-2">
@@ -572,7 +778,7 @@ export default function GalleryManagement() {
                     type="file"
                     accept="image/*"
                     onChange={handleImageFileChange}
-                    className="mt-1"
+                    className="mt-1 cursor-pointer"
                   />
                   {form.imageUrl && (
                     <p className="text-xs text-gray-500 break-all">
@@ -584,111 +790,60 @@ export default function GalleryManagement() {
                   )}
                 </div>
               </div>
-              <div>
-                <label className="text-sm font-medium">Photographer</label>
-                <Input
-                  value={form.photographer}
-                  onChange={(event) => handleFormChange("photographer", event.target.value)}
-                  placeholder="Photographer name"
-                  className="mt-1"
-                />
+              
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <input
+                    id="featured"
+                    type="checkbox"
+                    checked={form.featured}
+                    onChange={(event) => handleFormChange("featured", event.target.checked)}
+                    className="w-4 h-4 rounded border-gray-300"
+                  />
+                  <label htmlFor="featured" className="text-sm">
+                    Mark as featured
+                  </label>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Button
+                    type="button"
+                    variant={form.status === "Draft" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleFormChange("status", "Draft")}
+                  >
+                    Save as Draft
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={form.status === "Published" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleFormChange("status", "Published")}
+                  >
+                    Publish
+                  </Button>
+                </div>
               </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Tags</label>
-                <Input
-                  value={form.tags}
-                  onChange={(event) => handleFormChange("tags", event.target.value)}
-                  placeholder="Comma-separated tags"
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Alt Text</label>
-                <Input
-                  value={form.altText}
-                  onChange={(event) => handleFormChange("altText", event.target.value)}
-                  placeholder="Alt text for accessibility"
-                  className="mt-1"
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">File Size</label>
-                <Input
-                  value={form.fileSize}
-                  onChange={(event) => handleFormChange("fileSize", event.target.value)}
-                  placeholder="e.g., 2.4 MB"
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Dimensions</label>
-                <Input
-                  value={form.dimensions}
-                  onChange={(event) => handleFormChange("dimensions", event.target.value)}
-                  placeholder="e.g., 1920x1080"
-                  className="mt-1"
-                />
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <input
-                  id="featured"
-                  type="checkbox"
-                  checked={form.featured}
-                  onChange={(event) => handleFormChange("featured", event.target.checked)}
-                  className="w-4 h-4 rounded border-gray-300"
-                />
-                <label htmlFor="featured" className="text-sm">
-                  Mark as featured
-                </label>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Button
-                  type="button"
-                  variant={form.status === "Draft" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleFormChange("status", "Draft")}
+              
+              <DialogFooter>
+                <Button 
+                  type="submit" 
+                  className="ml-auto cursor-pointer"
+                  disabled={isSubmitting || isUploadingImage}
                 >
-                  Save as Draft
+                  {isSubmitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      {editingImage ? "Saving..." : "Creating..."}
+                    </>
+                  ) : (
+                    <>
+                      {editingImage ? "Save Changes" : "Create Image"}
+                    </>
+                  )}
                 </Button>
-                <Button
-                  type="button"
-                  variant={form.status === "Published" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleFormChange("status", "Published")}
-                >
-                  Publish
-                </Button>
-              </div>
-            </div>
-            
-            <DialogFooter>
-              <Button 
-                type="submit" 
-                className="ml-auto cursor-pointer"
-                disabled={isSubmitting || isUploadingImage}
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    {editingImage ? "Saving..." : "Creating..."}
-                  </>
-                ) : (
-                  <>
-                    {editingImage ? "Save Changes" : "Create Image"}
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
+              </DialogFooter>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
     </div>

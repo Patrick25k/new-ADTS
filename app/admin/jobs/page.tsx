@@ -151,11 +151,11 @@ export default function JobsManagement() {
           const days = getDaysLeft(job.deadline);
           return job.status === "Open" && days !== null && days >= 0 && days <= 7;
         }
-        return true;
+        return job.status === filter;
       })();
 
       return matchesSearch && matchesFilter;
-    });
+    }).sort((a, b) => new Date(b.createdAt || b.postDate || '0').getTime() - new Date(a.createdAt || a.postDate || '0').getTime()).slice(0, 8)
   }, [jobs, search, filter]);
 
   const stats = useMemo(() => {
@@ -280,8 +280,9 @@ export default function JobsManagement() {
 
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("fileName", file.name);
 
-      const response = await fetch("/api/admin/upload-image", {
+      const response = await fetch("/api/admin/upload-document", {
         method: "POST",
         credentials: "include",
         body: formData,
@@ -540,7 +541,11 @@ export default function JobsManagement() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div>
+            <div className="mb-4 text-sm text-gray-600">
+              Showing {filteredJobs.length} of {jobs.length} jobs (most recent)
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
           {filteredJobs.map((job) => {
             const daysLeft = getDaysLeft(job.deadline);
 
@@ -746,7 +751,8 @@ export default function JobsManagement() {
               </Card>
             );
           })}
-        </div>
+            </div>
+          </div>
         )}
       </div>
 

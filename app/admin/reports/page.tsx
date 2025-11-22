@@ -48,9 +48,6 @@ interface ReportItem {
   pages: number;
   size: string;
   publishDate: string | null;
-  downloads: number;
-  views: number;
-  tags: string[];
   documentUrl: string;
   createdAt: string;
   updatedAt: string;
@@ -82,11 +79,8 @@ export default function ReportsManagement() {
     year: "",
     pages: "",
     size: "",
-    publishDate: "",
-    downloads: "",
-    views: "",
-    tags: "",
     documentUrl: "",
+    publishDate: null as string | null,
   });
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [isUploadingDocument, setIsUploadingDocument] = useState(false);
@@ -152,17 +146,9 @@ export default function ReportsManagement() {
 
   const stats = useMemo(() => {
     const totalReports = reports.length;
-    const totalDownloads = reports.reduce(
-      (sum, r) => sum + (r.downloads ?? 0),
-      0,
-    );
     const published = reports.filter((r) => r.status === "Published").length;
-    const avgViews =
-      totalReports === 0
-        ? 0
-        : Math.round(
-            reports.reduce((sum, r) => sum + (r.views ?? 0), 0) / totalReports,
-          );
+    const drafts = reports.filter((r) => r.status === "Draft").length;
+    const highPriority = reports.filter((r) => r.priority === "High").length;
 
     return [
       {
@@ -174,28 +160,28 @@ export default function ReportsManagement() {
         bgColor: "bg-blue-50",
       },
       {
-        label: "Total Downloads",
-        value: String(totalDownloads),
-        change: "",
-        icon: Download,
-        color: "text-green-600",
-        bgColor: "bg-green-50",
-      },
-      {
         label: "Published",
         value: String(published),
         change: "",
         icon: TrendingUp,
-        color: "text-purple-600",
-        bgColor: "bg-purple-50",
+        color: "text-green-600",
+        bgColor: "bg-green-50",
       },
       {
-        label: "Avg Views",
-        value: String(avgViews),
+        label: "Drafts",
+        value: String(drafts),
         change: "",
-        icon: Eye,
+        icon: Clock,
         color: "text-orange-600",
         bgColor: "bg-orange-50",
+      },
+      {
+        label: "High Priority",
+        value: String(highPriority),
+        change: "",
+        icon: Users,
+        color: "text-purple-600",
+        bgColor: "bg-purple-50",
       },
     ];
   }, [reports]);
@@ -215,11 +201,8 @@ export default function ReportsManagement() {
       year: "",
       pages: "",
       size: "",
-      publishDate: "",
-      downloads: "",
-      views: "",
-      tags: "",
       documentUrl: "",
+      publishDate: null,
     });
     setDocumentFile(null);
     setIsDialogOpen(true);
@@ -240,11 +223,8 @@ export default function ReportsManagement() {
       year: report.year,
       pages: report.pages ? String(report.pages) : "",
       size: report.size,
-      publishDate: report.publishDate ?? "",
-      downloads: report.downloads ? String(report.downloads) : "",
-      views: report.views ? String(report.views) : "",
-      tags: report.tags.join("\n"),
       documentUrl: report.documentUrl,
+      publishDate: report.publishDate,
     });
     setDocumentFile(null);
     setIsDialogOpen(true);
@@ -272,8 +252,9 @@ export default function ReportsManagement() {
 
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("fileName", file.name);
 
-      const response = await fetch("/api/admin/upload-image", {
+      const response = await fetch("/api/admin/upload-document", {
         method: "POST",
         credentials: "include",
         body: formData,
@@ -328,7 +309,11 @@ export default function ReportsManagement() {
 
       setIsSubmitting(true);
 
-      const payload = { ...form };
+      const payload = { 
+        ...form,
+        // Auto-set publish date when status is "Published"
+        publishDate: form.status === "Published" && !editingReport ? new Date().toISOString().split('T')[0] : form.publishDate
+      };
 
       const endpoint = editingReport
         ? `/api/admin/reports/${editingReport.id}`
@@ -534,7 +519,7 @@ export default function ReportsManagement() {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredReports.map((report) => (
+          {filteredReports.slice(0, 4).map((report) => (
             <Card
               key={report.id}
               className="bg-white hover:shadow-lg transition-all duration-200 group"
@@ -611,42 +596,6 @@ export default function ReportsManagement() {
                       <Badge variant="secondary" className="text-xs">
                         {report.format || "PDF"}
                       </Badge>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between text-sm text-gray-500">
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-1">
-                        <Download className="w-4 h-4" />
-                        <span>{report.downloads} downloads</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Eye className="w-4 h-4" />
-                        <span>{report.views} views</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-gray-700">Tags:</p>
-                    <div className="flex flex-wrap gap-1">
-                      {report.tags.slice(0, 3).map((tag, index) => (
-                        <Badge
-                          key={index}
-                          variant="secondary"
-                          className="text-xs bg-gray-100 text-gray-700"
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
-                      {report.tags.length > 3 && (
-                        <Badge
-                          variant="secondary"
-                          className="text-xs bg-gray-100 text-gray-700"
-                        >
-                          +{report.tags.length - 3} more
-                        </Badge>
-                      )}
                     </div>
                   </div>
 
@@ -828,48 +777,6 @@ export default function ReportsManagement() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Publish Date</label>
-                <Input
-                  type="date"
-                  value={form.publishDate}
-                  onChange={(event) =>
-                    handleFormChange("publishDate", event.target.value)
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Downloads</label>
-                <Input
-                  type="number"
-                  value={form.downloads}
-                  onChange={(event) =>
-                    handleFormChange("downloads", event.target.value)
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Views</label>
-                <Input
-                  type="number"
-                  value={form.views}
-                  onChange={(event) =>
-                    handleFormChange("views", event.target.value)
-                  }
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Tags (one per line)</label>
-              <Textarea
-                value={form.tags}
-                onChange={(event) =>
-                  handleFormChange("tags", event.target.value)
-                }
-                rows={3}
-              />
-            </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Report Document</label>
               <div className="space-y-2">
@@ -877,13 +784,6 @@ export default function ReportsManagement() {
                   type="file"
                   accept=".pdf,.doc,.docx,application/pdf,image/*"
                   onChange={handleDocumentFileChange}
-                />
-                <Input
-                  value={form.documentUrl}
-                  onChange={(event) =>
-                    handleFormChange("documentUrl", event.target.value)
-                  }
-                  placeholder="https://...pdf"
                 />
                 {form.documentUrl && (
                   <p className="text-xs text-gray-500 break-all">

@@ -118,7 +118,7 @@ export default function BlogManagement() {
           : blog.status === statusFilter
 
       return matchesSearch && matchesStatus
-    })
+    }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 8)
   }, [blogs, search, statusFilter])
 
   const stats = useMemo(() => {
@@ -435,7 +435,11 @@ export default function BlogManagement() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div>
+            <div className="mb-4 text-sm text-gray-600">
+              Showing {filteredBlogs.length} of {blogs.length} posts (most recent)
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
           {filteredBlogs.map((post) => (
             <Card
               key={post.id}
@@ -562,7 +566,8 @@ export default function BlogManagement() {
               </CardContent>
             </Card>
           ))}
-        </div>
+            </div>
+          </div>
         )}
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

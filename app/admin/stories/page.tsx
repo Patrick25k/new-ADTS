@@ -122,7 +122,7 @@ export default function StoriesManagement() {
           : story.status === statusFilter
 
       return matchesSearch && matchesStatus
-    })
+    }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 8)
   }, [stories, search, statusFilter])
 
   const stats = useMemo(() => {
@@ -443,7 +443,11 @@ export default function StoriesManagement() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div>
+            <div className="mb-4 text-sm text-gray-600">
+              Showing {filteredStories.length} of {stories.length} stories (most recent)
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
           {filteredStories.map((story) => (
             <Card key={story.id} className="bg-white hover:shadow-lg transition-all duration-200 group">
               <div className="relative">
@@ -552,7 +556,8 @@ export default function StoriesManagement() {
               </CardContent>
             </Card>
           ))}
-        </div>
+            </div>
+          </div>
         )}
       </div>
 
@@ -575,7 +580,8 @@ export default function StoriesManagement() {
               <Textarea
                 value={form.excerpt}
                 onChange={(event) => handleFormChange("excerpt", event.target.value)}
-                rows={3}
+                rows={2}
+                placeholder="Brief summary of the story"
               />
             </div>
             <div className="space-y-2">
@@ -587,20 +593,13 @@ export default function StoriesManagement() {
                 required
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Impact</label>
-              <Textarea
-                value={form.impact}
-                onChange={(event) => handleFormChange("impact", event.target.value)}
-                rows={3}
-              />
-            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Category</label>
                 <Input
                   value={form.category}
                   onChange={(event) => handleFormChange("category", event.target.value)}
+                  placeholder="e.g. Success Story, Impact"
                 />
               </div>
               <div className="space-y-2">
@@ -608,35 +607,26 @@ export default function StoriesManagement() {
                 <Input
                   value={form.author}
                   onChange={(event) => handleFormChange("author", event.target.value)}
+                  placeholder="Story author name"
                 />
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Story Image</label>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Estimated Read Time</label>
                 <Input
-                  value={form.readTime}
-                  onChange={(event) => handleFormChange("readTime", event.target.value)}
-                  placeholder="e.g. 4 min read"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageFileChange}
                 />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Image</label>
-                <div className="space-y-2">
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageFileChange}
-                  />
-                  {form.image && (
-                    <p className="text-xs text-gray-500 break-all">
-                      Current image URL: {form.image}
-                    </p>
-                  )}
-                  {isUploadingImage && (
-                    <p className="text-xs text-blue-600">Uploading image...</p>
-                  )}
-                </div>
+                {form.image && (
+                  <p className="text-xs text-gray-500 break-all">
+                    Current image: {form.image}
+                  </p>
+                )}
+                {isUploadingImage && (
+                  <p className="text-xs text-blue-600">Uploading image...</p>
+                )}
               </div>
             </div>
             <div className="flex items-center justify-between gap-4">
