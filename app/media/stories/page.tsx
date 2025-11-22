@@ -1,4 +1,7 @@
-import { Heart, TrendingUp, Users, Home } from "lucide-react"
+"use client"
+
+import { useState, useEffect } from "react"
+import { Heart, TrendingUp, Users, Home, ChevronDown } from "lucide-react"
 import Image from "next/image"
 
 interface StoryItem {
@@ -102,51 +105,72 @@ function iconForCategory(category: string): typeof Heart {
   return Heart
 }
 
-export default async function CompassionStories() {
-  let stories: StoryItem[] = staticStories
+export default function CompassionStories() {
+  const [stories, setStories] = useState<StoryItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [showMore, setShowMore] = useState(false)
+  const STORIES_PER_PAGE = 4 // Show 4 stories initially
 
-  try {
-    const baseUrl =
-      process.env.NEXT_PUBLIC_SITE_URL ||
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
+  useEffect(() => {
+    const loadStories = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
 
-    const response = await fetch(`${baseUrl}/api/stories`, {
-      cache: "no-store",
-    })
+        const response = await fetch("/api/stories", {
+          cache: "no-store",
+        })
 
-    if (response.ok) {
-      const data = await response.json()
-      const dynamicStories = (data.stories ?? []).map((story: any) => {
-        const rawImage = ((story.imageUrl as string) ?? "").trim()
-        const rawVideo = ((story.videoUrl as string) ?? "").trim()
+        if (!response.ok) {
+          throw new Error(`Failed to load stories: ${response.status}`)
+        }
 
-        let image = rawImage
-        if (!image && rawVideo) {
-          const id = extractYouTubeId(rawVideo)
-          if (id) {
-            image = `https://img.youtube.com/vi/${id}/hqdefault.jpg`
+        const data = await response.json()
+        const dynamicStories = (data.stories ?? []).map((story: any) => {
+          const rawImage = ((story.imageUrl as string) ?? "").trim()
+          const rawVideo = ((story.videoUrl as string) ?? "").trim()
+
+          let image = rawImage
+          if (!image && rawVideo) {
+            const id = extractYouTubeId(rawVideo)
+            if (id) {
+              image = `https://img.youtube.com/vi/${id}/hqdefault.jpg`
+            }
           }
-        }
 
-        return {
-          icon: iconForCategory((story.category as string) ?? ""),
-          title: story.title as string,
-          category: (story.category as string) || "Story",
-          excerpt: (story.excerpt as string) ?? "",
-          story: (story.story as string) ?? "",
-          impact: (story.impact as string) ?? "",
-          image: image || undefined,
-          videoUrl: rawVideo || undefined,
-        }
-      }) as StoryItem[]
+          return {
+            icon: iconForCategory((story.category as string) ?? ""),
+            title: story.title as string,
+            category: (story.category as string) || "Story",
+            excerpt: (story.excerpt as string) ?? "",
+            story: (story.story as string) ?? "",
+            impact: (story.impact as string) ?? "",
+            image: image || undefined,
+            videoUrl: rawVideo || undefined,
+          }
+        }) as StoryItem[]
 
-      if (dynamicStories.length > 0) {
-        stories = dynamicStories
+        if (dynamicStories.length > 0) {
+          setStories(dynamicStories)
+        } else {
+          setStories(staticStories)
+        }
+      } catch (error) {
+        console.error("Failed to load public stories", error)
+        setError("Failed to load stories")
+        setStories(staticStories)
+      } finally {
+        setIsLoading(false)
       }
     }
-  } catch (error) {
-    console.error("Failed to load public stories", error)
-  }
+
+    loadStories()
+  }, [])
+
+  // Pagination for stories
+  const displayedStories = showMore ? stories : stories.slice(0, STORIES_PER_PAGE)
+  const hasMoreStories = stories.length > STORIES_PER_PAGE
 
   return (
     <main className="min-h-screen">
@@ -183,39 +207,87 @@ export default async function CompassionStories() {
       {/* Stories */}
       <section className="py-20 bg-accent/30">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto space-y-12">
-            {stories.map((item, index) => {
-              const Icon = item.icon
-              return (
-                <div key={index} className="bg-background rounded-lg border p-8">
-                  {item.image && (
-                    <div className="mb-6 rounded-lg overflow-hidden bg-accent/30 h-56">
-                      <img
-                        src={item.image}
-                        alt={item.title}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
-                  <div className="flex items-start gap-4 mb-6">
-                    <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Icon className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-primary mb-1">{item.category}</div>
-                      <h2 className="text-2xl font-bold mb-2">{item.title}</h2>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <p className="text-lg text-foreground/80 italic border-l-4 border-primary pl-4">{item.excerpt}</p>
-                    <p className="text-foreground/70 leading-relaxed">{item.story}</p>
-                    <div className="pt-4 border-t">
-                      <p className="text-sm font-semibold text-primary">Impact: {item.impact}</p>
-                    </div>
-                  </div>
+          <div className="max-w-4xl mx-auto">
+            {isLoading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-foreground/60">Loading stories...</p>
+              </div>
+            ) : error ? (
+              <div className="text-center py-12">
+                <p className="text-red-600 mb-4">{error}</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"
+                >
+                  Try Again
+                </button>
+              </div>
+            ) : stories.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-foreground/60 mb-4">No stories available yet.</p>
+                <p className="text-sm text-foreground/50">Check back soon for inspiring stories of transformation!</p>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-12">
+                  {displayedStories.map((item, index) => {
+                    const Icon = item.icon
+                    return (
+                      <div key={index} className="bg-background rounded-lg border p-8">
+                        {item.image && (
+                          <div className="mb-6 rounded-lg overflow-hidden bg-accent/30 h-56">
+                            <img
+                              src={item.image}
+                              alt={item.title}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                        <div className="flex items-start gap-4 mb-6">
+                          <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                            <Icon className="h-6 w-6 text-primary" />
+                          </div>
+                          <div>
+                            <div className="text-sm font-semibold text-primary mb-1">{item.category}</div>
+                            <h2 className="text-2xl font-bold mb-2">{item.title}</h2>
+                          </div>
+                        </div>
+                        <div className="space-y-4">
+                          <p className="text-lg text-foreground/80 italic border-l-4 border-primary pl-4">{item.excerpt}</p>
+                          <p className="text-foreground/70 leading-relaxed">{item.story}</p>
+                          <div className="pt-4 border-t">
+                            <p className="text-sm font-semibold text-primary">Impact: {item.impact}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
-              )
-            })}
+
+                {/* Show More Button */}
+                {hasMoreStories && (
+                  <div className="text-center pt-8">
+                    <button
+                      onClick={() => setShowMore(!showMore)}
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-primary/10 text-primary rounded-lg font-semibold hover:bg-primary/20 transition-colors"
+                    >
+                      {showMore ? (
+                        <>
+                          <ChevronDown className="h-4 w-4 rotate-180" />
+                          Show Less Stories
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="h-4 w-4" />
+                          Show More Stories ({stories.length - STORIES_PER_PAGE} more)
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       </section>

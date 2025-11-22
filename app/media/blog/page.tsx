@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Calendar, User, ArrowRight, ChevronDown } from "lucide-react"
+import { Calendar, User, ArrowRight, ChevronDown, Mail, CheckCircle } from "lucide-react"
 import Image from "next/image"
 
 interface BlogPost {
@@ -91,6 +91,12 @@ export default function Blog() {
   const [showMore, setShowMore] = useState(false)
   const POSTS_PER_PAGE = 6 // 2 rows × 3 columns
 
+  // Newsletter subscription state
+  const [email, setEmail] = useState("")
+  const [name, setName] = useState("")
+  const [isSubscribing, setIsSubscribing] = useState(false)
+  const [subscriptionMessage, setSubscriptionMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+
   useEffect(() => {
     const loadBlogs = async () => {
       try {
@@ -139,6 +145,50 @@ export default function Blog() {
 
   // If no featured posts, use the most recent regular post as featured
   const mainFeaturedPost = featuredPosts.length > 0 ? featuredPosts[0] : (blogPosts.length > 0 ? blogPosts[0] : null)
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!email.trim()) {
+      setSubscriptionMessage({ type: 'error', text: 'Please enter your email address' })
+      return
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      setSubscriptionMessage({ type: 'error', text: 'Please enter a valid email address' })
+      return
+    }
+
+    setIsSubscribing(true)
+    setSubscriptionMessage(null)
+
+    try {
+      const response = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: email.trim(), name: name.trim() || null }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setSubscriptionMessage({ type: 'success', text: data.message })
+        setEmail('')
+        setName('')
+      } else {
+        setSubscriptionMessage({ type: 'error', text: data.error || 'Subscription failed' })
+      }
+    } catch (error) {
+      console.error('Subscription error:', error)
+      setSubscriptionMessage({ type: 'error', text: 'Something went wrong. Please try again.' })
+    } finally {
+      setIsSubscribing(false)
+    }
+  }
 
   return (
     <main className="min-h-screen">
@@ -295,21 +345,74 @@ export default function Blog() {
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-6">Stay Updated</h2>
+            <div className="flex items-center justify-center mb-6">
+              <Mail className="w-8 h-8 text-primary mr-3" />
+              <h2 className="text-3xl font-bold">Stay Updated</h2>
+            </div>
             <p className="text-lg text-foreground/80 mb-8 text-pretty">
               Subscribe to receive our latest blog posts, program updates, and stories of transformation directly in
               your inbox.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1 px-4 py-3 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              <button className="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity">
-                Subscribe
+            
+            <form onSubmit={handleSubscribe} className="space-y-4">
+              <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+                <input
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isSubscribing}
+                  className="flex-1 px-4 py-3 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+                  required
+                />
+                <input
+                  type="text"
+                  placeholder="Your name (optional)"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  disabled={isSubscribing}
+                  className="flex-1 px-4 py-3 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+                />
+              </div>
+              
+              <button
+                type="submit"
+                disabled={isSubscribing}
+                className="px-8 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
+              >
+                {isSubscribing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
+                    Subscribing...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="w-4 h-4" />
+                    Subscribe
+                  </>
+                )}
               </button>
-            </div>
+            </form>
+
+            {/* Subscription Message */}
+            {subscriptionMessage && (
+              <div className={`mt-6 p-4 rounded-lg inline-flex items-center gap-2 ${
+                subscriptionMessage.type === 'success' 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-red-100 text-red-800'
+              }`}>
+                {subscriptionMessage.type === 'success' ? (
+                  <CheckCircle className="w-5 h-5" />
+                ) : (
+                  <Mail className="w-5 h-5" />
+                )}
+                <span>{subscriptionMessage.text}</span>
+              </div>
+            )}
+
+            <p className="text-sm text-foreground/60 mt-6">
+              We respect your privacy. Unsubscribe at any time.
+            </p>
           </div>
         </div>
       </section>

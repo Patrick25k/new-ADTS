@@ -233,28 +233,28 @@ export default function BlogPostPage() {
                   <span className="text-sm text-gray-600 mr-2">Share:</span>
                   <button
                     onClick={() => handleShare('facebook')}
-                    className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors hover:cursor-pointer"
                     title="Share on Facebook"
                   >
                     <Facebook className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleShare('twitter')}
-                    className="p-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors"
+                    className="p-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors hover:cursor-pointer"
                     title="Share on Twitter"
                   >
                     <Twitter className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleShare('linkedin')}
-                    className="p-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition-colors"
+                    className="p-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition-colors hover:cursor-pointer"
                     title="Share on LinkedIn"
                   >
                     <Linkedin className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleShare('email')}
-                    className="p-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                    className="p-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors hover:cursor-pointer"
                     title="Share via Email"
                   >
                     <Mail className="w-4 h-4" />
