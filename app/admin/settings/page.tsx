@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
+import { AdminHeader } from "@/components/admin-header"
 import { useAuth } from "@/lib/auth-context"
 import {
   Settings,
@@ -108,13 +109,10 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50/50">
-      {/* Simple header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">System Settings</h1>
-          <p className="text-sm text-gray-600 mt-1">Manage site configuration and preferences</p>
-        </div>
-      </div>
+      <AdminHeader
+        title="System Settings"
+        description="Manage site configuration and preferences"
+      />
 
       <div className="p-6 space-y-6">
         {/* Success/Error Message */}

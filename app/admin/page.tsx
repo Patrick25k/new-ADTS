@@ -1,3 +1,6 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import { AdminHeader } from "@/components/admin-header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -7,165 +10,333 @@ import {
   FileText, 
   Heart, 
   Mail, 
-  TrendingUp, 
   Video, 
   ImageIcon, 
-  Briefcase, 
   ArrowUpRight,
   ArrowDownRight,
-  Eye,
   MessageSquare,
   Calendar,
-  Globe,
   Activity,
-  BarChart3,
-  PieChart as PieChartIcon,
-  Clock
+  Clock,
+  Briefcase,
+  TrendingUp
 } from "lucide-react"
-// Temporarily removing recharts to fix the error
-// import {
-//   AreaChart,
-//   Area,
-//   BarChart,
-//   Bar,
-//   PieChart,
-//   Pie,
-//   Cell,
-//   XAxis,
-//   YAxis,
-//   CartesianGrid,
-//   Tooltip,
-//   ResponsiveContainer,
-//   Legend
-// } from "recharts"
+import { useRouter } from "next/navigation"
+
+interface DashboardStats {
+  contacts: {
+    total: number
+    unread: number
+    thisMonth: number
+    lastMonth: number
+  }
+  stories: {
+    total: number
+    published: number
+    thisMonth: number
+    thisQuarter: number
+  }
+  blogs: {
+    total: number
+    published: number
+    thisMonth: number
+  }
+  videos: {
+    total: number
+    thisMonth: number
+  }
+  gallery: {
+    total: number
+    thisMonth: number
+  }
+  newsletter: {
+    total: number
+    active: number
+    thisMonth: number
+  }
+  volunteers: {
+    total: number
+    pending: number
+    thisMonth: number
+  }
+  jobs: {
+    total: number
+    active: number
+    thisMonth: number
+  }
+  tenders: {
+    total: number
+    active: number
+    thisMonth: number
+  }
+}
+
+interface ActivityItem {
+  id: string
+  action: string
+  user: string
+  email?: string
+  details?: string
+  time: string
+  type: 'contact' | 'story' | 'blog' | 'video' | 'gallery' | 'newsletter' | 'volunteer' | 'job' | 'tender'
+  priority: 'high' | 'medium' | 'low'
+}
 
 export default function AdminDashboard() {
-  // Enhanced stats with trends
-  const stats = [
+  const router = useRouter()
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [activities, setActivities] = useState<ActivityItem[]>([])
+  const [isStatsLoading, setIsStatsLoading] = useState(true)
+  const [isActivitiesLoading, setIsActivitiesLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    loadDashboardData()
+  }, [])
+
+  const loadDashboardData = async () => {
+    try {
+      setError(null)
+      
+      // Load stats first
+      setIsStatsLoading(true)
+      const statsResponse = await fetch('/api/admin/dashboard')
+      
+      if (!statsResponse.ok) {
+        throw new Error(`Stats API Error: ${statsResponse.status} ${statsResponse.statusText}`)
+      }
+      
+      const statsData = await statsResponse.json()
+      setStats(statsData.stats)
+      setIsStatsLoading(false)
+      
+      // Then load activities separately
+      setIsActivitiesLoading(true)
+      const activityResponse = await fetch('/api/admin/activity?limit=4')
+      
+      if (!activityResponse.ok) {
+        throw new Error(`Activity API Error: ${activityResponse.status} ${activityResponse.statusText}`)
+      }
+      
+      const activityData = await activityResponse.json()
+      setActivities(activityData.activities)
+      setIsActivitiesLoading(false)
+      
+    } catch (error) {
+      console.error('Dashboard data error:', error)
+      setError(error instanceof Error ? error.message : 'Failed to load dashboard data')
+      setIsStatsLoading(false)
+      setIsActivitiesLoading(false)
+    }
+  }
+
+  const getStatsCards = () => {
+    if (!stats) return []
+
+    return [
+      {
+        title: "Contact Messages",
+        value: stats.contacts.total.toString(),
+        change: stats.contacts.thisMonth > 0 ? "+" + stats.contacts.thisMonth : "0",
+        changeValue: `${stats.contacts.unread} unread`,
+        period: "this month",
+        icon: MessageSquare,
+        color: "text-blue-600",
+        bgColor: "bg-blue-50",
+        borderColor: "border-blue-200",
+        trend: stats.contacts.thisMonth > stats.contacts.lastMonth ? "up" : "down"
+      },
+      {
+        title: "Success Stories",
+        value: stats.stories.published.toString(),
+        change: stats.stories.thisMonth > 0 ? "+" + stats.stories.thisMonth : "0",
+        changeValue: `${stats.stories.total} total`,
+        period: "this month",
+        icon: Heart,
+        color: "text-red-600",
+        bgColor: "bg-red-50",
+        borderColor: "border-red-200",
+        trend: "up"
+      },
+      {
+        title: "Newsletter Subscribers",
+        value: stats.newsletter.active.toString(),
+        change: stats.newsletter.thisMonth > 0 ? "+" + stats.newsletter.thisMonth : "0",
+        changeValue: `${stats.newsletter.total} total`,
+        period: "this month",
+        icon: Mail,
+        color: "text-green-600",
+        bgColor: "bg-green-50",
+        borderColor: "border-green-200",
+        trend: "up"
+      },
+      {
+        title: "Pending Volunteers",
+        value: stats.volunteers.pending.toString(),
+        change: stats.volunteers.thisMonth > 0 ? "+" + stats.volunteers.thisMonth : "0",
+        changeValue: `${stats.volunteers.total} total`,
+        period: "this month",
+        icon: Users,
+        color: "text-purple-600",
+        bgColor: "bg-purple-50",
+        borderColor: "border-purple-200",
+        trend: stats.volunteers.thisMonth > 0 ? "up" : "down"
+      }
+    ]
+  }
+
+  const getContentOverview = () => {
+    if (!stats) return []
+
+    return [
+      {
+        title: "Blog Posts",
+        value: stats.blogs.published.toString(),
+        change: stats.blogs.thisMonth > 0 ? "+" + stats.blogs.thisMonth : "0",
+        details: "Published articles",
+        icon: FileText,
+        color: "text-primary",
+        bgColor: "bg-primary/10"
+      },
+      {
+        title: "Success Stories",
+        value: stats.stories.published.toString(),
+        change: stats.stories.thisMonth > 0 ? "+" + stats.stories.thisMonth : "0",
+        details: "Impact testimonials",
+        icon: Heart,
+        color: "text-blue-600",
+        bgColor: "bg-blue-50"
+      },
+      {
+        title: "Videos",
+        value: stats.videos.total.toString(),
+        change: stats.videos.thisMonth > 0 ? "+" + stats.videos.thisMonth : "0",
+        details: "Media content",
+        icon: Video,
+        color: "text-green-600",
+        bgColor: "bg-green-50"
+      },
+      {
+        title: "Gallery",
+        value: stats.gallery.total.toString(),
+        change: stats.gallery.thisMonth > 0 ? "+" + stats.gallery.thisMonth : "0",
+        details: "Photo collection",
+        icon: ImageIcon,
+        color: "text-orange-600",
+        bgColor: "bg-orange-50"
+      }
+    ]
+  }
+
+  const getQuickActions = () => [
     {
-      title: "Website Visitors",
-      value: "24,847",
-      change: "+12.5%",
-      changeValue: "+2,743",
-      period: "vs last month",
-      icon: Globe,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
-      borderColor: "border-blue-200",
-      trend: "up"
+      title: "New Blog Post",
+      icon: FileText,
+      href: "/admin/blog",
+      variant: "outline" as const
     },
     {
-      title: "Contact Messages",
-      value: "156",
-      change: "+8.2%",
-      changeValue: "+12",
-      period: "this month",
-      icon: MessageSquare,
-      color: "text-green-600",
-      bgColor: "bg-green-50",
-      borderColor: "border-green-200",
-      trend: "up"
-    },
-    {
-      title: "Success Stories",
-      value: "89",
-      change: "+15.3%",
-      changeValue: "+12",
-      period: "this quarter",
+      title: "Add Story",
       icon: Heart,
-      color: "text-red-600",
-      bgColor: "bg-red-50",
-      borderColor: "border-red-200",
-      trend: "up"
+      href: "/admin/stories",
+      variant: "outline" as const
     },
     {
-      title: "Active Programs",
-      value: "12",
-      change: "+2",
-      changeValue: "new programs",
-      period: "this year",
-      icon: Activity,
-      color: "text-purple-600",
-      bgColor: "bg-purple-50",
-      borderColor: "border-purple-200",
-      trend: "up"
+      title: "Upload Video",
+      icon: Video,
+      href: "/admin/videos",
+      variant: "outline" as const
+    },
+    {
+      title: "Manage Gallery",
+      icon: ImageIcon,
+      href: "/admin/gallery",
+      variant: "outline" as const
+    },
+    {
+      title: "View Contacts",
+      icon: MessageSquare,
+      href: "/admin/contacts",
+      variant: "outline" as const
+    },
+    {
+      title: "View Volunteers",
+      icon: Users,
+      href: "/admin/volunteers",
+      variant: "outline" as const
     }
   ]
 
-  // Chart data
-  const visitorData = [
-    { month: 'Jan', visitors: 18500, engagement: 65 },
-    { month: 'Feb', visitors: 19200, engagement: 68 },
-    { month: 'Mar', visitors: 21800, engagement: 72 },
-    { month: 'Apr', visitors: 20400, engagement: 69 },
-    { month: 'May', visitors: 22900, engagement: 75 },
-    { month: 'Jun', visitors: 24847, engagement: 78 }
-  ]
+  const formatTimeAgo = (timestamp: string) => {
+    const now = new Date()
+    const time = new Date(timestamp)
+    const diffInMinutes = Math.floor((now.getTime() - time.getTime()) / (1000 * 60))
+    
+    if (diffInMinutes < 60) {
+      return `${diffInMinutes} minute${diffInMinutes !== 1 ? 's' : ''} ago`
+    } else if (diffInMinutes < 1440) {
+      const hours = Math.floor(diffInMinutes / 60)
+      return `${hours} hour${hours !== 1 ? 's' : ''} ago`
+    } else {
+      const days = Math.floor(diffInMinutes / 1440)
+      return `${days} day${days !== 1 ? 's' : ''} ago`
+    }
+  }
 
-  const contentData = [
-    { name: 'Blog Posts', value: 48, color: '#3B82F6' },
-    { name: 'Stories', value: 89, color: '#EF4444' },
-    { name: 'Videos', value: 32, color: '#F59E0B' },
-    { name: 'Gallery', value: 284, color: '#10B981' }
-  ]
+  if (isStatsLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50/50">
+        <AdminHeader title="Dashboard Overview" description="Welcome back! Here's your ADTS Rwanda impact summary." />
+        
+        <div className="p-6">
+          <div className="animate-pulse">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-32 bg-gray-200 rounded-lg"></div>
+              ))}
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 h-64 bg-gray-200 rounded-lg"></div>
+              <div className="h-64 bg-gray-200 rounded-lg"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
-  const programsData = [
-    { program: 'Education', participants: 1250, budget: 85000 },
-    { program: 'Healthcare', participants: 890, budget: 65000 },
-    { program: 'Community Dev', participants: 2100, budget: 120000 },
-    { program: 'Youth Programs', participants: 650, budget: 45000 },
-    { program: 'Women Empowerment', participants: 980, budget: 75000 }
-  ]
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50/50">
+        <AdminHeader title="Dashboard Overview" description="Welcome back! Here's your ADTS Rwanda impact summary." />
+        
+        <div className="p-6">
+          <div className="text-center py-12">
+            <div className="text-red-600 mb-4">{error}</div>
+            <button
+              onClick={loadDashboardData}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
-  const recentActivity = [
-    {
-      action: "New contact message",
-      user: "John Doe",
-      time: "5 minutes ago",
-      type: "message",
-    },
-    {
-      action: "New volunteer application",
-      user: "Sarah Smith",
-      time: "1 hour ago",
-      type: "volunteer",
-    },
-    {
-      action: "Blog post published",
-      user: "Admin",
-      time: "2 hours ago",
-      type: "blog",
-    },
-    {
-      action: "New prayer request",
-      user: "Mary Johnson",
-      time: "3 hours ago",
-      type: "prayer",
-    },
-    {
-      action: "Gallery images uploaded",
-      user: "Admin",
-      time: "5 hours ago",
-      type: "gallery",
-    },
-  ]
-
-  const upcomingTasks = [
-    { task: "Review pending volunteer applications", priority: "high", due: "Today" },
-    { task: "Respond to contact messages", priority: "high", due: "Today" },
-    { task: "Update job posting deadline", priority: "medium", due: "Tomorrow" },
-    { task: "Publish monthly report", priority: "medium", due: "In 3 days" },
-    { task: "Review and approve blog drafts", priority: "low", due: "This week" },
-  ]
+  const statsCards = getStatsCards()
+  const contentOverview = getContentOverview()
+  const quickActions = getQuickActions()
 
   return (
     <div className="min-h-screen bg-gray-50/50">
       <AdminHeader title="Dashboard Overview" description="Welcome back! Here's your ADTS Rwanda impact summary." />
 
       <div className="p-6 space-y-6">
-        {/* Enhanced Stats Grid */}
+        {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat, index) => (
+          {statsCards.map((stat, index) => (
             <Card key={index} className={`hover:shadow-lg transition-all duration-200 bg-white`}>
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
@@ -196,79 +367,8 @@ export default function AdminDashboard() {
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Website Analytics - Full Width on Mobile, 2 cols on Desktop */}
-          <Card className="lg:col-span-2 bg-white shadow-sm border-0 ring-1 ring-gray-200">
-            <CardHeader className="pb-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-xl font-bold text-gray-900">Website Analytics</CardTitle>
-                  <p className="text-gray-600 mt-1">Monthly performance overview</p>
-                </div>
-                <Badge className="bg-green-100 text-green-800 border-green-200">
-                  <TrendingUp className="w-3 h-3 mr-1" />
-                  Growing
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-gray-900 mb-1">24.8K</div>
-                  <div className="text-sm text-gray-600">Total Visitors</div>
-                  <div className="text-xs text-green-600 mt-1">+12.5%</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-gray-900 mb-1">78%</div>
-                  <div className="text-sm text-gray-600">Engagement</div>
-                  <div className="text-xs text-green-600 mt-1">+5.2%</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-gray-900 mb-1">156</div>
-                  <div className="text-sm text-gray-600">New Contacts</div>
-                  <div className="text-xs text-blue-600 mt-1">+8 today</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-gray-900 mb-1">4.2m</div>
-                  <div className="text-sm text-gray-600">Page Views</div>
-                  <div className="text-xs text-green-600 mt-1">+18%</div>
-                </div>
-              </div>
-              
-              {/* Simple Progress Bars */}
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="font-medium text-gray-700">Monthly Growth</span>
-                    <span className="text-gray-600">78%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-primary h-2 rounded-full" style={{ width: '78%' }}></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="font-medium text-gray-700">User Engagement</span>
-                    <span className="text-gray-600">65%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: '65%' }}></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="font-medium text-gray-700">Content Performance</span>
-                    <span className="text-gray-600">82%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-green-500 h-2 rounded-full" style={{ width: '82%' }}></div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Recent Activity */}
-          <Card className="bg-white">
+          <Card className="lg:col-span-2 bg-white">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
@@ -278,34 +378,126 @@ export default function AdminDashboard() {
                 </Badge>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentActivity.map((activity, index) => (
-                  <div key={index} className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      activity.type === 'message' ? 'bg-blue-100' :
-                      activity.type === 'volunteer' ? 'bg-green-100' :
-                      activity.type === 'blog' ? 'bg-purple-100' :
-                      activity.type === 'prayer' ? 'bg-orange-100' : 'bg-gray-100'
-                    }`}>
-                      {activity.type === 'message' && <MessageSquare className="w-4 h-4 text-blue-600" />}
-                      {activity.type === 'volunteer' && <Users className="w-4 h-4 text-green-600" />}
-                      {activity.type === 'blog' && <FileText className="w-4 h-4 text-purple-600" />}
-                      {activity.type === 'prayer' && <Heart className="w-4 h-4 text-orange-600" />}
-                      {activity.type === 'gallery' && <ImageIcon className="w-4 h-4 text-gray-600" />}
+            <CardContent className="overflow-hidden">
+              {isActivitiesLoading ? (
+                <div className="animate-pulse space-y-4">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="flex items-center gap-3 p-3">
+                      <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
+                      <div className="flex-1">
+                        <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                        <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900">{activity.action}</p>
-                      <p className="text-xs text-gray-500">{activity.user}</p>
-                      <p className="text-xs text-gray-400 mt-1">{activity.time}</p>
+                  ))}
+                </div>
+              ) : activities.length === 0 ? (
+                <div className="text-center py-8">
+                  <Activity className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">No recent activity</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {activities.slice(0, 4).map((activity) => (
+                    <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                        activity.type === 'contact' ? 'bg-blue-100' :
+                        activity.type === 'volunteer' ? 'bg-green-100' :
+                        activity.type === 'blog' ? 'bg-purple-100' :
+                        activity.type === 'story' ? 'bg-red-100' :
+                        activity.type === 'video' ? 'bg-orange-100' :
+                        activity.type === 'gallery' ? 'bg-yellow-100' :
+                        activity.type === 'newsletter' ? 'bg-pink-100' :
+                        activity.type === 'job' ? 'bg-indigo-100' :
+                        activity.type === 'tender' ? 'bg-gray-100' : 'bg-gray-100'
+                      }`}>
+                        {activity.type === 'contact' && <MessageSquare className="w-4 h-4 text-blue-600" />}
+                        {activity.type === 'volunteer' && <Users className="w-4 h-4 text-green-600" />}
+                        {activity.type === 'blog' && <FileText className="w-4 h-4 text-purple-600" />}
+                        {activity.type === 'story' && <Heart className="w-4 h-4 text-red-600" />}
+                        {activity.type === 'video' && <Video className="w-4 h-4 text-orange-600" />}
+                        {activity.type === 'gallery' && <ImageIcon className="w-4 h-4 text-yellow-600" />}
+                        {activity.type === 'newsletter' && <Mail className="w-4 h-4 text-pink-600" />}
+                        {activity.type === 'job' && <Briefcase className="w-4 h-4 text-indigo-600" />}
+                        {activity.type === 'tender' && <Briefcase className="w-4 h-4 text-gray-600" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900">{activity.action}</p>
+                        <p className="text-xs text-gray-500">{activity.user}</p>
+                        {activity.details && <p className="text-xs text-gray-400 mt-1">{activity.details}</p>}
+                        <p className="text-xs text-gray-400 mt-1">{formatTimeAgo(activity.time)}</p>
+                      </div>
+                      {activity.priority === 'high' && (
+                        <Badge className="bg-red-100 text-red-800 border-red-200 text-xs flex-shrink-0">
+                          High
+                        </Badge>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Quick Stats */}
+          <Card className="bg-white">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold">Quick Stats</CardTitle>
+            </CardHeader>
+            <CardContent className="overflow-hidden">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <MessageSquare className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">Unread Messages</div>
+                      <div className="text-xs text-gray-600">Need attention</div>
                     </div>
                   </div>
-                ))}
+                  <div className="text-lg font-bold text-blue-600">{stats?.contacts.unread || 0}</div>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                      <Users className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">Pending Volunteers</div>
+                      <div className="text-xs text-gray-600">Awaiting review</div>
+                    </div>
+                  </div>
+                  <div className="text-lg font-bold text-green-600">{stats?.volunteers.pending || 0}</div>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                      <Mail className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">New Subscribers</div>
+                      <div className="text-xs text-gray-600">This month</div>
+                    </div>
+                  </div>
+                  <div className="text-lg font-bold text-purple-600">{stats?.newsletter.thisMonth || 0}</div>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                      <Briefcase className="w-5 h-5 text-orange-600" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">Active Jobs</div>
+                      <div className="text-xs text-gray-600">Currently open</div>
+                    </div>
+                  </div>
+                  <div className="text-lg font-bold text-orange-600">{stats?.jobs.active || 0}</div>
+                </div>
               </div>
-              <Button variant="ghost" className="w-full mt-4 text-sm">
-                View All Activity
-                <ArrowUpRight className="w-4 h-4 ml-2" />
-              </Button>
             </CardContent>
           </Card>
         </div>
@@ -320,69 +512,23 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                      <FileText className="w-6 h-6 text-primary" />
+                {contentOverview.map((content, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-12 h-12 ${content.bgColor} rounded-lg flex items-center justify-center`}>
+                        <content.icon className={`w-6 h-6 ${content.color}`} />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-gray-900">{content.title}</div>
+                        <div className="text-sm text-gray-600">{content.details}</div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="font-semibold text-gray-900">Blog Posts</div>
-                      <div className="text-sm text-gray-600">Published articles</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-gray-900">48</div>
-                    <div className="text-xs text-green-600">+3 this month</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-                      <Heart className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-gray-900">Success Stories</div>
-                      <div className="text-sm text-gray-600">Impact testimonials</div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-gray-900">{content.value}</div>
+                      <div className="text-xs text-green-600">{content.change} this month</div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-gray-900">89</div>
-                    <div className="text-xs text-green-600">+12 this month</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
-                      <Video className="w-6 h-6 text-green-600" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-gray-900">Videos</div>
-                      <div className="text-sm text-gray-600">Media content</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-gray-900">32</div>
-                    <div className="text-xs text-blue-600">+2 this month</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-orange-50 rounded-lg flex items-center justify-center">
-                      <ImageIcon className="w-6 h-6 text-orange-600" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-gray-900">Gallery</div>
-                      <div className="text-sm text-gray-600">Photo collection</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-gray-900">284</div>
-                    <div className="text-xs text-green-600">+15 this month</div>
-                  </div>
-                </div>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -395,30 +541,17 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
-                <Button className="h-16 bg-primary hover:bg-primary/90 text-white flex flex-col items-center gap-2">
-                  <FileText className="w-5 h-5" />
-                  <span className="text-sm font-medium">New Blog Post</span>
-                </Button>
-                <Button variant="outline" className="h-16 border-2 hover:bg-gray-50 flex flex-col items-center gap-2">
-                  <Heart className="w-5 h-5 text-gray-700" />
-                  <span className="text-sm font-medium">Add Story</span>
-                </Button>
-                <Button variant="outline" className="h-16 border-2 hover:bg-gray-50 flex flex-col items-center gap-2">
-                  <Video className="w-5 h-5 text-gray-700" />
-                  <span className="text-sm font-medium">Upload Video</span>
-                </Button>
-                <Button variant="outline" className="h-16 border-2 hover:bg-gray-50 flex flex-col items-center gap-2">
-                  <ImageIcon className="w-5 h-5 text-gray-700" />
-                  <span className="text-sm font-medium">Manage Gallery</span>
-                </Button>
-                <Button variant="outline" className="h-16 border-2 hover:bg-gray-50 flex flex-col items-center gap-2">
-                  <Users className="w-5 h-5 text-gray-700" />
-                  <span className="text-sm font-medium">Team Settings</span>
-                </Button>
-                <Button variant="outline" className="h-16 border-2 hover:bg-gray-50 flex flex-col items-center gap-2">
-                  <MessageSquare className="w-5 h-5 text-gray-700" />
-                  <span className="text-sm font-medium">View Messages</span>
-                </Button>
+                {quickActions.map((action, index) => (
+                  <Button
+                    key={index}
+                    variant={action.variant}
+                    className="h-16 border-2 hover:bg-primary/90 flex flex-col items-center gap-2"
+                    onClick={() => router.push(action.href)}
+                  >
+                    <action.icon className="w-5 h-5 text-gray-700" />
+                    <span className="text-sm font-medium">{action.title}</span>
+                  </Button>
+                ))}
               </div>
             </CardContent>
           </Card>

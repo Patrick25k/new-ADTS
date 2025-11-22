@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Mail, Users, Download, Search, Calendar, CheckCircle, X, User } from "lucide-react"
+import { AdminHeader } from "@/components/admin-header"
 
 interface Subscriber {
   id: string
@@ -98,21 +99,34 @@ export default function NewsletterSubscribers() {
   }
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <Mail className="w-8 h-8 text-primary" />
-          <h1 className="text-3xl font-bold">Newsletter Subscribers</h1>
+    <div className="min-h-screen bg-gray-50/50">
+      <AdminHeader
+        title="Newsletter Subscribers"
+        description="Manage newsletter subscribers and export data"
+      />
+
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Mail className="w-8 h-8 text-primary" />
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Subscriber Overview</h2>
+                <p className="text-gray-600">
+                  {activeCount} active • {totalCount} total subscribers
+                </p>
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={exportToCSV}
+            disabled={filteredSubscribers.length === 0}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Download className="w-4 h-4" />
+            Export CSV
+          </button>
         </div>
-        <button
-          onClick={exportToCSV}
-          disabled={filteredSubscribers.length === 0}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Download className="w-4 h-4" />
-          Export CSV
-        </button>
-      </div>
 
       {error ? (
         <div className="text-center py-12">
@@ -279,5 +293,6 @@ export default function NewsletterSubscribers() {
         </>
       )}
     </div>
-  )
+  </div>
+)
 }
