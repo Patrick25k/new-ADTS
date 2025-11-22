@@ -545,7 +545,7 @@ export default function JobsManagement() {
             <div className="mb-4 text-sm text-gray-600">
               Showing {filteredJobs.length} of {jobs.length} jobs (most recent)
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredJobs.map((job) => {
             const daysLeft = getDaysLeft(job.deadline);
 
@@ -581,16 +581,16 @@ export default function JobsManagement() {
                   )}
                 </div>
 
-                <CardContent className="p-6">
-                  <div className="space-y-4">
+                <CardContent className="p-4">
+                  <div className="space-y-3">
                     <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <Badge variant="outline" className="text-xs">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="outline" className="text-xs flex-shrink-0">
                           {job.department}
                         </Badge>
                         <Badge
                           variant="outline"
-                          className={`text-xs ${
+                          className={`text-xs flex-shrink-0 ${
                             job.priority === "High"
                               ? "border-red-200 text-red-700"
                               : job.priority === "Medium"
@@ -598,53 +598,53 @@ export default function JobsManagement() {
                               : "border-gray-200 text-gray-700"
                           }`}
                         >
-                          {job.priority} Priority
+                          {job.priority}
                         </Badge>
                       </div>
-                      <h3 className="font-bold text-lg text-gray-900 group-hover:text-primary transition-colors line-clamp-2">
+                      <h3 className="font-bold text-base text-gray-900 group-hover:text-primary transition-colors line-clamp-2">
                         {job.title}
                       </h3>
-                      <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+                      <p className="text-xs text-gray-600 mt-1 line-clamp-2">
                         {job.description}
                       </p>
                     </div>
 
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <MapPin className="w-4 h-4 text-gray-400" />
-                        <span>{job.location}</span>
-                        <Badge variant="secondary" className="text-xs ml-auto">
+                    <div className="space-y-1 text-xs">
+                      <div className="flex items-center gap-1 text-gray-600">
+                        <MapPin className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                        <span className="truncate">{job.location}</span>
+                        <Badge variant="secondary" className="text-xs ml-auto flex-shrink-0">
                           {job.type}
                         </Badge>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <DollarSign className="w-4 h-4 text-gray-400" />
-                        <span>{job.salary}</span>
+                      <div className="flex items-center gap-1 text-gray-600">
+                        <DollarSign className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                        <span className="truncate">{job.salary}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Calendar className="w-4 h-4 text-gray-400" />
-                        <span>
-                          Deadline: {job.deadline
+                      <div className="flex items-center gap-1 text-gray-600">
+                        <Calendar className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                        <span className="truncate">
+                          {job.deadline
                             ? new Date(job.deadline).toLocaleDateString()
                             : "TBA"}
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between text-sm text-gray-500">
-                      <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-between text-xs text-gray-500 border-t pt-2">
+                      <div className="flex items-center gap-3">
                         <div className="flex items-center gap-1">
-                          <Users className="w-4 h-4" />
-                          <span>{job.applicants} applicants</span>
+                          <Users className="w-3 h-3" />
+                          <span>{job.applicants}</span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <Eye className="w-4 h-4" />
-                          <span>{job.views} views</span>
+                          <Eye className="w-3 h-3" />
+                          <span>{job.views}</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       <p className="text-xs font-medium text-gray-700">
                         Requirements:
                       </p>
@@ -655,7 +655,7 @@ export default function JobsManagement() {
                             variant="secondary"
                             className="text-xs bg-gray-100 text-gray-700"
                           >
-                            {req}
+                            {req.length > 15 ? req.substring(0, 15) + "..." : req}
                           </Badge>
                         ))}
                         {job.requirements.length > 2 && (
@@ -669,7 +669,7 @@ export default function JobsManagement() {
                       </div>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       <p className="text-xs font-medium text-gray-700">Benefits:</p>
                       <div className="flex flex-wrap gap-1">
                         {job.benefits.slice(0, 2).map((benefit, index) => (
@@ -678,7 +678,7 @@ export default function JobsManagement() {
                             variant="secondary"
                             className="text-xs bg-blue-50 text-blue-700"
                           >
-                            {benefit}
+                            {benefit.length > 15 ? benefit.substring(0, 15) + "..." : benefit}
                           </Badge>
                         ))}
                         {job.benefits.length > 2 && (

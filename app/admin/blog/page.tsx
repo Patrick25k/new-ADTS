@@ -340,7 +340,7 @@ export default function BlogManagement() {
             </Button>
             <Button
               type="button"
-              className="gap-2 bg-blue-600 hover:bg-blue-700"
+              className="gap-2 bg-primary hover:bg-primary/90"
               onClick={openNewDialog}
             >
               <Plus className="w-4 h-4" />
