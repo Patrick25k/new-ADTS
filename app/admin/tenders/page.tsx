@@ -538,7 +538,7 @@ export default function TendersManagement() {
             <div className="mb-4 text-sm text-gray-600">
               Showing {filteredTenders.length} of {tenders.length} tenders (most recent)
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-6">
           {filteredTenders.map((tender) => {
             const daysLeft = getDaysLeft(tender.deadline);
 

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
 import { ADMIN_TOKEN_COOKIE_NAME, verifyAdminToken } from '@/lib/auth-tokens'
+import { put } from '@vercel/blob'
 
 export const runtime = 'nodejs'
 
@@ -25,42 +24,50 @@ export async function POST(request: NextRequest) {
     if (!file || !(file instanceof Blob)) {
       return NextResponse.json(
         { error: 'No file uploaded' },
-        { status: 400 },
+        { status: 400 }
       )
     }
 
-    // Get file info
+    // Check if Blob storage is configured
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      return NextResponse.json(
+        { error: 'Vercel Blob Storage not configured. Please set BLOB_READ_WRITE_TOKEN environment variable.' },
+        { status: 500 }
+      )
+    }
+
     const fileName = formData.get('fileName') as string || 'document'
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = join(process.cwd(), 'public', 'uploads', 'documents')
+    // Generate unique filename with timestamp
+    const timestamp = Date.now()
+    const originalName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_')
+    const uniqueFileName = `documents/${timestamp}-${originalName}`
+
     try {
-      await mkdir(uploadsDir, { recursive: true })
-    } catch (error) {
-      // Directory might already exist, that's fine
+      // Upload to Vercel Blob Storage
+      const blob = await put(uniqueFileName, buffer, {
+        access: 'public',
+        token: process.env.BLOB_READ_WRITE_TOKEN,
+        contentType: file.type || 'application/octet-stream',
+      })
+
+      return NextResponse.json({
+        url: blob.url,
+        fileName: originalName,
+        blobId: blob.pathname,
+        vercelBlob: true,
+      })
+
+    } catch (blobError) {
+      console.error('Vercel Blob upload error:', blobError)
+      return NextResponse.json(
+        { error: 'Failed to upload to Vercel Blob Storage: ' + (blobError as Error).message },
+        { status: 500 }
+      )
     }
 
-    // Generate unique filename
-    const timestamp = Date.now()
-    const originalName = (formData.get('fileName') as string) || 'document'
-    const extension = originalName.includes('.') ? 
-      originalName.split('.').pop() : 
-      'pdf' // default to pdf if no extension
-    const safeFileName = `${timestamp}-${originalName.replace(/[^a-zA-Z0-9.-]/g, '_')}.${extension}`
-    const filePath = join(uploadsDir, safeFileName)
-
-    // Write file to local storage
-    await writeFile(filePath, buffer)
-
-    // Return the public URL
-    const publicUrl = `/uploads/documents/${safeFileName}`
-
-    return NextResponse.json({
-      url: publicUrl,
-      fileName: safeFileName,
-    })
   } catch (error: any) {
     console.error('Document upload error:', error)
 
@@ -70,7 +77,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { error: 'Failed to upload document' },
-      { status: 500 },
+      { status: 500 }
     )
   }
 }
