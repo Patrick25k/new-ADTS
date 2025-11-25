@@ -1,75 +1,79 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { sql, ensureBlogTables, ensureContactsTables } from '@/lib/db'
+import { sql } from '@/lib/db'
 
 export const runtime = 'nodejs'
 
 export async function GET(request: NextRequest) {
   try {
-    // Ensure tables exist
-    await ensureBlogTables()
-    await ensureContactsTables()
-
-    // Create notification read tracking table if not exists
-    await sql`
-      CREATE TABLE IF NOT EXISTS notification_reads (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        user_email TEXT NOT NULL,
-        notification_id TEXT NOT NULL,
-        notification_type TEXT NOT NULL,
-        read_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        UNIQUE(user_email, notification_id, notification_type)
-      )
-    `
-
     // Get user email from auth context (for now, use admin email)
     const userEmail = 'admin@adtsrwanda.org' // This should come from auth context
 
     // Get current timestamp from 24 hours ago
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
 
-    // Fetch new subscribers from last 24 hours
-    const subscribers = await sql`
-      SELECT 
-        id,
-        email,
-        name,
-        subscribed_at as created_at,
-        'subscriber' as type
-      FROM newsletter_subscribers
-      WHERE subscribed_at >= ${twentyFourHoursAgo.toISOString()}
-      ORDER BY subscribed_at DESC
-      LIMIT 10
-    `
+    // Fetch new subscribers from last 24 hours (simple query)
+    let subscribers: any[] = []
+    try {
+      subscribers = await sql`
+        SELECT 
+          id,
+          email,
+          name,
+          subscribed_at as created_at,
+          'subscriber' as type
+        FROM newsletter_subscribers
+        WHERE subscribed_at >= ${twentyFourHoursAgo.toISOString()}
+        ORDER BY subscribed_at DESC
+        LIMIT 5
+      `
+    } catch (error) {
+      // Table might not exist, continue with empty results
+      console.log('Newsletter subscribers table not found')
+    }
 
-    // Fetch new contact messages from last 24 hours
-    const contacts = await sql`
-      SELECT 
-        id,
-        name,
-        email,
-        subject,
-        created_at,
-        'contact' as type
-      FROM contact_messages
-      WHERE created_at >= ${twentyFourHoursAgo.toISOString()}
-      ORDER BY created_at DESC
-      LIMIT 10
-    `
+    // Fetch new contact messages from last 24 hours (simple query)
+    let contacts: any[] = []
+    try {
+      contacts = await sql`
+        SELECT 
+          id,
+          name,
+          email,
+          subject,
+          created_at,
+          'contact' as type
+        FROM contact_messages
+        WHERE created_at >= ${twentyFourHoursAgo.toISOString()}
+        ORDER BY created_at DESC
+        LIMIT 5
+      `
+    } catch (error) {
+      // Table might not exist, continue with empty results
+      console.log('Contact messages table not found')
+    }
 
-    // Get already read notifications
-    const readNotifications = await sql`
-      SELECT notification_id, notification_type
-      FROM notification_reads
-      WHERE user_email = ${userEmail}
-    `
+    // Get already read notifications (only if we have notifications)
+    let readNotifications: any[] = []
+    if (subscribers.length > 0 || contacts.length > 0) {
+      try {
+        readNotifications = await sql`
+          SELECT notification_id, notification_type
+          FROM notification_reads
+          WHERE user_email = ${userEmail}
+        `
+      } catch (error) {
+        // Read tracking table might not exist, that's fine
+        console.log('Notification reads table not found')
+      }
+    }
 
     const readSet = new Set(
-      (readNotifications as any[]).map(row => `${row.notification_id}-${row.notification_type}`)
+      readNotifications.map(row => `${row.notification_id}-${row.notification_type}`)
     )
 
     // Combine and format notifications, filtering out read ones
     const allNotifications = [
-      ...(subscribers as any[]).map((row) => ({
+      ...subscribers.map((row) => ({
         id: row.id,
         type: 'subscriber',
         title: 'New Newsletter Subscriber',
@@ -78,7 +82,7 @@ export async function GET(request: NextRequest) {
         link: '/admin/newsletter',
         icon: '📧'
       })),
-      ...(contacts as any[]).map((row) => ({
+      ...contacts.map((row) => ({
         id: row.id,
         type: 'contact',
         title: 'New Contact Message',
