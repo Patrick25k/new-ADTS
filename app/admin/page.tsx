@@ -368,7 +368,7 @@ export default function AdminDashboard() {
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Recent Activity */}
-          <Card className="lg:col-span-2 bg-white">
+          <Card className="lg:col-span-2 bg-white py-4">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
@@ -440,7 +440,7 @@ export default function AdminDashboard() {
           </Card>
 
           {/* Quick Stats */}
-          <Card className="bg-white">
+          <Card className="bg-white py-4">
             <CardHeader className="pb-4">
               <CardTitle className="text-lg font-semibold">Quick Stats</CardTitle>
             </CardHeader>
@@ -505,7 +505,7 @@ export default function AdminDashboard() {
         {/* Content Overview and Quick Actions */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Content Overview */}
-          <Card className="bg-white shadow-sm border-0 ring-1 ring-gray-200">
+          <Card className="bg-white shadow-sm border-0 ring-1 ring-gray-200 py-4">
             <CardHeader className="pb-6">
               <CardTitle className="text-xl font-bold text-gray-900">Content Overview</CardTitle>
               <p className="text-gray-600 mt-1">Published content across platforms</p>
@@ -534,7 +534,7 @@ export default function AdminDashboard() {
           </Card>
 
           {/* Quick Actions */}
-          <Card className="bg-white shadow-sm border-0 ring-1 ring-gray-200">
+          <Card className="bg-white shadow-sm border-0 ring-1 ring-gray-200 py-4">
             <CardHeader className="pb-6">
               <CardTitle className="text-xl font-bold text-gray-900">Quick Actions</CardTitle>
               <p className="text-gray-600 mt-1">Common tasks and shortcuts</p>

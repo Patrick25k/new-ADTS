@@ -137,7 +137,7 @@ export default function AdminLogin() {
           </div>
 
           <Card>
-            <CardHeader>
+            <CardHeader className="py-4">
               <CardTitle>Admin Login</CardTitle>
               <CardDescription>
                 Enter your credentials to continue
