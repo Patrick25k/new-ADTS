@@ -102,7 +102,7 @@ export function EmailComposer({
     try {
       // Send via EmailJS
       const templateParams = {
-        to_email: emailData.to.join(", "),
+        to_email: emailData.to.join(", "), // This should be the recipient's email
         subject: emailData.subject,
         message: emailData.message,
         from_name: "ADTS Rwanda",
@@ -112,13 +112,15 @@ export function EmailComposer({
       // Import EmailJS dynamically
       const emailjs = await import("@emailjs/browser")
       
-      await emailjs.default.send(
+      const result = await emailjs.default.send(
         process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID!,
         process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID!,
         templateParams,
         process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY!
       )
 
+      alert(`✅ Email sent successfully to ${emailData.to.join(", ")}! Check your inbox and spam folder.`)
+       
       toast({
         title: "Success!",
         description: `Email sent to ${emailData.to.length} recipient${emailData.to.length > 1 ? 's' : ''}`,
@@ -137,7 +139,7 @@ export function EmailComposer({
       console.error("Email send error:", error)
       toast({
         title: "Error",
-        description: "Failed to send email. Please try again.",
+        description: `Failed to send email: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive",
       })
     } finally {
