@@ -230,9 +230,6 @@ export default function NewsletterSubscribers() {
                   <Mail className="w-8 h-8 text-primary" />
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900">Subscriber Overview</h2>
-                    <p className="text-gray-600">
-                      {activeCount} active • {totalCount} total subscribers
-                    </p>
                   </div>
                 </div>
               </div>
