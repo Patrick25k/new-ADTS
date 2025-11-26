@@ -151,10 +151,6 @@ export default function ChildProtectionManagement() {
         description="Review and manage protect-a-child applications"
         action={
           <div className="flex items-center gap-3">
-            <Button variant="outline" className="gap-2">
-              <Filter className="w-4 h-4" />
-              Filter
-            </Button>
             <Button className="gap-2 bg-primary hover:bg-primary/90">
               <Shield className="w-4 h-4" />
               New Application

@@ -403,10 +403,6 @@ export default function GalleryManagement() {
         description="Manage photo gallery and media assets"
         action={
           <div className="flex items-center gap-3">
-            <Button variant="outline" className="gap-2">
-              <Filter className="w-4 h-4" />
-              Filter
-            </Button>
             <Button onClick={handleAddImage} className="gap-2 bg-primary hover:bg-primary/90">
               <Plus className="w-4 h-4" />
               Add Image

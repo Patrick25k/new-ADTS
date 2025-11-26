@@ -342,10 +342,6 @@ export default function StoriesManagement() {
         description="Manage inspiring stories and testimonials"
         action={
           <div className="flex items-center gap-3">
-            <Button variant="outline" className="gap-2">
-              <Filter className="w-4 h-4" />
-              Filter
-            </Button>
             <Button
               type="button"
               className="gap-2 bg-primary hover:bg-primary/90"

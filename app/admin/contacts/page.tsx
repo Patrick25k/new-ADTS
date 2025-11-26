@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { EmailComposer } from "@/components/email-composer";
 import {
   Eye,
   Trash2,
@@ -61,6 +62,11 @@ export default function ContactsManagement() {
   const [selectedContact, setSelectedContact] = useState<ContactItem | null>(
     null,
   );
+
+  // Email composer states
+  const [isEmailComposerOpen, setIsEmailComposerOpen] = useState(false);
+  const [emailMode, setEmailMode] = useState<"compose" | "reply">("compose");
+  const [selectedContactForReply, setSelectedContactForReply] = useState<ContactItem | null>(null);
 
   const loadContacts = useCallback(async () => {
     try {
@@ -238,11 +244,14 @@ export default function ContactsManagement() {
         description="Manage contact form submissions and inquiries"
         action={
           <div className="flex items-center gap-3">
-            <Button variant="outline" className="gap-2">
-              <Filter className="w-4 h-4" />
-              Filter
-            </Button>
-            <Button className="gap-2 bg-primary hover:bg-primary/90">
+            <Button 
+              className="gap-2 bg-primary hover:bg-primary/90"
+              onClick={() => {
+                setEmailMode("compose");
+                setSelectedContactForReply(null);
+                setIsEmailComposerOpen(true);
+              }}
+            >
               <Mail className="w-4 h-4" />
               Compose
             </Button>
@@ -447,12 +456,14 @@ export default function ContactsManagement() {
                           variant="outline"
                           size="sm"
                           className="text-blue-700 border-blue-200 hover:bg-blue-50"
-                          onClick={() => updateContactStatus(contact, {
-                            status: "Replied",
-                          })}
+                          onClick={() => {
+                            setEmailMode("reply");
+                            setSelectedContactForReply(contact);
+                            setIsEmailComposerOpen(true);
+                          }}
                         >
                           <Reply className="w-4 h-4 mr-1" />
-                          Mark Replied
+                          Reply
                         </Button>
                       </div>
                       <div className="flex items-center gap-1">
@@ -519,6 +530,19 @@ export default function ContactsManagement() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Email Composer */}
+      <EmailComposer
+        isOpen={isEmailComposerOpen}
+        onClose={() => setIsEmailComposerOpen(false)}
+        mode={emailMode}
+        recipients={emailMode === "reply" && selectedContactForReply ? [selectedContactForReply.email] : []}
+        defaultSubject={emailMode === "reply" && selectedContactForReply ? `Re: ${selectedContactForReply.subject}` : ""}
+        defaultMessage={emailMode === "reply" && selectedContactForReply ? `\n\n---\nOriginal Message:\n${selectedContactForReply.message}` : ""}
+        replyToMessage={selectedContactForReply?.message || ""}
+        replyToName={selectedContactForReply?.name || ""}
+        replyToEmail={selectedContactForReply?.email || ""}
+      />
     </div>
   );
 }
