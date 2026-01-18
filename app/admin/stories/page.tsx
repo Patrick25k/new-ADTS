@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/components/ui/use-toast"
 import { 
@@ -23,7 +23,8 @@ import {
   Clock,
   Share2,
   FileText,
-  BookOpen
+  BookOpen,
+  AlertTriangle
 } from "lucide-react"
 
 type StoryStatus = "Draft" | "Published"
@@ -60,6 +61,8 @@ export default function StoriesManagement() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingStory, setEditingStory] = useState<Story | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [storyToDelete, setStoryToDelete] = useState<Story | null>(null)
   const [form, setForm] = useState({
     title: "",
     excerpt: "",
@@ -301,13 +304,11 @@ export default function StoriesManagement() {
     }
   }
 
-  const handleDelete = async (story: Story) => {
-    if (!confirm(`Delete story "${story.title}"? This cannot be undone.`)) {
-      return
-    }
+  const handleDelete = async () => {
+    if (!storyToDelete) return
 
     try {
-      const response = await fetch(`/api/admin/stories/${story.id}`, {
+      const response = await fetch(`/api/admin/stories/${storyToDelete.id}`, {
         method: "DELETE",
         credentials: "include",
       })
@@ -317,12 +318,15 @@ export default function StoriesManagement() {
         throw new Error(data?.error || "Failed to delete story")
       }
 
-      setStories((prev) => prev.filter((s) => s.id !== story.id))
+      setStories((prev) => prev.filter((s) => s.id !== storyToDelete.id))
 
       toast({
         title: "Story deleted",
         description: "The story has been removed.",
       })
+
+      setDeleteDialogOpen(false)
+      setStoryToDelete(null)
 
       await loadStories()
     } catch (error: any) {
@@ -333,6 +337,16 @@ export default function StoriesManagement() {
         variant: "destructive",
       })
     }
+  }
+
+  const openDeleteDialog = (story: Story) => {
+    setStoryToDelete(story)
+    setDeleteDialogOpen(true)
+  }
+
+  const closeDeleteDialog = () => {
+    setDeleteDialogOpen(false)
+    setStoryToDelete(null)
   }
 
   return (
@@ -542,7 +556,7 @@ export default function StoriesManagement() {
                         variant="ghost"
                         size="sm"
                         className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => handleDelete(story)}
+                        onClick={() => openDeleteDialog(story)}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -676,6 +690,63 @@ export default function StoriesManagement() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="w-5 h-5" />
+              Delete Story
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{storyToDelete?.title}"? This action cannot be undone and will permanently remove the story from your success stories.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {storyToDelete && (
+              <div className="bg-gray-50 rounded-lg p-3 border">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                    <BookOpen className="w-6 h-6 text-red-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">{storyToDelete.title}</p>
+                    <p className="text-sm text-gray-500">{storyToDelete.category}</p>
+                    <p className="text-xs text-gray-400">By {storyToDelete.author} • {storyToDelete.readTime} read</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={closeDeleteDialog}
+              disabled={isSubmitting || isUploadingImage}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isSubmitting || isUploadingImage}
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Story
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

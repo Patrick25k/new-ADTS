@@ -18,15 +18,9 @@ import {
   FileText,
   Clock,
   Share2,
+  AlertTriangle,
 } from "lucide-react"
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/components/ui/use-toast"
 
@@ -59,6 +53,8 @@ export default function BlogManagement() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingBlog, setEditingBlog] = useState<BlogPost | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [blogToDelete, setBlogToDelete] = useState<BlogPost | null>(null)
   const [form, setForm] = useState({
     title: "",
     excerpt: "",
@@ -294,13 +290,11 @@ export default function BlogManagement() {
     }
   }
 
-  const handleDelete = async (blog: BlogPost) => {
-    if (!confirm(`Delete blog \"${blog.title}\"? This cannot be undone.`)) {
-      return
-    }
+  const handleDelete = async () => {
+    if (!blogToDelete) return
 
     try {
-      const response = await fetch(`/api/admin/blogs/${blog.id}`, {
+      const response = await fetch(`/api/admin/blogs/${blogToDelete.id}`, {
         method: "DELETE",
         credentials: "include",
       })
@@ -310,12 +304,16 @@ export default function BlogManagement() {
         throw new Error(data?.error || "Failed to delete blog post")
       }
 
-      setBlogs((prev) => prev.filter((b) => b.id !== blog.id))
+      setBlogs((prev) => prev.filter((b) => b.id !== blogToDelete.id))
 
       toast({
         title: "Blog deleted",
         description: "The blog post has been removed.",
       })
+
+      setDeleteDialogOpen(false)
+      setBlogToDelete(null)
+
       await loadBlogs()
     } catch (error: any) {
       console.error("Failed to delete blog post", error)
@@ -325,6 +323,16 @@ export default function BlogManagement() {
         variant: "destructive",
       })
     }
+  }
+
+  const openDeleteDialog = (blog: BlogPost) => {
+    setBlogToDelete(blog)
+    setDeleteDialogOpen(true)
+  }
+
+  const closeDeleteDialog = () => {
+    setDeleteDialogOpen(false)
+    setBlogToDelete(null)
   }
 
   return (
@@ -552,7 +560,7 @@ export default function BlogManagement() {
                         variant="ghost"
                         size="sm"
                         className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => handleDelete(post)}
+                        onClick={() => openDeleteDialog(post)}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -677,6 +685,63 @@ export default function BlogManagement() {
             </form>
           </DialogContent>
         </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="w-5 h-5" />
+              Delete Blog Post
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{blogToDelete?.title}"? This action cannot be undone and will permanently remove the blog post from your website.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {blogToDelete && (
+              <div className="bg-gray-50 rounded-lg p-3 border">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                    <FileText className="w-6 h-6 text-red-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">{blogToDelete.title}</p>
+                    <p className="text-sm text-gray-500">{blogToDelete.category}</p>
+                    <p className="text-xs text-gray-400">By {blogToDelete.authorName || "Unknown author"}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={closeDeleteDialog}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Post
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       </div>
     </div>
   )

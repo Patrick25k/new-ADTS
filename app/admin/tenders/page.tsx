@@ -22,6 +22,7 @@ import {
   Share2,
   Eye,
   AlertCircle,
+  AlertTriangle,
 } from "lucide-react";
 import {
   Dialog,
@@ -29,6 +30,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
@@ -80,6 +82,8 @@ export default function TendersManagement() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTender, setEditingTender] = useState<TenderItem | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [tenderToDelete, setTenderToDelete] = useState<TenderItem | null>(null);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -383,13 +387,11 @@ export default function TendersManagement() {
     }
   };
 
-  const handleDelete = async (tender: TenderItem) => {
-    if (!confirm(`Delete tender "${tender.title}"? This cannot be undone.`)) {
-      return;
-    }
+  const handleDelete = async () => {
+    if (!tenderToDelete) return;
 
     try {
-      const response = await fetch(`/api/admin/tenders/${tender.id}`, {
+      const response = await fetch(`/api/admin/tenders/${tenderToDelete.id}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -399,12 +401,15 @@ export default function TendersManagement() {
         throw new Error(data?.error || "Failed to delete tender");
       }
 
-      setTenders((prev) => prev.filter((t) => t.id !== tender.id));
+      setTenders((prev) => prev.filter((t) => t.id !== tenderToDelete.id));
 
       toast({
         title: "Tender deleted",
         description: "The tender has been removed.",
       });
+
+      setDeleteDialogOpen(false);
+      setTenderToDelete(null);
 
       await loadTenders();
     } catch (error: any) {
@@ -415,6 +420,16 @@ export default function TendersManagement() {
         variant: "destructive",
       });
     }
+  };
+
+  const openDeleteDialog = (tender: TenderItem) => {
+    setTenderToDelete(tender);
+    setDeleteDialogOpen(true);
+  };
+
+  const closeDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setTenderToDelete(null);
   };
 
   return (
@@ -709,7 +724,7 @@ export default function TendersManagement() {
                           variant="ghost"
                           size="sm"
                           className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => handleDelete(tender)}
+                          onClick={() => openDeleteDialog(tender)}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -943,6 +958,63 @@ export default function TendersManagement() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="w-5 h-5" />
+              Delete Tender
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{tenderToDelete?.title}"? This action cannot be undone and will permanently remove the tender from your procurement opportunities.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {tenderToDelete && (
+              <div className="bg-gray-50 rounded-lg p-3 border">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                    <FileText className="w-6 h-6 text-red-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">{tenderToDelete.title}</p>
+                    <p className="text-sm text-gray-500">{tenderToDelete.category}</p>
+                    <p className="text-xs text-gray-400">{tenderToDelete.reference} • {tenderToDelete.budget}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={closeDeleteDialog}
+              disabled={isSubmitting || isUploadingDocument}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isSubmitting || isUploadingDocument}
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Tender
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

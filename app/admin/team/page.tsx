@@ -22,8 +22,9 @@ import {
   Share2,
   Eye,
   UserPlus,
+  AlertTriangle,
 } from "lucide-react";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -60,6 +61,8 @@ export default function TeamManagement() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [memberToDelete, setMemberToDelete] = useState<TeamMember | null>(null);
   const [form, setForm] = useState({
     name: "",
     position: "",
@@ -348,13 +351,11 @@ export default function TeamManagement() {
     }
   };
 
-  const handleDelete = async (member: TeamMember) => {
-    if (!confirm(`Delete team member "${member.name}"? This cannot be undone.`)) {
-      return;
-    }
+  const handleDelete = async () => {
+    if (!memberToDelete) return;
 
     try {
-      const response = await fetch(`/api/admin/team/${member.id}`, {
+      const response = await fetch(`/api/admin/team/${memberToDelete.id}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -364,12 +365,15 @@ export default function TeamManagement() {
         throw new Error(data?.error || "Failed to delete team member");
       }
 
-      setMembers((prev) => prev.filter((m) => m.id !== member.id));
+      setMembers((prev) => prev.filter((m) => m.id !== memberToDelete.id));
 
       toast({
         title: "Team member deleted",
         description: "The team member has been removed.",
       });
+
+      setDeleteDialogOpen(false);
+      setMemberToDelete(null);
 
       await loadMembers();
     } catch (error: any) {
@@ -380,6 +384,16 @@ export default function TeamManagement() {
         variant: "destructive",
       });
     }
+  };
+
+  const openDeleteDialog = (member: TeamMember) => {
+    setMemberToDelete(member);
+    setDeleteDialogOpen(true);
+  };
+
+  const closeDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setMemberToDelete(null);
   };
 
   return (
@@ -628,7 +642,7 @@ export default function TeamManagement() {
                         variant="ghost"
                         size="sm"
                         className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => handleDelete(member)}
+                        onClick={() => openDeleteDialog(member)}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -818,6 +832,63 @@ export default function TeamManagement() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="w-5 h-5" />
+              Delete Team Member
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{memberToDelete?.name}"? This action cannot be undone and will permanently remove the team member from your organization.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {memberToDelete && (
+              <div className="bg-gray-50 rounded-lg p-3 border">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                    <User className="w-6 h-6 text-red-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">{memberToDelete.name}</p>
+                    <p className="text-sm text-gray-500">{memberToDelete.position}</p>
+                    <p className="text-xs text-gray-400">{memberToDelete.department} • {memberToDelete.status}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={closeDeleteDialog}
+              disabled={isSubmitting || isUploadingImage}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isSubmitting || isUploadingImage}
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Member
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

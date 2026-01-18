@@ -21,6 +21,7 @@ import {
   Share2,
   Eye,
   DollarSign,
+  AlertTriangle,
 } from "lucide-react";
 import {
   Dialog,
@@ -28,6 +29,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
@@ -81,6 +83,8 @@ export default function JobsManagement() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<JobItem | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [jobToDelete, setJobToDelete] = useState<JobItem | null>(null);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -390,13 +394,11 @@ export default function JobsManagement() {
     }
   };
 
-  const handleDelete = async (job: JobItem) => {
-    if (!confirm(`Delete job "${job.title}"? This cannot be undone.`)) {
-      return;
-    }
+  const handleDelete = async () => {
+    if (!jobToDelete) return;
 
     try {
-      const response = await fetch(`/api/admin/jobs/${job.id}`, {
+      const response = await fetch(`/api/admin/jobs/${jobToDelete.id}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -406,14 +408,15 @@ export default function JobsManagement() {
         throw new Error(data?.error || "Failed to delete job");
       }
 
-      setJobs((prev) => prev.filter((j) => j.id !== job.id));
+      setJobs((prev) => prev.filter((j) => j.id !== jobToDelete.id));
 
       toast({
         title: "Job deleted",
         description: "The job has been removed.",
       });
 
-      await loadJobs();
+      setDeleteDialogOpen(false);
+      setJobToDelete(null);
     } catch (error: any) {
       console.error("Failed to delete job", error);
       toast({
@@ -422,6 +425,16 @@ export default function JobsManagement() {
         variant: "destructive",
       });
     }
+  };
+
+  const openDeleteDialog = (job: JobItem) => {
+    setJobToDelete(job);
+    setDeleteDialogOpen(true);
+  };
+
+  const closeDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setJobToDelete(null);
   };
 
   return (
@@ -736,7 +749,7 @@ export default function JobsManagement() {
                           variant="ghost"
                           size="sm"
                           className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => handleDelete(job)}
+                          onClick={() => openDeleteDialog(job)}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -1014,6 +1027,63 @@ export default function JobsManagement() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="w-5 h-5" />
+              Delete Job Posting
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{jobToDelete?.title}"? This action cannot be undone and will permanently remove the job posting from your careers page.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {jobToDelete && (
+              <div className="bg-gray-50 rounded-lg p-3 border">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                    <Briefcase className="w-6 h-6 text-red-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">{jobToDelete.title}</p>
+                    <p className="text-sm text-gray-500">{jobToDelete.department}</p>
+                    <p className="text-xs text-gray-400">{jobToDelete.location} • {jobToDelete.type}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={closeDeleteDialog}
+              disabled={isSubmitting || isUploadingDocument}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isSubmitting || isUploadingDocument}
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Job
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

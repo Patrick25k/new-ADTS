@@ -21,6 +21,7 @@ import {
   Reply,
   User,
   AlertCircle,
+  AlertTriangle,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import {
@@ -28,6 +29,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 
 type ContactStatus = "Unread" | "Read" | "Replied";
@@ -67,6 +70,8 @@ export default function ContactsManagement() {
   const [isEmailComposerOpen, setIsEmailComposerOpen] = useState(false);
   const [emailMode, setEmailMode] = useState<"compose" | "reply">("compose");
   const [selectedContactForReply, setSelectedContactForReply] = useState<ContactItem | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [contactToDelete, setContactToDelete] = useState<ContactItem | null>(null);
 
   const loadContacts = useCallback(async () => {
     try {
@@ -204,13 +209,11 @@ export default function ContactsManagement() {
     }
   };
 
-  const handleDelete = async (contact: ContactItem) => {
-    if (!confirm(`Delete message from "${contact.name}"? This cannot be undone.`)) {
-      return;
-    }
+  const handleDelete = async () => {
+    if (!contactToDelete) return;
 
     try {
-      const url = `/api/admin/contacts?id=${encodeURIComponent(contact.id)}`;
+      const url = `/api/admin/contacts?id=${encodeURIComponent(contactToDelete.id)}`;
       const response = await fetch(url, {
         method: "DELETE",
         credentials: "include",
@@ -221,12 +224,15 @@ export default function ContactsManagement() {
         throw new Error(data?.error || "Failed to delete contact");
       }
 
-      setContacts((prev) => prev.filter((c) => c.id !== contact.id));
+      setContacts((prev) => prev.filter((c) => c.id !== contactToDelete.id));
 
       toast({
         title: "Message deleted",
         description: "The contact message has been removed.",
       });
+
+      setDeleteDialogOpen(false);
+      setContactToDelete(null);
     } catch (error: any) {
       console.error("Failed to delete contact", error);
       toast({
@@ -235,6 +241,16 @@ export default function ContactsManagement() {
         variant: "destructive",
       });
     }
+  };
+
+  const openDeleteDialog = (contact: ContactItem) => {
+    setContactToDelete(contact);
+    setDeleteDialogOpen(true);
+  };
+
+  const closeDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setContactToDelete(null);
   };
 
   return (
@@ -478,7 +494,7 @@ export default function ContactsManagement() {
                           variant="ghost"
                           size="sm"
                           className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => handleDelete(contact)}
+                          onClick={() => openDeleteDialog(contact)}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -528,6 +544,62 @@ export default function ContactsManagement() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="w-5 h-5" />
+              Delete Contact Message
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete the message from "{contactToDelete?.name}"? This action cannot be undone and will permanently remove the contact message.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {contactToDelete && (
+              <div className="bg-gray-50 rounded-lg p-3 border">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                    <MessageSquare className="w-6 h-6 text-red-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">{contactToDelete.name}</p>
+                    <p className="text-sm text-gray-500">{contactToDelete.email}</p>
+                    <p className="text-xs text-gray-400">{contactToDelete.subject}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={closeDeleteDialog}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={isLoading}
+              onClick={handleDelete}
+            >
+              {isLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Message
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

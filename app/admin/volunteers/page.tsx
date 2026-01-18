@@ -24,6 +24,7 @@ import {
   Star,
   MapPin,
   Award,
+  AlertTriangle,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import {
@@ -32,6 +33,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -74,6 +76,8 @@ export default function VolunteersManagement() {
   const [editingVolunteer, setEditingVolunteer] = useState<VolunteerItem | null>(
     null,
   );
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [volunteerToDelete, setVolunteerToDelete] = useState<VolunteerItem | null>(null);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -341,15 +345,11 @@ export default function VolunteersManagement() {
     }
   };
 
-  const handleDelete = async (volunteer: VolunteerItem) => {
-    if (
-      !confirm(`Delete volunteer "${volunteer.name}"? This cannot be undone.`)
-    ) {
-      return;
-    }
+  const handleDelete = async () => {
+    if (!volunteerToDelete) return;
 
     try {
-      const url = `/api/admin/volunteers?id=${encodeURIComponent(volunteer.id)}`;
+      const url = `/api/admin/volunteers?id=${encodeURIComponent(volunteerToDelete.id)}`;
       const response = await fetch(url, {
         method: "DELETE",
         credentials: "include",
@@ -360,12 +360,15 @@ export default function VolunteersManagement() {
         throw new Error(data?.error || "Failed to delete volunteer");
       }
 
-      setVolunteers((prev) => prev.filter((v) => v.id !== volunteer.id));
+      setVolunteers((prev) => prev.filter((v) => v.id !== volunteerToDelete.id));
 
       toast({
         title: "Volunteer deleted",
         description: "The volunteer has been removed.",
       });
+
+      setDeleteDialogOpen(false);
+      setVolunteerToDelete(null);
     } catch (error: any) {
       console.error("Failed to delete volunteer", error);
       toast({
@@ -374,6 +377,16 @@ export default function VolunteersManagement() {
         variant: "destructive",
       });
     }
+  };
+
+  const openDeleteDialog = (volunteer: VolunteerItem) => {
+    setVolunteerToDelete(volunteer);
+    setDeleteDialogOpen(true);
+  };
+
+  const closeDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setVolunteerToDelete(null);
   };
 
   return (
@@ -684,7 +697,7 @@ export default function VolunteersManagement() {
                           variant="ghost"
                           size="sm"
                           className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => handleDelete(volunteer)}
+                          onClick={() => openDeleteDialog(volunteer)}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -916,6 +929,63 @@ export default function VolunteersManagement() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="w-5 h-5" />
+              Delete Volunteer
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{volunteerToDelete?.name}"? This action cannot be undone and will permanently remove the volunteer from your system.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {volunteerToDelete && (
+              <div className="bg-gray-50 rounded-lg p-3 border">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                    <Users className="w-6 h-6 text-red-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">{volunteerToDelete.name}</p>
+                    <p className="text-sm text-gray-500">{volunteerToDelete.profession}</p>
+                    <p className="text-xs text-gray-400">{volunteerToDelete.location} • {volunteerToDelete.status}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={closeDeleteDialog}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Volunteer
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

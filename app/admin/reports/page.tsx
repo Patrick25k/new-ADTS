@@ -19,6 +19,7 @@ import {
   TrendingUp,
   Clock,
   Users,
+  AlertTriangle,
 } from "lucide-react";
 import {
   Dialog,
@@ -26,6 +27,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
@@ -66,6 +68,8 @@ export default function ReportsManagement() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingReport, setEditingReport] = useState<ReportItem | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [reportToDelete, setReportToDelete] = useState<ReportItem | null>(null);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -367,13 +371,11 @@ export default function ReportsManagement() {
     }
   };
 
-  const handleDelete = async (report: ReportItem) => {
-    if (!confirm(`Delete report "${report.title}"? This cannot be undone.`)) {
-      return;
-    }
+  const handleDelete = async () => {
+    if (!reportToDelete) return;
 
     try {
-      const response = await fetch(`/api/admin/reports/${report.id}`, {
+      const response = await fetch(`/api/admin/reports/${reportToDelete.id}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -383,12 +385,15 @@ export default function ReportsManagement() {
         throw new Error(data?.error || "Failed to delete report");
       }
 
-      setReports((prev) => prev.filter((r) => r.id !== report.id));
+      setReports((prev) => prev.filter((r) => r.id !== reportToDelete.id));
 
       toast({
         title: "Report deleted",
         description: "The report has been removed.",
       });
+
+      setDeleteDialogOpen(false);
+      setReportToDelete(null);
 
       await loadReports();
     } catch (error: any) {
@@ -399,6 +404,16 @@ export default function ReportsManagement() {
         variant: "destructive",
       });
     }
+  };
+
+  const openDeleteDialog = (report: ReportItem) => {
+    setReportToDelete(report);
+    setDeleteDialogOpen(true);
+  };
+
+  const closeDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setReportToDelete(null);
   };
 
   return (
@@ -645,7 +660,7 @@ export default function ReportsManagement() {
                         variant="ghost"
                         size="sm"
                         className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => handleDelete(report)}
+                        onClick={() => openDeleteDialog(report)}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -848,6 +863,63 @@ export default function ReportsManagement() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="w-5 h-5" />
+              Delete Report
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{reportToDelete?.title}"? This action cannot be undone and will permanently remove the report from your publications.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {reportToDelete && (
+              <div className="bg-gray-50 rounded-lg p-3 border">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                    <FileText className="w-6 h-6 text-red-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">{reportToDelete.title}</p>
+                    <p className="text-sm text-gray-500">{reportToDelete.category}</p>
+                    <p className="text-xs text-gray-400">{reportToDelete.format} • {reportToDelete.pages} pages • {reportToDelete.year}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={closeDeleteDialog}
+              disabled={isSubmitting || isUploadingDocument}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isSubmitting || isUploadingDocument}
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Report
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

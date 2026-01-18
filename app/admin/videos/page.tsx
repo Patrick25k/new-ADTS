@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/components/ui/use-toast"
 import { 
@@ -23,7 +23,8 @@ import {
   Clock,
   Share2,
   Eye,
-  Upload
+  Upload,
+  AlertTriangle
 } from "lucide-react"
 
 type VideoStatus = "Draft" | "Published"
@@ -85,6 +86,8 @@ export default function VideosManagement() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingVideo, setEditingVideo] = useState<VideoItem | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [videoToDelete, setVideoToDelete] = useState<VideoItem | null>(null)
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -253,13 +256,11 @@ export default function VideosManagement() {
     }
   }
 
-  const handleDelete = async (video: VideoItem) => {
-    if (!confirm(`Delete video "${video.title}"? This cannot be undone.`)) {
-      return
-    }
+  const handleDelete = async () => {
+    if (!videoToDelete) return
 
     try {
-      const response = await fetch(`/api/admin/videos/${video.id}`, {
+      const response = await fetch(`/api/admin/videos/${videoToDelete.id}`, {
         method: "DELETE",
         credentials: "include",
       })
@@ -269,12 +270,15 @@ export default function VideosManagement() {
         throw new Error(data?.error || "Failed to delete video")
       }
 
-      setVideos((prev) => prev.filter((v) => v.id !== video.id))
+      setVideos((prev) => prev.filter((v) => v.id !== videoToDelete.id))
 
       toast({
         title: "Video deleted",
         description: "The video has been removed.",
       })
+
+      setDeleteDialogOpen(false)
+      setVideoToDelete(null)
 
       await loadVideos()
     } catch (error: any) {
@@ -285,6 +289,16 @@ export default function VideosManagement() {
         variant: "destructive",
       })
     }
+  }
+
+  const openDeleteDialog = (video: VideoItem) => {
+    setVideoToDelete(video)
+    setDeleteDialogOpen(true)
+  }
+
+  const closeDeleteDialog = () => {
+    setDeleteDialogOpen(false)
+    setVideoToDelete(null)
   }
 
   return (
@@ -521,7 +535,7 @@ export default function VideosManagement() {
                           variant="ghost"
                           size="sm"
                           className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => handleDelete(video)}
+                          onClick={() => openDeleteDialog(video)}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -643,6 +657,63 @@ export default function VideosManagement() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="w-5 h-5" />
+              Delete Video
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{videoToDelete?.title}"? This action cannot be undone and will permanently remove the video from your library.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {videoToDelete && (
+              <div className="bg-gray-50 rounded-lg p-3 border">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                    <Video className="w-6 h-6 text-red-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">{videoToDelete.title}</p>
+                    <p className="text-sm text-gray-500">{videoToDelete.category}</p>
+                    <p className="text-xs text-gray-400">Duration: {videoToDelete.duration}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={closeDeleteDialog}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Video
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
