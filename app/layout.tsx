@@ -13,6 +13,11 @@ export const metadata: Metadata = {
   description:
     "ADTS Rwanda works for social transformation, sustainable and equitable development through community-driven education, training and grassroots programs.",
   generator: "v0.app",
+  icons: {
+    icon: '/images/ADTS LOGO.jpg',
+    shortcut: '/favicon.ico',
+    apple: '/images/ADTS LOGO.jpg',
+  },
 }
 
 export default function RootLayout({
