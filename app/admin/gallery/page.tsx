@@ -24,7 +24,9 @@ import {
   Edit,
   X,
   FolderOpen,
-  AlertTriangle
+  AlertTriangle,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react"
 import Image from "next/image"
 
@@ -56,6 +58,8 @@ export default function GalleryManagement() {
   const [isLoading, setIsLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | ImageStatus | "featured">("all")
+  const [currentPage, setCurrentPage] = useState(1)
+  const imagesPerPage = 8
 
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingImage, setEditingImage] = useState<GalleryImage | null>(null)
@@ -122,7 +126,18 @@ export default function GalleryManagement() {
         : image.status === statusFilter
 
     return matchesSearch && matchesStatus
-  }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 8)
+  }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredImages.length / imagesPerPage)
+  const startIndex = (currentPage - 1) * imagesPerPage
+  const endIndex = startIndex + imagesPerPage
+  const paginatedImages = filteredImages.slice(startIndex, endIndex)
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, statusFilter])
 
   const resetForm = () => {
     setForm({
@@ -501,7 +516,7 @@ export default function GalleryManagement() {
               <p className="text-gray-600">Loading images...</p>
             </div>
           </div>
-        ) : filteredImages.length === 0 ? (
+        ) : paginatedImages.length === 0 ? (
           <div className="text-center py-12">
             <div className="flex flex-col items-center gap-3">
               <ImageIcon className="w-12 h-12 text-gray-400" />
@@ -511,11 +526,40 @@ export default function GalleryManagement() {
           </div>
         ) : (
           <div>
-            <div className="mb-4 text-sm text-gray-600">
-              Showing {filteredImages.length} of {images.length} images (most recent)
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-sm text-gray-600">
+                Showing {Math.min(endIndex, filteredImages.length)} of {filteredImages.length} images ({paginatedImages.length} on this page)
+              </div>
+              
+              {/* Pagination Component */}
+              {totalPages > 1 && (
+                <div className="flex items-center gap-2 bg-gray-200 rounded-full border border-gray-200 px-3 py-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="h-8 w-8 p-0 rounded-full hover:bg-primary"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <span className="text-sm font-medium text-gray-700 min-w-[60px] text-center">
+                    {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="h-8 w-8 p-0 rounded-full hover:bg-primary"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredImages.map((image) => (
+            {paginatedImages.map((image) => (
               <Card key={image.id} className="bg-white hover:shadow-lg transition-all duration-200 group overflow-hidden">
                 <div className="relative">
                   <div className="aspect-video relative bg-gradient-to-br from-gray-100 to-gray-200">
