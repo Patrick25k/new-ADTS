@@ -346,3 +346,37 @@ export async function ensureGalleryTables() {
     )
   `
 }
+
+/* ============================================================
+   JOBS
+============================================================ */
+
+export async function ensureJobsTables() {
+    await ensureAdminTables()
+
+    await sql`
+    CREATE TABLE IF NOT EXISTS jobs (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      title TEXT NOT NULL,
+      description TEXT,
+      department TEXT,
+      location TEXT,
+      job_type TEXT,
+      experience TEXT,
+      education TEXT,
+      salary_text TEXT,
+      post_date DATE,
+      deadline DATE,
+      applicants INTEGER NOT NULL DEFAULT 0,
+      views INTEGER NOT NULL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'Open',
+      priority TEXT NOT NULL DEFAULT 'Medium',
+      featured BOOLEAN NOT NULL DEFAULT FALSE,
+      requirements TEXT,
+      benefits TEXT,
+      document_url TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `
+}

@@ -1,8 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { sql } from '@/lib/db'
+import { 
+  sql, 
+  ensureAdminTables,
+  ensureBlogTables,
+  ensureContactsTables,
+  ensureStoriesTables,
+  ensureVideosTables,
+  ensureGalleryTables,
+  ensureVolunteersTables,
+  ensureTendersTables,
+  ensureJobsTables
+} from '@/lib/db'
 
 export async function GET(request: NextRequest) {
   try {
+    // Ensure all required tables exist before querying
+    await Promise.all([
+      ensureAdminTables(),
+      ensureBlogTables(),
+      ensureContactsTables(),
+      ensureStoriesTables(),
+      ensureVideosTables(),
+      ensureGalleryTables(),
+      ensureVolunteersTables(),
+      ensureTendersTables(),
+      ensureJobsTables()
+    ])
+
     // Get counts for different content types
     const [
       contactsResult,
