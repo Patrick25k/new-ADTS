@@ -1,37 +1,40 @@
 import { Pool } from 'pg'
+import bcrypt from 'bcryptjs'
 
-const connectionString = process.env.NEON_DATABASE_URL
+const connectionString = process.env.DATABASE_URL
 
 if (!connectionString) {
-  throw new Error('DATABASE_URL environment variable is not set')
+    throw new Error('DATABASE_URL environment variable is not set')
 }
 
 /**
  * PostgreSQL connection pool
  */
 export const pool = new Pool({
-  connectionString,
+    connectionString,
 })
 
 /**
  * Tagged template helper to keep `sql\`...\`` syntax
+ * Returns rows array to match Neon serverless driver behavior
  */
 export async function sql(
-  strings: TemplateStringsArray,
-  ...values: any[]
+    strings: TemplateStringsArray,
+    ...values: any[]
 ) {
-  let query = ''
-  const params: any[] = []
+    let query = ''
+    const params: any[] = []
 
-  strings.forEach((str, i) => {
-    query += str
-    if (i < values.length) {
-      params.push(values[i])
-      query += `$${params.length}`
-    }
-  })
+    strings.forEach((str, i) => {
+        query += str
+        if (i < values.length) {
+            params.push(values[i])
+            query += `$${params.length}`
+        }
+    })
 
-  return pool.query(query, params)
+    const result = await pool.query(query, params)
+    return result.rows
 }
 
 /* ============================================================
@@ -39,9 +42,9 @@ export async function sql(
 ============================================================ */
 
 export async function ensureAdminTables() {
-  await sql`CREATE EXTENSION IF NOT EXISTS "pgcrypto"`
+    await sql`CREATE EXTENSION IF NOT EXISTS "pgcrypto"`
 
-  await sql`
+    await sql`
     CREATE TABLE IF NOT EXISTS admin_users (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       email TEXT NOT NULL UNIQUE,
@@ -55,13 +58,56 @@ export async function ensureAdminTables() {
 }
 
 /* ============================================================
+   ADMIN SEEDING
+============================================================ */
+
+/**
+ * Seeds the default admin user if no admin exists
+ * Uses environment variables for credentials with sensible defaults
+ */
+export async function seedAdmin() {
+    try {
+        await ensureAdminTables()
+
+        const existingAdmins = await sql`
+            SELECT id FROM admin_users LIMIT 1
+        `
+
+        if (existingAdmins.length > 0) {
+            return { seeded: false, message: 'Admin already exists' }
+        }
+
+        const defaultEmail = process.env.DEFAULT_ADMIN_EMAIL || 'admin@adts.rw'
+        const defaultPassword = process.env.DEFAULT_ADMIN_PASSWORD || 'admin123'
+        const defaultFullName = process.env.DEFAULT_ADMIN_NAME || 'Administrator'
+
+        const passwordHash = await bcrypt.hash(defaultPassword, 10)
+
+        const inserted = await sql`
+            INSERT INTO admin_users (email, password_hash, full_name, role)
+            VALUES (${defaultEmail}, ${passwordHash}, ${defaultFullName}, 'admin')
+            RETURNING id, email, full_name
+        `
+
+        if (inserted.length > 0) {
+            return { seeded: true, email: defaultEmail, password: defaultPassword }
+        } else {
+            return { seeded: false, message: 'No rows returned from insert' }
+        }
+    } catch (error) {
+        console.error('Error seeding admin user:', error)
+        return { seeded: false, error: error instanceof Error ? error.message : 'Unknown error' }
+    }
+}
+
+/* ============================================================
    BLOG TABLES
 ============================================================ */
 
 export async function ensureBlogTables() {
-  await ensureAdminTables()
+    await ensureAdminTables()
 
-  await sql`
+    await sql`
     CREATE TABLE IF NOT EXISTS blog_posts (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       title TEXT NOT NULL,
@@ -80,7 +126,7 @@ export async function ensureBlogTables() {
     )
   `
 
-  await sql`
+    await sql`
     CREATE TABLE IF NOT EXISTS newsletter_subscribers (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       email TEXT NOT NULL UNIQUE,
@@ -97,9 +143,9 @@ export async function ensureBlogTables() {
 ============================================================ */
 
 export async function ensureContactsTables() {
-  await ensureAdminTables()
+    await ensureAdminTables()
 
-  await sql`
+    await sql`
     CREATE TABLE IF NOT EXISTS contact_messages (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       name TEXT NOT NULL,
@@ -123,9 +169,9 @@ export async function ensureContactsTables() {
 ============================================================ */
 
 export async function ensureTendersTables() {
-  await ensureAdminTables()
+    await ensureAdminTables()
 
-  await sql`
+    await sql`
     CREATE TABLE IF NOT EXISTS tenders (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       title TEXT NOT NULL,
@@ -155,9 +201,9 @@ export async function ensureTendersTables() {
 ============================================================ */
 
 export async function ensureTeamTables() {
-  await ensureAdminTables()
+    await ensureAdminTables()
 
-  await sql`
+    await sql`
     CREATE TABLE IF NOT EXISTS team_members (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       name TEXT NOT NULL,
@@ -183,9 +229,9 @@ export async function ensureTeamTables() {
 ============================================================ */
 
 export async function ensureStoriesTables() {
-  await ensureAdminTables()
+    await ensureAdminTables()
 
-  await sql`
+    await sql`
     CREATE TABLE IF NOT EXISTS stories (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       title TEXT NOT NULL,
@@ -214,9 +260,9 @@ export async function ensureStoriesTables() {
 ============================================================ */
 
 export async function ensureVideosTables() {
-  await ensureAdminTables()
+    await ensureAdminTables()
 
-  await sql`
+    await sql`
     CREATE TABLE IF NOT EXISTS videos (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       title TEXT NOT NULL,
@@ -242,9 +288,9 @@ export async function ensureVideosTables() {
 ============================================================ */
 
 export async function ensureVolunteersTables() {
-  await ensureAdminTables()
+    await ensureAdminTables()
 
-  await sql`
+    await sql`
     CREATE TABLE IF NOT EXISTS volunteers (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       name TEXT NOT NULL,
@@ -276,9 +322,9 @@ export async function ensureVolunteersTables() {
 ============================================================ */
 
 export async function ensureGalleryTables() {
-  await ensureAdminTables()
+    await ensureAdminTables()
 
-  await sql`
+    await sql`
     CREATE TABLE IF NOT EXISTS gallery_images (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       title TEXT NOT NULL,

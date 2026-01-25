@@ -16,8 +16,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Ensure admin-related tables exist before querying
+    // Ensure admin-related tables exist and seed admin if needed
     await ensureAdminTables()
+    
+    // Seed admin if none exists (idempotent)
+    const existingCheck = await sql`SELECT id FROM admin_users LIMIT 1`
+    if (existingCheck.length === 0) {
+      const { seedAdmin } = await import('@/lib/db')
+      await seedAdmin()
+    }
 
     const result = (await sql`
       SELECT id, email, password_hash, full_name, role, is_active

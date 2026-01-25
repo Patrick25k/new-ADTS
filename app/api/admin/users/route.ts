@@ -7,6 +7,13 @@ export async function GET(request: NextRequest) {
   try {
     // Ensure the admin_users table exists
     await ensureAdminTables()
+    
+    // Seed admin if none exists (idempotent)
+    const existingCheck = await sql`SELECT id FROM admin_users LIMIT 1`
+    if (existingCheck.length === 0) {
+      const { seedAdmin } = await import('@/lib/db')
+      await seedAdmin()
+    }
 
     // Fetch all admin users from the database
     const rows = await sql`
