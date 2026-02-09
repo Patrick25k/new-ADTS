@@ -169,7 +169,7 @@ export default function VideosManagement() {
       description: "",
       youtubeUrl: "",
       category: "",
-      status: "Draft",
+      status: "Published",
       featured: false,
       duration: "",
       author: "",

@@ -2,62 +2,122 @@
 
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Play } from "lucide-react";
 
 interface GalleryImage {
   id: string
   title: string
   description: string
-  imageUrl: string
+  imageUrl?: string
+  youtubeUrl?: string
   category: string
-  photographer: string
+  photographer?: string
+  author?: string
   featured: boolean
   status: string
-  fileSize: string
-  dimensions: string
+  fileSize?: string
+  dimensions?: string
   views: number
-  downloads: number
-  altText: string
-  tags: string
+  downloads?: number
+  altText?: string
+  tags?: string
   createdAt: string
   updatedAt: string
+  type: 'image' | 'video';
 }
 
 type Img = { src: string; alt: string };
 
+function extractYouTubeId(url: string): string | null {
+  if (!url) return null;
+
+  try {
+    const parsed = new URL(url.trim());
+
+    if (parsed.hostname === "youtu.be") {
+      return parsed.pathname.slice(1) || null;
+    }
+
+    if (parsed.hostname.includes("youtube.com")) {
+      const v = parsed.searchParams.get("v");
+      if (v) return v;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function getVideoThumbnailUrl(youtubeUrl: string): string {
+  const id = extractYouTubeId(youtubeUrl);
+  if (!id) return "";
+  return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+}
+
 export default function GalleryPage() {
   const itemsPerPage = 6; // 2 rows x 3 columns on large screens
   const [page, setPage] = useState(0);
-  const [images, setImages] = useState<GalleryImage[]>([]);
+  const [items, setItems] = useState<GalleryImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const pageCount = Math.max(1, Math.ceil(images.length / itemsPerPage));
+  const pageCount = Math.max(1, Math.ceil(items.length / itemsPerPage));
   const [modalIndex, setModalIndex] = useState<number | null>(null);
 
   const start = page * itemsPerPage;
-  const pageImages: Img[] = images.slice(start, start + itemsPerPage).map(img => ({
-    src: img.imageUrl,
-    alt: img.altText || img.title
+  const pageItems: Img[] = items.slice(start, start + itemsPerPage).map(item => ({
+    src: item.type === 'image' ? (item.imageUrl || '') : getVideoThumbnailUrl(item.youtubeUrl || ''),
+    alt: item.altText || item.title
   }));
 
-  const currentImage = modalIndex !== null ? images[modalIndex] : null;
+  const currentItem = modalIndex !== null ? items[modalIndex] : null;
 
   useEffect(() => {
-    async function loadImages() {
+    async function loadGalleryItems() {
       try {
         setIsLoading(true);
-        const response = await fetch("/api/gallery");
-        if (!response.ok) throw new Error("Failed to load images");
         
-        const data = await response.json();
-        setImages(data.images || []);
+        const [imagesRes, videosRes] = await Promise.all([
+          fetch("/api/gallery"),
+          fetch("/api/videos")
+        ]);
+
+        const images = imagesRes.ok ? (await imagesRes.json()).images || [] : [];
+        const videos = videosRes.ok ? (await videosRes.json()).videos || [] : [];
+
+        const imageItems: GalleryImage[] = images.map((img: any) => ({
+          ...img,
+          type: 'image' as const,
+          views: img.views || 0
+        }));
+
+        const videoItems: GalleryImage[] = videos.map((vid: any) => ({
+          id: vid.id,
+          title: vid.title,
+          description: vid.description,
+          youtubeUrl: vid.youtubeUrl,
+          category: vid.category,
+          author: vid.author,
+          featured: vid.featured,
+          status: vid.status,
+          views: vid.views || 0,
+          createdAt: vid.createdAt,
+          updatedAt: vid.updatedAt,
+          type: 'video' as const
+        }));
+
+        const combined = [...imageItems, ...videoItems].sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+
+        setItems(combined);
       } catch (error) {
-        console.error("Failed to load gallery images", error);
+        console.error("Failed to load gallery items", error);
       } finally {
         setIsLoading(false);
       }
     }
 
-    loadImages();
+    loadGalleryItems();
   }, []);
 
   // Modal (lightbox) helpers
@@ -66,12 +126,12 @@ export default function GalleryPage() {
   const showPrev = () =>
     setModalIndex((i) => {
       if (i === null) return i;
-      return (i - 1 + images.length) % images.length;
+      return (i - 1 + items.length) % items.length;
     });
   const showNext = () =>
     setModalIndex((i) => {
       if (i === null) return i;
-      return (i + 1) % images.length;
+      return (i + 1) % items.length;
     });
 
   // Keyboard support and preloading adjacent images
@@ -87,15 +147,17 @@ export default function GalleryPage() {
     window.addEventListener("keydown", onKey);
 
     // Preload prev/next images for smoother navigation
-    const prev = (modalIndex - 1 + images.length) % images.length;
-    const next = (modalIndex + 1) % images.length;
+    const prev = (modalIndex - 1 + items.length) % items.length;
+    const next = (modalIndex + 1) % items.length;
     const pImg = document.createElement("img");
     const nImg = document.createElement("img");
-    pImg.src = images[prev]?.imageUrl || "";
-    nImg.src = images[next]?.imageUrl || "";
+    const prevItem = items[prev];
+    const nextItem = items[next];
+    pImg.src = prevItem?.type === 'image' ? (prevItem?.imageUrl || '') : getVideoThumbnailUrl(prevItem?.youtubeUrl || '');
+    nImg.src = nextItem?.type === 'image' ? (nextItem?.imageUrl || '') : getVideoThumbnailUrl(nextItem?.youtubeUrl || '');
 
     return () => window.removeEventListener("keydown", onKey);
-  }, [modalIndex, images]);
+  }, [modalIndex, items]);
 
   return (
     <div className="flex flex-col">
@@ -157,32 +219,40 @@ export default function GalleryPage() {
                   <div className="col-span-full text-center py-12">
                     <p className="text-muted-foreground">Loading gallery...</p>
                   </div>
-                ) : pageImages.length === 0 ? (
+                ) : pageItems.length === 0 ? (
                   <div className="col-span-full text-center py-12">
-                    <p className="text-muted-foreground">No images available in the gallery.</p>
+                    <p className="text-muted-foreground">No items available in the gallery.</p>
                   </div>
                 ) : (
-                  pageImages.map((image: Img, index: number) => (
-                    <figure
-                      key={start + index}
-                      className="relative aspect-[4/3] overflow-hidden rounded-lg group cursor-zoom-in hover:shadow-xl transition-shadow"
-                      onClick={() => openModal(index)}
-                    >
-                      <img
-                        src={
-                          image.src ||
-                          "/images/image_22.jpeg"
-                        }
-                        alt={image.alt}
-                        className="w-full h-full object-cover"
-                      />
-                      <figcaption className="absolute inset-0 bg-gradient-to-t from-foreground/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end pointer-events-none group-hover:pointer-events-auto">
-                        <p className="text-background p-4 text-sm font-medium">
-                          {image.alt}
-                        </p>
-                      </figcaption>
-                    </figure>
-                  ))
+                  pageItems.map((item: Img, index: number) => {
+                    const itemData = items[start + index];
+                    return (
+                      <figure
+                        key={start + index}
+                        className="relative aspect-[4/3] overflow-hidden rounded-lg group cursor-zoom-in hover:shadow-xl transition-shadow"
+                        onClick={() => openModal(index)}
+                      >
+                        <img
+                          src={
+                            item.src ||
+                            "/images/image_22.jpeg"
+                          }
+                          alt={item.alt}
+                          className="w-full h-full object-cover"
+                        />
+                        {itemData?.type === 'video' && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
+                            <Play className="w-16 h-16 text-white fill-white opacity-80 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        )}
+                        <figcaption className="absolute inset-0 bg-gradient-to-t from-foreground/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end pointer-events-none group-hover:pointer-events-auto">
+                          <p className="text-background p-4 text-sm font-medium">
+                            {item.alt}
+                          </p>
+                        </figcaption>
+                      </figure>
+                    );
+                  })
                 )}
               </div>
 
@@ -198,7 +268,7 @@ export default function GalleryPage() {
       </section>
 
       {/* Lightbox Modal */}
-      {modalIndex !== null && currentImage && (
+      {modalIndex !== null && currentItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div
             className="absolute inset-0 bg-black/70"
@@ -227,19 +297,37 @@ export default function GalleryPage() {
               </button>
 
             <div className="bg-black rounded">
-              <img
-                src={currentImage.imageUrl}
-                alt={currentImage.altText || currentImage.title}
-                className="w-full h-[70vh] object-contain mx-auto"
-              />
-              {currentImage.title && (
+              {currentItem.type === 'image' ? (
+                <img
+                  src={currentItem.imageUrl || ''}
+                  alt={currentItem.altText || currentItem.title}
+                  className="w-full h-[70vh] object-contain mx-auto"
+                />
+              ) : (
+                <div className="w-full h-[70vh] flex items-center justify-center">
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    src={`https://www.youtube.com/embed/${extractYouTubeId(currentItem.youtubeUrl || '')}`}
+                    title={currentItem.title}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="rounded"
+                  />
+                </div>
+              )}
+              {currentItem.title && (
                 <div className="text-white text-center p-4">
-                  <h3 className="text-lg font-semibold">{currentImage.title}</h3>
-                  {currentImage.description && (
-                    <p className="text-sm text-gray-300 mt-1">{currentImage.description}</p>
+                  <h3 className="text-lg font-semibold">{currentItem.title}</h3>
+                  {currentItem.description && (
+                    <p className="text-sm text-gray-300 mt-1">{currentItem.description}</p>
                   )}
-                  {currentImage.photographer && (
-                    <p className="text-xs text-gray-400 mt-2">Photo by: {currentImage.photographer}</p>
+                  {currentItem.type === 'image' && currentItem.photographer && (
+                    <p className="text-xs text-gray-400 mt-2">Photo by: {currentItem.photographer}</p>
+                  )}
+                  {currentItem.type === 'video' && currentItem.author && (
+                    <p className="text-xs text-gray-400 mt-2">By: {currentItem.author}</p>
                   )}
                 </div>
               )}
