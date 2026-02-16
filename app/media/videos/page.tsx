@@ -5,33 +5,6 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import VideoNavigator from "@/components/VideoNavigator";
 
-function extractYouTubeId(url: string): string | null {
-  if (!url) return null;
-
-  try {
-    const parsed = new URL(url.trim());
-
-    if (parsed.hostname === "youtu.be") {
-      return parsed.pathname.slice(1) || null;
-    }
-
-    if (parsed.hostname.includes("youtube.com")) {
-      const v = parsed.searchParams.get("v");
-      if (v) return v;
-    }
-
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-function getVideoThumbnailUrl(youtubeUrl: string): string {
-  const id = extractYouTubeId(youtubeUrl)
-  if (!id) return ""
-  return `https://img.youtube.com/vi/${id}/hqdefault.jpg`
-}
-
 interface PublicVideoItem {
   id: string;
   title: string;
@@ -127,7 +100,7 @@ export default function Videos() {
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            {/* Description block above the video */}
+            {/* Description block above video */}
             <div className="mb-6 text-center">
               <h2 className="text-4xl font-bold mb-4">OUR FEATURED VIDEOS</h2>
             </div>
@@ -136,7 +109,6 @@ export default function Videos() {
           </div>
         </div>
       </section>
-
 
       {/* Call to Action */}
       <section className="py-20 bg-accent/30">
