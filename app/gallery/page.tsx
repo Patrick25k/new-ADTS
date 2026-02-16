@@ -5,25 +5,25 @@ import { useState, useEffect } from "react";
 import { ArrowLeft, ArrowRight, Play } from "lucide-react";
 
 interface GalleryImage {
-  id: string
-  title: string
-  description: string
-  imageUrl?: string
-  youtubeUrl?: string
-  category: string
-  photographer?: string
-  author?: string
-  featured: boolean
-  status: string
-  fileSize?: string
-  dimensions?: string
-  views: number
-  downloads?: number
-  altText?: string
-  tags?: string
-  createdAt: string
-  updatedAt: string
-  type: 'image' | 'video';
+  id: string;
+  title: string;
+  description: string;
+  imageUrl?: string;
+  youtubeUrl?: string;
+  category: string;
+  photographer?: string;
+  author?: string;
+  featured: boolean;
+  status: string;
+  fileSize?: string;
+  dimensions?: string;
+  views: number;
+  downloads?: number;
+  altText?: string;
+  tags?: string;
+  createdAt: string;
+  updatedAt: string;
+  type: "image" | "video";
 }
 
 type Img = { src: string; alt: string };
@@ -64,10 +64,15 @@ export default function GalleryPage() {
   const [modalIndex, setModalIndex] = useState<number | null>(null);
 
   const start = page * itemsPerPage;
-  const pageItems: Img[] = items.slice(start, start + itemsPerPage).map(item => ({
-    src: item.type === 'image' ? (item.imageUrl || '') : getVideoThumbnailUrl(item.youtubeUrl || ''),
-    alt: item.altText || item.title
-  }));
+  const pageItems: Img[] = items
+    .slice(start, start + itemsPerPage)
+    .map((item) => ({
+      src:
+        item.type === "image"
+          ? item.imageUrl || ""
+          : getVideoThumbnailUrl(item.youtubeUrl || ""),
+      alt: item.altText || item.title,
+    }));
 
   const currentItem = modalIndex !== null ? items[modalIndex] : null;
 
@@ -75,19 +80,23 @@ export default function GalleryPage() {
     async function loadGalleryItems() {
       try {
         setIsLoading(true);
-        
+
         const [imagesRes, videosRes] = await Promise.all([
           fetch("/api/gallery"),
-          fetch("/api/videos")
+          fetch("/api/videos"),
         ]);
 
-        const images = imagesRes.ok ? (await imagesRes.json()).images || [] : [];
-        const videos = videosRes.ok ? (await videosRes.json()).videos || [] : [];
+        const images = imagesRes.ok
+          ? (await imagesRes.json()).images || []
+          : [];
+        const videos = videosRes.ok
+          ? (await videosRes.json()).videos || []
+          : [];
 
         const imageItems: GalleryImage[] = images.map((img: any) => ({
           ...img,
-          type: 'image' as const,
-          views: img.views || 0
+          type: "image" as const,
+          views: img.views || 0,
         }));
 
         const videoItems: GalleryImage[] = videos.map((vid: any) => ({
@@ -102,11 +111,12 @@ export default function GalleryPage() {
           views: vid.views || 0,
           createdAt: vid.createdAt,
           updatedAt: vid.updatedAt,
-          type: 'video' as const
+          type: "video" as const,
         }));
 
         const combined = [...imageItems, ...videoItems].sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
         );
 
         setItems(combined);
@@ -153,8 +163,14 @@ export default function GalleryPage() {
     const nImg = document.createElement("img");
     const prevItem = items[prev];
     const nextItem = items[next];
-    pImg.src = prevItem?.type === 'image' ? (prevItem?.imageUrl || '') : getVideoThumbnailUrl(prevItem?.youtubeUrl || '');
-    nImg.src = nextItem?.type === 'image' ? (nextItem?.imageUrl || '') : getVideoThumbnailUrl(nextItem?.youtubeUrl || '');
+    pImg.src =
+      prevItem?.type === "image"
+        ? prevItem?.imageUrl || ""
+        : getVideoThumbnailUrl(prevItem?.youtubeUrl || "");
+    nImg.src =
+      nextItem?.type === "image"
+        ? nextItem?.imageUrl || ""
+        : getVideoThumbnailUrl(nextItem?.youtubeUrl || "");
 
     return () => window.removeEventListener("keydown", onKey);
   }, [modalIndex, items]);
@@ -221,7 +237,9 @@ export default function GalleryPage() {
                   </div>
                 ) : pageItems.length === 0 ? (
                   <div className="col-span-full text-center py-12">
-                    <p className="text-muted-foreground">No items available in the gallery.</p>
+                    <p className="text-muted-foreground">
+                      No items available in the gallery.
+                    </p>
                   </div>
                 ) : (
                   pageItems.map((item: Img, index: number) => {
@@ -233,14 +251,11 @@ export default function GalleryPage() {
                         onClick={() => openModal(index)}
                       >
                         <img
-                          src={
-                            item.src ||
-                            "/images/image_22.jpeg"
-                          }
+                          src={item.src || "/images/image_22.jpeg"}
                           alt={item.alt}
                           className="w-full h-full object-cover"
                         />
-                        {itemData?.type === 'video' && (
+                        {itemData?.type === "video" && (
                           <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
                             <Play className="w-16 h-16 text-white fill-white opacity-80 group-hover:opacity-100 transition-opacity" />
                           </div>
@@ -286,20 +301,20 @@ export default function GalleryPage() {
             </button>
 
             <button
-                aria-label="Previous page"
-                className="absolute left-2 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-primary hover:bg-secondary/95 shadow-md disabled:opacity-40 hover:cursor-pointer"
-                onClick={(e) => {
+              aria-label="Previous page"
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-primary hover:bg-secondary/95 shadow-md disabled:opacity-40 hover:cursor-pointer"
+              onClick={(e) => {
                 e.stopPropagation();
                 showPrev();
               }}
-              >
-                <ArrowLeft className="h-6 w-6 text-foreground" />
-              </button>
+            >
+              <ArrowLeft className="h-6 w-6 text-foreground" />
+            </button>
 
             <div className="bg-black rounded">
-              {currentItem.type === 'image' ? (
+              {currentItem.type === "image" ? (
                 <img
-                  src={currentItem.imageUrl || ''}
+                  src={currentItem.imageUrl || ""}
                   alt={currentItem.altText || currentItem.title}
                   className="w-full h-[70vh] object-contain mx-auto"
                 />
@@ -308,7 +323,7 @@ export default function GalleryPage() {
                   <iframe
                     width="100%"
                     height="100%"
-                    src={`https://www.youtube.com/embed/${extractYouTubeId(currentItem.youtubeUrl || '')}`}
+                    src={`https://www.youtube.com/embed/${extractYouTubeId(currentItem.youtubeUrl || "")}`}
                     title={currentItem.title}
                     frameBorder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -321,28 +336,34 @@ export default function GalleryPage() {
                 <div className="text-white text-center p-4">
                   <h3 className="text-lg font-semibold">{currentItem.title}</h3>
                   {currentItem.description && (
-                    <p className="text-sm text-gray-300 mt-1">{currentItem.description}</p>
+                    <p className="text-sm text-gray-300 mt-1">
+                      {currentItem.description}
+                    </p>
                   )}
-                  {currentItem.type === 'image' && currentItem.photographer && (
-                    <p className="text-xs text-gray-400 mt-2">Photo by: {currentItem.photographer}</p>
+                  {currentItem.type === "image" && currentItem.photographer && (
+                    <p className="text-xs text-gray-400 mt-2">
+                      Photo by: {currentItem.photographer}
+                    </p>
                   )}
-                  {currentItem.type === 'video' && currentItem.author && (
-                    <p className="text-xs text-gray-400 mt-2">By: {currentItem.author}</p>
+                  {currentItem.type === "video" && currentItem.author && (
+                    <p className="text-xs text-gray-400 mt-2">
+                      By: {currentItem.author}
+                    </p>
                   )}
                 </div>
               )}
             </div>
 
             <button
-                aria-label="Next page"
-                className="absolute right-2 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-primary/80 hover:bg-secondary/95 shadow-md disabled:opacity-40 hover:cursor-pointer"
-                onClick={(e) => {
+              aria-label="Next page"
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-primary/80 hover:bg-secondary/95 shadow-md disabled:opacity-40 hover:cursor-pointer"
+              onClick={(e) => {
                 e.stopPropagation();
                 showNext();
               }}
-              >
-                <ArrowRight className="h-6 w-6 text-foreground" />
-              </button>
+            >
+              <ArrowRight className="h-6 w-6 text-foreground" />
+            </button>
           </div>
         </div>
       )}
