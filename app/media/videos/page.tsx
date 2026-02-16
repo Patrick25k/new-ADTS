@@ -1,6 +1,8 @@
+"use client";
+
 import { Play } from "lucide-react";
 import Image from "next/image";
-import { sql, ensureVideosTables } from "@/lib/db";
+import { useState, useEffect } from "react";
 import VideoNavigator from "@/components/VideoNavigator";
 
 function extractYouTubeId(url: string): string | null {
@@ -45,61 +47,59 @@ interface PublicVideoItem {
   date: string;
 }
 
-export default async function Videos() {
-  let videos: PublicVideoItem[] = [];
+export default function Videos() {
+  const [videos, setVideos] = useState<PublicVideoItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  try {
-    await ensureVideosTables();
-
-    const rows = await sql`
-      SELECT
-        id,
-        title,
-        description,
-        youtube_url,
-        category,
-        status,
-        featured,
-        duration,
-        views,
-        likes,
-        comments_count,
-        published_at,
-        created_at
-      FROM videos
-      WHERE status = 'Published'
-      ORDER BY COALESCE(published_at, created_at) DESC
-    `;
-
-    videos = (rows as any[]).map((row) => {
-      const publishedAt = (row.published_at as string) ?? null
-      const createdAt = row.created_at as string
-      const rawDate = publishedAt ?? createdAt
-
-      return {
-        id: row.id as string,
-        title: row.title as string,
-        description: (row.description as string) ?? '',
-        youtubeUrl: (row.youtube_url as string) ?? '',
-        category: (row.category as string) ?? '',
-        status: (row.status as string) ?? 'Draft',
-        featured: Boolean(row.featured),
-        duration: (row.duration as string) ?? '',
-        views: (row.views as number) ?? 0,
-        likes: (row.likes as number) ?? 0,
-        comments: (row.comments_count as number) ?? 0,
-        date: rawDate
-          ? new Date(rawDate).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            })
-          : '',
+  useEffect(() => {
+    async function loadVideos() {
+      try {
+        setIsLoading(true);
+        const response = await fetch("/api/videos");
+        
+        if (response.ok) {
+          const data = await response.json();
+          setVideos(data.videos || []);
+        } else {
+          console.error("Failed to fetch videos");
+        }
+      } catch (error) {
+        console.error("Error loading videos:", error);
+      } finally {
+        setIsLoading(false);
       }
-    });
+    }
 
-  } catch (error) {
-    console.error("Failed to load public videos", error);
+    loadVideos();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <main className="min-h-screen">
+        <section className="relative h-[400px] flex items-center justify-center">
+          <Image
+            src="/images/image_30.jpeg"
+            alt="ADTS Rwanda video stories"
+            fill
+            className="object-cover brightness-50"
+          />
+          <div className="relative z-10 container mx-auto px-4 text-center text-white">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 text-[#FCB20B]">
+              Videos
+            </h1>
+            <p className="text-xl mb-8">
+              Discover inspiring stories from our work across Rwanda
+            </p>
+          </div>
+        </section>
+
+        <div className="container mx-auto px-4 py-12">
+          <div className="text-center">
+            <p className="text-lg text-gray-600">Loading videos...</p>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   return (
