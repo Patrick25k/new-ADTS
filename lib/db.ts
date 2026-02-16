@@ -3,22 +3,26 @@ import bcrypt from "bcryptjs";
 
 const connectionString = process.env.DATABASE_URL;
 
-if (!connectionString) {
-  throw new Error("DATABASE_URL environment variable is not set");
+if (!connectionString && process.env.NODE_ENV !== 'production') {
+  console.warn("DATABASE_URL environment variable is not set");
 }
 
 /**
  * PostgreSQL connection pool
  */
-export const pool = new Pool({
+export const pool = connectionString ? new Pool({
   connectionString,
-});
+}) : null;
 
 /**
  * Tagged template helper to keep `sql\`...\`` syntax
  * Returns rows array to match Neon serverless driver behavior
  */
 export async function sql(strings: TemplateStringsArray, ...values: any[]) {
+  if (!pool) {
+    throw new Error("DATABASE_URL environment variable is not set");
+  }
+  
   let query = "";
   const params: any[] = [];
 
