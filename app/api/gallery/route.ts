@@ -49,7 +49,14 @@ export async function GET(_request: NextRequest) {
       updatedAt: row.updated_at as string,
     }))
 
-    return NextResponse.json({ images })
+    return NextResponse.json({ images }, {
+      status: 200,
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    })
   } catch (error) {
     console.error('Public gallery images list error:', error)
     return NextResponse.json(

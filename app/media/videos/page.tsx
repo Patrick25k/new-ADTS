@@ -97,6 +97,7 @@ export default async function Videos() {
           : '',
       }
     });
+
   } catch (error) {
     console.error("Failed to load public videos", error);
   }
