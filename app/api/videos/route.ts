@@ -54,7 +54,14 @@ export async function GET(_request: NextRequest) {
       }
     })
 
-    return NextResponse.json({ videos })
+    return NextResponse.json({ videos }, {
+      status: 200,
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    })
   } catch (error) {
     console.error('Public videos list error:', error)
     return NextResponse.json(

@@ -118,28 +118,23 @@ export async function seedAdmin() {
       SELECT id FROM admin_users LIMIT 1
     `;
 
-    if (existingAdmins.length > 0) {
-      return { seeded: false, message: "Admin already exists" };
+    if (existingAdmins.length === 0) {
+      const defaultEmail = process.env.DEFAULT_ADMIN_EMAIL;
+      const defaultPassword = process.env.DEFAULT_ADMIN_PASSWORD ?? "admin123";
+      const defaultFullName = process.env.DEFAULT_ADMIN_NAME ?? "Administrator";
+
+      const passwordHash = await bcrypt.hash(defaultPassword, 10);
+
+      const inserted = await sql`
+        INSERT INTO admin_users (email, password_hash, full_name, role)
+        VALUES (${defaultEmail}, ${passwordHash}, ${defaultFullName}, 'admin')
+        RETURNING id, email, full_name
+      `;
+
+      return { seeded: true, message: "Default admin created", admin: inserted[0] };
     }
 
-    const defaultEmail = process.env.DEFAULT_ADMIN_EMAIL || "admin@adts.rw";
-    const defaultPassword = process.env.DEFAULT_ADMIN_PASSWORD || "admin123";
-    const defaultFullName = process.env.DEFAULT_ADMIN_NAME || "Administrator";
-
-    const passwordHash = await bcrypt.hash(defaultPassword, 10);
-
-    const inserted = await sql`
-      INSERT INTO admin_users (email, password_hash, full_name, role)
-      VALUES (${defaultEmail}, ${passwordHash}, ${defaultFullName}, 'admin')
-      RETURNING id, email, full_name
-    `;
-
-    if (inserted.length > 0) {
-      console.log(`Admin user seeded successfully: ${defaultEmail}`);
-      return { seeded: true, email: defaultEmail, password: defaultPassword };
-    } else {
-      return { seeded: false, message: "No rows returned from insert" };
-    }
+    return { seeded: false, message: "Admin already exists" };
   } catch (error) {
     console.error("Error seeding admin user:", error);
     return {
