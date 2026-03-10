@@ -15,9 +15,7 @@ export default function HomePage() {
           <div className="max-w-4xl mx-auto text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6">WHO WE ARE</h2>
             <p className="text-lg text-muted-foreground leading-relaxed">
-              ADTS Rwanda is a non-governmental organization working since 1998 to promote social transformation, gender
-              equality, peaceful families, socio-economic empowerment, civic participation, and sustainable development
-              through community-driven education, training and grassroots programs.
+              The <strong>Association pour le Développement et la Transformation Sociale (ADTS)</strong> is a <strong>Non Gouvernemental Organisation (NGO)</strong>, categorized as a <strong>public interests' organization</strong>. It was established on April 1st, 1998 by a group of 18 people comprised of individuals, professionals and trainers of adult learning methodology known at that time on the name of <strong>Development Education and Leadership Teams in Action (DELTA)</strong>, with a passion of contributing to social cohesion, peace building through trust building among Rwandans, unity and reconciliation, social justice, effective leadership self-reliance, social transformation and sustainable development.
             </p>
             <Button asChild className="mt-8" size="lg">
               <Link href="/about">
@@ -51,8 +49,7 @@ export default function HomePage() {
                   <h3 className="text-2xl font-bold">Innovation</h3>
                 </div>
                 <p className="text-muted-foreground leading-relaxed">
-                  We embrace creative solutions and new approaches to address community challenges and drive meaningful
-                  change.
+                  We encourage creativity and use of new ideas and methods in all aspects of our work.  
                 </p>
                 <Button asChild variant="link" className="mt-4 p-0 text-primary">
                   <Link href="/about">
@@ -79,8 +76,7 @@ export default function HomePage() {
                   <h3 className="text-2xl font-bold">Participation</h3>
                 </div>
                 <p className="text-muted-foreground leading-relaxed">
-                  Programs are delivered in partnership with local communities, ensuring grassroots ownership and
-                  sustainable impact.
+                 We value and promote participation in our processes and in communities where we work. 
                 </p>
                 <Button asChild variant="link" className="mt-4 p-0 text-primary">
                   <Link href="/programs">
@@ -107,8 +103,7 @@ export default function HomePage() {
                   <h3 className="text-2xl font-bold">Solidarity</h3>
                 </div>
                 <p className="text-muted-foreground leading-relaxed">
-                  We address the needs of individuals and families so they can become responsible and fulfilled members
-                  of society.
+                  We value and promote solidarity to reach equality, inclusion and social justice in cooperation with others in all aspects of our work
                 </p>
                 <Button asChild variant="link" className="mt-4 p-0 text-primary">
                   <Link href="/programs">
@@ -133,7 +128,7 @@ export default function HomePage() {
                   <Award className="h-8 w-8" />
                 </div>
               </div>
-              <div className="text-5xl font-bold mb-2">23+</div>
+              <div className="text-5xl font-bold mb-2">27+</div>
               <div className="text-lg opacity-90">Years of Service</div>
             </div>
 
@@ -163,7 +158,7 @@ export default function HomePage() {
                   <BookOpen className="h-8 w-8" />
                 </div>
               </div>
-              <div className="text-5xl font-bold mb-2">300+</div>
+              <div className="text-5xl font-bold mb-2">600+</div>
               <div className="text-lg opacity-90">Teen Mothers Trained</div>
             </div>
           </div>

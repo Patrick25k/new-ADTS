@@ -61,7 +61,7 @@ export function HeroSlider() {
             TRANSFORMING LIVES, EMPOWERING COMMUNITIES
           </h1>
           <p className="text-xl md:text-2xl text-background/90 mb-8 text-pretty">
-            Building a society where all members are active, cohesive and autonomous
+            ADTS envisages cohesive, just and prosperous world
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
             <Button asChild size="lg" className="bg-primary hover:bg-primary/90">

@@ -67,7 +67,7 @@ const staticBlogPosts: BlogPost[] = [
       author: "Youth Programs Team",
       category: "Youth Empowerment",
       excerpt:
-        "Teen pregnancy often leads to rejection, poverty, and lost opportunities. But it doesn't have to. Discover how our teen mothers' program is restoring hope and creating pathways to success for 300+ young mothers.",
+        "Teen pregnancy often leads to rejection, poverty, and lost opportunities. But it doesn't have to. Discover how our teen mothers' program is restoring hope and creating pathways to success for 600+ young mothers.",
       image: "/images/image_9.jpeg",
       featured: false,
     },

@@ -387,7 +387,7 @@ export default function GalleryPage() {
               grow and develop. We're here for the people of Rwanda.
             </p>
             <div className="flex flex-wrap gap-4 justify-center text-sm text-muted-foreground">
-              <span>23+ Years of Service</span>
+              <span>27+ Years of Service</span>
               <span>•</span>
               <span>140K+ People Reached</span>
               <span>•</span>

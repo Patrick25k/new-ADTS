@@ -70,7 +70,7 @@ export default function Publications() {
             </p>
             <div className="grid md:grid-cols-3 gap-6 mt-12">
               <div className="text-center">
-                <div className="text-4xl font-bold text-primary mb-2">23+</div>
+                <div className="text-4xl font-bold text-primary mb-2">27+</div>
                 <div className="text-sm text-foreground/70">Years of Documented Impact</div>
               </div>
               <div className="text-center">

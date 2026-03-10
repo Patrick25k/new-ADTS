@@ -54,15 +54,15 @@ export default function WhoWeAre() {
             <div className="p-8 rounded-lg border bg-card">
               <h2 className="text-3xl font-bold mb-4 text-primary">Our Vision</h2>
               <p className="text-lg text-foreground/80 text-pretty">
-                A society where all members are active, cohesive and autonomous and participate in achieving a just and
-                prosperous world.
+                ADTS envisages cohesive, just and prosperous world.
               </p>
             </div>
             <div className="p-8 rounded-lg border bg-card">
               <h2 className="text-3xl font-bold mb-4 text-secondary">Our Mission</h2>
               <p className="text-lg text-foreground/80 text-pretty">
-                ADTS works for social transformation, sustainable and equitable development through community-driven
-                education, training, and grassroots programs.
+                ADTS works for social transformation and sustainable development to contribute to
+                the society where all members are active, cohesive andautonomous and actively
+                participate in achieving a just and prosperous world.
               </p>
             </div>
           </div>

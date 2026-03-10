@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
               <ul style="color: #166534; margin: 0; padding-left: 20px;">
                 <li style="margin: 8px 0;">Our team will review your message within 24 hours</li>
                 <li style="margin: 8px 0;">We'll get back to you as soon as possible</li>
-                <li style="margin: 8px 0;">For urgent matters, feel free to call us at +250 788 123 456</li>
+                <li style="margin: 8px 0;">For urgent matters, feel free to call us at +250 788 308 255</li>
               </ul>
             </div>
             
@@ -183,11 +183,11 @@ export async function POST(request: NextRequest) {
               </div>
               <div>
                 <p style="color: #6b7280; margin: 0; font-size: 14px;">📞 Phone</p>
-                <p style="color: #1f2937; margin: 5px 0 0 0; font-size: 14px;">+250 788 123 456</p>
+                <p style="color: #1f2937; margin: 5px 0 0 0; font-size: 14px;">+250 788 308 255</p>
               </div>
               <div>
                 <p style="color: #6b7280; margin: 0; font-size: 14px;">✉️ Email</p>
-                <p style="color: #1f2937; margin: 5px 0 0 0; font-size: 14px;">info@adtsrwanda.org</p>
+                <p style="color: #1f2937; margin: 5px 0 0 0; font-size: 14px;">rwandaadts@gmail.com</p>
               </div>
             </div>
             

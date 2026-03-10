@@ -276,7 +276,7 @@ export default function Tender() {
                 href="tel:+250788308255"
                 className="inline-block px-6 py-3 bg-background text-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity"
               >
-                +250 788 605 493
+                +250 788 308 255
               </a>
               <a
                 href="mailto:rwandaadts@gmail.com?subject=Tender Inquiry"

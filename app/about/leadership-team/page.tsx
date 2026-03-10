@@ -298,11 +298,12 @@ export default function LeadershipTeam() {
               about our governance and leadership, please contact us.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              
               <a
                 href="tel:+250788308255"
                 className="inline-block px-6 py-3 bg-background text-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity"
               >
-                +250 788 605 493
+                +250 788 308 255
               </a>
               <a
                 href="mailto:rwandaadts@gmail.com"

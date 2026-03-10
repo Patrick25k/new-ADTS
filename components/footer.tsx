@@ -82,7 +82,7 @@ export function Footer() {
                   href="tel:+250788308255"
                   className="text-background/80 hover:text-[#FCB20B] transition-colors"
                 >
-                  +250 788 605 493
+                  +250 788 308 255
                 </a>
               </li>
               <li className="flex items-center gap-2">

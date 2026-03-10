@@ -145,7 +145,7 @@ export default function ProtectAChild() {
                   prevent child marriage and early pregnancy.
                 </p>
                 <div className="text-sm font-semibold text-primary">
-                  300+ teen mothers trained, protecting their children's futures
+                  600+ teen mothers trained, protecting their children's futures
                 </div>
               </div>
 

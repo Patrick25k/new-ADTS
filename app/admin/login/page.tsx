@@ -74,7 +74,7 @@ export default function AdminLogin() {
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-18 h-18 rounded-full bg-white/20 flex items-center justify-center">
-                <span className="text-2xl font-bold">23+</span>
+                <span className="text-2xl font-bold">27+</span>
               </div>
               <div>
                 <p className="font-semibold">Years of Service</p>

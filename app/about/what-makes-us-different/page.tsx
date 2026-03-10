@@ -96,7 +96,7 @@ export default function WhatMakesUsDifferent() {
                 "Mutual respect",
                 "Participation",
                 "Solidarity",
-                "Meaningful work",
+                "Credibility",
               ].map((value) => (
                 <div key={value} className="bg-background p-6 rounded-lg text-center border">
                   <h3 className="font-semibold text-lg">{value}</h3>
@@ -119,7 +119,7 @@ export default function WhatMakesUsDifferent() {
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               <div>
-                <div className="text-4xl font-bold text-primary mb-2">23+</div>
+                <div className="text-4xl font-bold text-primary mb-2">27+</div>
                 <div className="text-sm text-foreground/70">Years of Service</div>
               </div>
               <div>
@@ -131,7 +131,7 @@ export default function WhatMakesUsDifferent() {
                 <div className="text-sm text-foreground/70">Women Empowered</div>
               </div>
               <div>
-                <div className="text-4xl font-bold text-primary mb-2">300+</div>
+                <div className="text-4xl font-bold text-primary mb-2">600+</div>
                 <div className="text-sm text-foreground/70">Teen Mothers Trained</div>
               </div>
             </div>

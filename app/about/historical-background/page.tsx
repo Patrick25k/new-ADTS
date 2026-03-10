@@ -47,7 +47,7 @@ export default function HistoricalBackground() {
     },
     {
       year: "2024",
-      title: "23+ Years of Service",
+      title: "27+ Years of Service",
       description:
         "ADTS has now reached over 140,000 people, empowered 86,000+ women, trained thousands of community mobilizers, and created lasting transformation in families and communities across Rwanda.",
     },
@@ -75,17 +75,12 @@ export default function HistoricalBackground() {
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            <p className="text-lg text-foreground/80 mb-8 text-pretty">
-              The story of ADTS Rwanda cannot be told without understanding the context from which it emerged. Born in
-              the aftermath of the 1994 Genocide against the Tutsi, ADTS represents the resilience, hope, and
-              determination of the Rwandan people to rebuild not just infrastructure, but the very social fabric of
-              their nation.
-            </p>
-            <p className="text-lg text-foreground/80 text-pretty">
-              What began as a grassroots response to urgent post-genocide needs has grown into a comprehensive,
-              evidence-based organization that has touched the lives of over 140,000 people across Rwanda and the Great
-              Lakes region.
-            </p>
+            <p className="text-lg text-foreground/80 mb-6 text-pretty">
+                The <strong>Association pour le Développement et la Transformation Sociale (ADTS)</strong> is a <strong>Non Gouvernemental Organisation (NGO)</strong>, categorized as a <strong>public interests' organization</strong>. It was established on April 1st, 1998 by a group of 18 people comprised of individuals, professionals and trainers of adult learning methodology known at that time on the name of <strong>Development Education and Leadership Teams in Action (DELTA)</strong>, with a passion of contributing to social cohesion, peace building through trust building among Rwandans, unity and reconciliation, social justice, effective leadership self-reliance, social transformation and sustainable development. ADTS was legally recognized in 2003 by the Government of Rwanda and was granted <strong>Legal Personality No. 092/11</strong>. Through a thorough assessment and evaluation of its activities and reports, and after having complied with the requirements of the new NGO law N°04/2012 du 17/02/2012, governing the organization and functioning of national non-governmental organizations in Rwanda, it was granted a <strong>certificate of compliance by the Rwanda Governance Board on May 29th 2013</strong>.
+              </p>
+              <p className="text-lg text-foreground/80 mb-6 text-pretty">
+                The creation of ADTS was mainly motivated by the following reasons: the context of after the Genocide against Tutsi in 1994 where there was a huge need of rebuilding trust, social cohesion, unity and reconciliation; a need for mindset and behavior change to be able to promote sustainable development, social transformation, human rights protection, peace, leadership, good governance and gender equality; and a need for critical thinking and consciousness of community members, groups, organizations and society for a better and just world.
+              </p>
           </div>
         </div>
       </section>

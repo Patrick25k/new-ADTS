@@ -314,7 +314,7 @@ export default function CompassionStories() {
                 <div className="text-xs text-foreground/50 mt-1">Families finding peace</div>
               </div>
               <div>
-                <div className="text-4xl font-bold text-primary mb-2">300+</div>
+                <div className="text-4xl font-bold text-primary mb-2">600+</div>
                 <div className="text-sm text-foreground/70">Teen Mothers</div>
                 <div className="text-xs text-foreground/50 mt-1">Hope restored</div>
               </div>

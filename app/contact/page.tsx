@@ -286,7 +286,7 @@ export default function ContactPage() {
                       <div>
                         <h3 className="font-bold mb-2">Phone</h3>
                         <p className="text-muted-foreground">
-                          +250 788 123 456
+                          +250 788 308 255
                         </p>
                       </div>
                     </div>
@@ -302,7 +302,7 @@ export default function ContactPage() {
                       <div>
                         <h3 className="font-bold mb-2">Email</h3>
                         <p className="text-muted-foreground">
-                          info@adtsrwanda.org
+                          rwandaadts@gmail.com
                         </p>
                       </div>
                     </div>
@@ -317,14 +317,10 @@ export default function ContactPage() {
                   <div className="space-y-2 text-muted-foreground">
                     <div className="flex justify-between">
                       <span>Monday - Friday:</span>
-                      <span className="font-medium">8:00 AM - 5:00 PM</span>
+                      <span className="font-medium">9:00 AM - 5:00 PM</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Saturday:</span>
-                      <span className="font-medium">9:00 AM - 1:00 PM</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Sunday:</span>
+                      <span>Saturday - Sunday:</span>
                       <span className="font-medium">Closed</span>
                     </div>
                   </div>
@@ -502,7 +498,7 @@ export default function ContactPage() {
               variant="outline"
               className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
             >
-              <a href="mailto:info@adtsrwanda.org">Email Us</a>
+              <a href="mailto:rwandaadts@gmail.com">Email Us</a>
             </Button>
             <Button
               asChild

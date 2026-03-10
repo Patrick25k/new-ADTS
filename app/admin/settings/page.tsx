@@ -57,7 +57,7 @@ export default function SettingsPage() {
     siteName: "ADTS Rwanda",
     siteEmail: "rwandaadts@gmail.com",
     siteDescription: "Transforming lives and empowering communities through social development",
-    phone: "+250 788 605 493",
+    phone: "+250 788 308 255",
     address: "KG 567 St, Nyarugunga, Kigali",
     facebook: "",
     twitter: "",

@@ -57,7 +57,7 @@ export default function WhereWeWork() {
                   Contact Information
                 </h3>
                 <div className="space-y-2 text-foreground/70">
-                  <p>Phone: +250 788 605 493</p>
+                  <p>Phone: +250 788 308 255</p>
                   <p>Email: rwandaadts@gmail.com</p>
                 </div>
               </div>

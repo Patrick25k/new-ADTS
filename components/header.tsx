@@ -70,7 +70,7 @@ export function Header() {
                 className="flex items-center gap-2 hover:opacity-80 transition-opacity"
               >
                 <Phone className="h-4 w-4" />
-                <span>+250 788 605 493</span>
+                <span>+250 788 308 255</span>
               </a>
               <a
                 href="mailto:rwandaadts@gmail.com"

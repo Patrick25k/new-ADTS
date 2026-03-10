@@ -164,7 +164,7 @@ export default function ProgramsPage() {
                       <GraduationCap className="h-8 w-8 text-primary" />
                     </div>
                     <h2 className="text-3xl font-bold mb-4">Teen Mothers Education & Support</h2>
-                    <div className="text-4xl font-bold text-primary mb-2">300+</div>
+                    <div className="text-4xl font-bold text-primary mb-2">600+</div>
                     <p className="text-muted-foreground">Teen Mothers Trained</p>
                   </div>
                   <div className="md:col-span-2">

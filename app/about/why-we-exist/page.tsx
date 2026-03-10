@@ -26,15 +26,10 @@ export default function WhyWeExist() {
             <h2 className="text-3xl font-bold mb-8">Our Origin Story</h2>
             <div className="prose prose-lg max-w-none">
               <p className="text-lg text-foreground/80 mb-6 text-pretty">
-                ADTS was created in 1998 in response to the profound needs that emerged after the 1994 Genocide against
-                the Tutsi in Rwanda. Our founders recognized that rebuilding Rwanda required more than physical
-                reconstruction—it demanded a fundamental transformation of hearts, minds, and social structures.
+                The <strong>Association pour le Développement et la Transformation Sociale (ADTS)</strong> is a <strong>Non Gouvernemental Organisation (NGO)</strong>, categorized as a <strong>public interests' organization</strong>. It was established on April 1st, 1998 by a group of 18 people comprised of individuals, professionals and trainers of adult learning methodology known at that time on the name of <strong>Development Education and Leadership Teams in Action (DELTA)</strong>, with a passion of contributing to social cohesion, peace building through trust building among Rwandans, unity and reconciliation, social justice, effective leadership self-reliance, social transformation and sustainable development. ADTS was legally recognized in 2003 by the Government of Rwanda and was granted <strong>Legal Personality No. 092/11</strong>. Through a thorough assessment and evaluation of its activities and reports, and after having complied with the requirements of the new NGO law N°04/2012 du 17/02/2012, governing the organization and functioning of national non-governmental organizations in Rwanda, it was granted a <strong>certificate of compliance by the Rwanda Governance Board on May 29th 2013</strong>.
               </p>
               <p className="text-lg text-foreground/80 mb-6 text-pretty">
-                In the aftermath of unimaginable tragedy, communities were fractured, trust was shattered, and the
-                social fabric that held society together had been torn apart. Domestic violence, poverty, gender
-                inequality, and trauma were widespread. Traditional approaches to development were insufficient to
-                address these deep-rooted challenges.
+                The creation of ADTS was mainly motivated by the following reasons: the context of after the Genocide against Tutsi in 1994 where there was a huge need of rebuilding trust, social cohesion, unity and reconciliation; a need for mindset and behavior change to be able to promote sustainable development, social transformation, human rights protection, peace, leadership, good governance and gender equality; and a need for critical thinking and consciousness of community members, groups, organizations and society for a better and just world.
               </p>
             </div>
           </div>

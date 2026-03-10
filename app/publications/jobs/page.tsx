@@ -109,7 +109,7 @@ export default function Jobs() {
             </p>
             <div className="grid md:grid-cols-3 gap-6">
               <div className="p-6 rounded-lg border bg-card text-center">
-                <div className="text-3xl font-bold text-primary mb-2">23+</div>
+                <div className="text-3xl font-bold text-primary mb-2">27+</div>
                 <div className="text-sm text-foreground/70">
                   Years of Impact
                 </div>
@@ -328,7 +328,7 @@ export default function Jobs() {
                 href="tel:+250788308255"
                 className="inline-block px-6 py-3 bg-background text-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity"
               >
-                +250 788 605 493
+                +250 788 308 255
               </a>
               <a
                 href="mailto:rwandaadts@gmail.com?subject=Career Inquiry"
