@@ -19,7 +19,7 @@ export default function HomePage() {
             </p>
             <Button asChild className="mt-8" size="lg">
               <Link href="/about">
-                Read More <ArrowRight className="ml-2 h-5 w-5" />
+                Read More Stuff!!!!!!!!!!!!<ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
           </div>
