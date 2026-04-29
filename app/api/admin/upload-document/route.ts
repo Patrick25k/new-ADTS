@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ADMIN_TOKEN_COOKIE_NAME, verifyAdminToken } from '@/lib/auth-tokens'
 import { validateFile, saveFile, getFileSizeText } from '@/lib/file-storage'
+import { extractPDFMetadata } from '@/lib/pdf-metadata'
 
 export const runtime = 'nodejs'
 
@@ -47,6 +48,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Extract PDF metadata
+    const metadata = await extractPDFMetadata(file)
+
     // Save file to local storage
     const url = await saveFile(file, fileName)
     const sizeText = getFileSizeText(file.size)
@@ -56,6 +60,8 @@ export async function POST(request: NextRequest) {
       fileName,
       size: sizeText,
       sizeBytes: file.size,
+      pages: metadata.pages,
+      format: 'PDF',
       localStorage: true,
     })
 

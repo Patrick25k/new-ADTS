@@ -277,14 +277,19 @@ export default function ReportsManagement() {
         throw new Error("Upload succeeded but no URL was returned");
       }
 
+      // Auto-fill form fields based on uploaded file
       setForm((prev) => ({
         ...prev,
         documentUrl: url,
+        format: data.format || "PDF",
+        size: data.size || "",
+        pages: data.pages ? String(data.pages) : "",
       }));
 
       toast({
         title: "Document uploaded",
-        description: "Report document has been uploaded successfully.",
+        description:
+          "Report document has been uploaded successfully and fields auto-filled.",
       });
     } catch (error: any) {
       console.error("Failed to upload document", error);
@@ -801,6 +806,29 @@ export default function ReportsManagement() {
                 rows={3}
               />
             </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Report Document</label>
+              <p className="text-xs text-gray-600 mb-2">
+                Upload the PDF file first. Format, Size, and Pages will be
+                automatically populated.
+              </p>
+              <div className="space-y-2">
+                <Input
+                  type="file"
+                  accept=".pdf,application/pdf"
+                  onChange={handleDocumentFileChange}
+                  required={!editingReport}
+                />
+                {form.documentUrl && (
+                  <p className="text-xs text-green-600">
+                    ✓ Document uploaded successfully
+                  </p>
+                )}
+                {isUploadingDocument && (
+                  <p className="text-xs text-blue-600">Uploading document...</p>
+                )}
+              </div>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Type</label>
@@ -845,11 +873,20 @@ export default function ReportsManagement() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Format</label>
+                <label className="text-sm font-medium">
+                  Format{" "}
+                  {form.documentUrl && (
+                    <span className="text-xs text-gray-500">(Auto-filled)</span>
+                  )}
+                </label>
                 <Input
                   value={form.format}
                   onChange={(event) =>
                     handleFormChange("format", event.target.value)
+                  }
+                  readOnly={!!form.documentUrl}
+                  className={
+                    form.documentUrl ? "bg-gray-50 cursor-not-allowed" : ""
                   }
                   placeholder="PDF, DOCX, ..."
                 />
@@ -867,42 +904,47 @@ export default function ReportsManagement() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Pages</label>
+                <label className="text-sm font-medium">
+                  Pages{" "}
+                  {form.documentUrl && form.pages && (
+                    <span className="text-xs text-gray-500">
+                      (Auto-detected)
+                    </span>
+                  )}
+                </label>
                 <Input
                   type="number"
                   value={form.pages}
                   onChange={(event) =>
                     handleFormChange("pages", event.target.value)
                   }
+                  readOnly={!!form.documentUrl && !!form.pages}
+                  className={
+                    form.documentUrl && form.pages
+                      ? "bg-gray-50 cursor-not-allowed"
+                      : ""
+                  }
+                  placeholder="Auto-filled from PDF"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Size (text)</label>
+                <label className="text-sm font-medium">
+                  Size{" "}
+                  {form.documentUrl && (
+                    <span className="text-xs text-gray-500">(Auto-filled)</span>
+                  )}
+                </label>
                 <Input
                   value={form.size}
                   onChange={(event) =>
                     handleFormChange("size", event.target.value)
                   }
+                  readOnly={!!form.documentUrl}
+                  className={
+                    form.documentUrl ? "bg-gray-50 cursor-not-allowed" : ""
+                  }
                   placeholder="e.g. 2.5 MB"
                 />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Report Document</label>
-              <div className="space-y-2">
-                <Input
-                  type="file"
-                  accept=".pdf,application/pdf"
-                  onChange={handleDocumentFileChange}
-                />
-                {form.documentUrl && (
-                  <p className="text-xs text-gray-500 break-all">
-                    Current document URL: {form.documentUrl}
-                  </p>
-                )}
-                {isUploadingDocument && (
-                  <p className="text-xs text-blue-600">Uploading document...</p>
-                )}
               </div>
             </div>
             <div className="flex items-center justify-between gap-4">
