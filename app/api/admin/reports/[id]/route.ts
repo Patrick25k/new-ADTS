@@ -215,22 +215,26 @@ export async function DELETE(
 
     const documentUrl = (reportRows as any[])[0].document_url as string | null
 
-    // Delete the associated file if it exists
-    if (documentUrl) {
-      try {
-        await deleteFile(documentUrl)
-      } catch (fileError) {
-        console.warn("Failed to delete associated file:", fileError)
-        // Continue with database deletion even if file deletion fails
-      }
-    }
-
-    // Delete from database
+    // Delete from database first
     const result = await sql`
       DELETE FROM reports
       WHERE id = ${id}
       RETURNING id
     `
+
+    if ((result as any[]).length === 0) {
+      return NextResponse.json({ error: "Failed to delete report from database" }, { status: 500 })
+    }
+
+    // Delete the associated file if it exists (after successful DB deletion)
+    if (documentUrl) {
+      try {
+        await deleteFile(documentUrl)
+      } catch (fileError) {
+        console.warn("Failed to delete associated file:", fileError)
+        // DB deletion succeeded, so we don't roll back
+      }
+    }
 
     return NextResponse.json({ success: true })
   } catch (error: any) {

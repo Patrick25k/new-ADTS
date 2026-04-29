@@ -64,6 +64,17 @@ export default function Reports() {
 
   const closePreview = () => setPreviewReport(null);
 
+  const normalizeDocumentUrl = (url?: string | null) => {
+    if (!url) return '';
+    if (url.startsWith('/uploads/documents/')) {
+      const fileName = url.split('/').pop();
+      return fileName ? `/api/documents/${fileName}` : url;
+    }
+    return url;
+  };
+
+  const previewUrl = normalizeDocumentUrl(previewReport?.documentUrl);
+
   useEffect(() => {
     const loadReports = async () => {
       try {
@@ -290,11 +301,12 @@ export default function Reports() {
           </DialogHeader>
 
           <div className="absolute top-3 right-3 z-50 flex items-center gap-2">
-            {previewReport?.documentUrl && (
+            {previewUrl && (
               <a
-                href={previewReport.documentUrl}
-                download
-                title="Download Report"
+                href={previewUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Open Report"
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground p-2 hover:opacity-90 transition-opacity shadow-md"
               >
                 <Download className="h-5 w-5" />
@@ -313,10 +325,10 @@ export default function Reports() {
           </div>
 
           <div className="flex-1 min-h-0 w-full bg-white">
-            {previewReport?.documentUrl ? (
+            {previewUrl ? (
               <iframe
-                src={`${previewReport.documentUrl}#toolbar=0`}
-                title={previewReport.title}
+                src={`${previewUrl}#toolbar=0`}
+                title={previewReport?.title || 'Report Preview'}
                 className="h-full w-full border-0"
               />
             ) : null}

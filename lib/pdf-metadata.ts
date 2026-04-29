@@ -27,7 +27,7 @@ function extractPageCount(buffer: ArrayBuffer): number {
   }
 
   // Fallback: count /Page objects (less reliable but works for simple PDFs)
-  const pageMatches = text.match(/\/Type\s*\/Page[\s\S]*?(?=\/Type|\nendobj|$)/g);
+  const pageMatches = text.match(/\/Type\s*\/Page(?!s)[\s\S]*?(?=\/Type|(?:\r\n|\r|\n)endobj|$)/g);
   if (pageMatches) {
     return pageMatches.length;
   }

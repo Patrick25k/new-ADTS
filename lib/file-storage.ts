@@ -3,7 +3,7 @@ import { resolve } from 'path'
 import { existsSync } from 'fs'
 
 // Configuration
-const UPLOAD_DIR = process.env.UPLOAD_DIR || 'public/uploads/documents'
+const UPLOAD_DIR = process.env.UPLOAD_DIR || 'storage/uploads/documents'
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50 MB
 const ALLOWED_MIME_TYPES = ['application/pdf']
 
@@ -21,17 +21,29 @@ export async function validateFile(file: Blob, fileName: string) {
   }
 
   // Check file type by extension
-  const ext = fileName.substring(fileName.lastIndexOf('.')).toLowerCase()
+  const lastDotIndex = fileName.lastIndexOf('.')
+  if (lastDotIndex < 0) {
+    throw new Error(
+      `File type not allowed. Filename "${fileName}" has no extension. Allowed extensions: ${ALLOWED_EXTENSIONS.join(', ')}`
+    )
+  }
+  const ext = fileName.substring(lastDotIndex).toLowerCase()
   if (!ALLOWED_EXTENSIONS.includes(ext)) {
     throw new Error(
-      `File type not allowed. Allowed types: ${ALLOWED_EXTENSIONS.join(', ')}`
+      `File type not allowed. Extension "${ext}" is not permitted. Allowed extensions: ${ALLOWED_EXTENSIONS.join(', ')}`
     )
   }
 
-  // Check MIME type if available
-  if (file.type && !ALLOWED_MIME_TYPES.includes(file.type)) {
-    console.warn(
-      `Warning: MIME type ${file.type} not in approved list, but extension is valid`
+  // Require MIME type and validate it
+  if (!file.type) {
+    throw new Error(
+      `File type not allowed. MIME type is missing. Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}`
+    )
+  }
+
+  if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+    throw new Error(
+      `File type not allowed. MIME type ${file.type} is not permitted. Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}`
     )
   }
 
@@ -60,6 +72,9 @@ export async function saveFile(file: Blob, fileName: string): Promise<string> {
   try {
     await ensureUploadDir()
 
+    // Validate file before saving
+    await validateFile(file, fileName)
+
     // Sanitize filename
     const sanitizedName = fileName
       .replace(/[^a-zA-Z0-9.-]/g, '_')
@@ -70,13 +85,19 @@ export async function saveFile(file: Blob, fileName: string): Promise<string> {
     const uniqueFileName = `${timestamp}-${sanitizedName}`
     const filePath = resolve(process.cwd(), UPLOAD_DIR, uniqueFileName)
 
+    // Path traversal check: ensure resolved path is within upload directory
+    const uploadDirPath = resolve(process.cwd(), UPLOAD_DIR)
+    if (!filePath.startsWith(uploadDirPath)) {
+      throw new Error('Invalid file path: path traversal detected')
+    }
+
     // Convert blob to buffer and save
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
     await writeFile(filePath, buffer)
 
-    // Return relative URL
-    const url = `/uploads/documents/${uniqueFileName}`
+    // Return API URL for secure access
+    const url = `/api/documents/${uniqueFileName}`
     return url
   } catch (error) {
     console.error('File save error:', error)
@@ -89,11 +110,11 @@ export async function saveFile(file: Blob, fileName: string): Promise<string> {
  */
 export async function deleteFile(fileUrl: string): Promise<boolean> {
   try {
-    if (!fileUrl || !fileUrl.startsWith('/uploads/documents/')) {
+    if (!fileUrl || !fileUrl.startsWith('/api/documents/')) {
       return false
     }
 
-    // Extract filename from URL
+    // Extract filename from API URL
     const fileName = fileUrl.split('/').pop()
     if (!fileName) {
       return false
@@ -127,8 +148,18 @@ export async function deleteFile(fileUrl: string): Promise<boolean> {
  */
 export function getFileSizeText(bytes: number): string {
   if (bytes === 0) return '0 Bytes'
+
+  // Guard against negative, non-finite, or invalid inputs
+  if (bytes < 0 || !isFinite(bytes) || isNaN(bytes)) {
+    return 'Invalid size'
+  }
+
   const k = 1024
   const sizes = ['Bytes', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
+
+  // Clamp index to prevent out-of-bounds access
+  const clampedI = Math.max(Math.min(i, sizes.length - 1), 0)
+
+  return Math.round((bytes / Math.pow(k, clampedI)) * 100) / 100 + ' ' + sizes[clampedI]
 }

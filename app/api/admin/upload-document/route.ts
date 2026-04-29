@@ -49,7 +49,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract PDF metadata
-    const metadata = await extractPDFMetadata(file)
+    let metadata
+    try {
+      metadata = await extractPDFMetadata(file)
+    } catch (metadataError: any) {
+      console.error('PDF metadata extraction error:', metadataError)
+      return NextResponse.json(
+        { error: 'Invalid PDF file or unable to read metadata' },
+        { status: 400 }
+      )
+    }
 
     // Save file to local storage
     const url = await saveFile(file, fileName)
@@ -73,7 +82,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: error?.message || 'Failed to upload document' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

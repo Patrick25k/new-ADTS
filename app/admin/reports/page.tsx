@@ -451,6 +451,17 @@ export default function ReportsManagement() {
     setPreviewReport(null);
   };
 
+  const normalizeDocumentUrl = (url?: string | null) => {
+    if (!url) return '';
+    if (url.startsWith('/uploads/documents/')) {
+      const fileName = url.split('/').pop();
+      return fileName ? `/api/documents/${fileName}` : url;
+    }
+    return url;
+  };
+
+  const previewUrl = normalizeDocumentUrl(previewReport?.documentUrl);
+
   return (
     <div className="min-h-screen bg-gray-50/50">
       <AdminHeader
@@ -498,59 +509,6 @@ export default function ReportsManagement() {
               </CardContent>
             </Card>
           ))}
-
-          {/* Pagination Controls */}
-          {paginationData.totalPages > 1 && (
-            <div className="flex items-center justify-between mt-8 p-4 bg-white rounded-lg border">
-              <div className="text-sm text-gray-600">
-                Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-                {Math.min(
-                  currentPage * itemsPerPage,
-                  paginationData.totalItems,
-                )}{" "}
-                of {paginationData.totalItems} reports
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                >
-                  Previous
-                </Button>
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: paginationData.totalPages }).map(
-                    (_, index) => (
-                      <Button
-                        key={index + 1}
-                        variant={
-                          currentPage === index + 1 ? "default" : "outline"
-                        }
-                        size="sm"
-                        onClick={() => setCurrentPage(index + 1)}
-                        className="w-10"
-                      >
-                        {index + 1}
-                      </Button>
-                    ),
-                  )}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setCurrentPage(
-                      Math.min(paginationData.totalPages, currentPage + 1),
-                    )
-                  }
-                  disabled={currentPage === paginationData.totalPages}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Search and Filters */}
@@ -646,52 +604,6 @@ export default function ReportsManagement() {
                     {report.status}
                   </Badge>
 
-                  <Dialog
-                    open={!!previewReport}
-                    onOpenChange={(open) => !open && closePreview()}
-                  >
-                    <DialogContent className="max-w-6xl w-[95vw] h-[92vh] p-0 overflow-hidden flex flex-col">
-                      <DialogHeader className="sr-only">
-                        <DialogTitle>Report Preview</DialogTitle>
-                        <DialogDescription>
-                          Preview the selected report document.
-                        </DialogDescription>
-                      </DialogHeader>
-
-                      <div className="absolute top-3 right-3 z-50 flex items-center gap-2">
-                        {previewReport?.documentUrl && (
-                          <a
-                            href={previewReport.documentUrl}
-                            download
-                            title="Download Report"
-                            className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground p-2 hover:opacity-90 transition-opacity shadow-md"
-                          >
-                            <Download className="h-5 w-5" />
-                          </a>
-                        )}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          onClick={closePreview}
-                          title="Close Preview"
-                          className="rounded-lg shadow-md"
-                        >
-                          <X className="h-5 w-5" />
-                        </Button>
-                      </div>
-
-                      <div className="flex-1 min-h-0 w-full bg-white">
-                        {previewReport?.documentUrl ? (
-                          <iframe
-                            src={`${previewReport.documentUrl}#toolbar=0`}
-                            title={previewReport.title}
-                            className="h-full w-full border-0"
-                          />
-                        ) : null}
-                      </div>
-                    </DialogContent>
-                  </Dialog>
                   <Badge
                     variant="outline"
                     className="absolute bottom-3 left-3 text-xs border-blue-200 text-blue-700 bg-blue-50"
@@ -769,9 +681,9 @@ export default function ReportsManagement() {
                             className="text-blue-700 border-blue-200 hover:bg-blue-50"
                           >
                             <a
-                              href={report.documentUrl}
+                              href={normalizeDocumentUrl(report.documentUrl)}
                               target="_blank"
-                              rel="noreferrer"
+                              rel="noopener noreferrer"
                             >
                               <Download className="w-4 h-4 mr-1" />
                               Download
@@ -804,347 +716,404 @@ export default function ReportsManagement() {
             ))}
           </div>
         )}
-      </div>
 
-      <Dialog
-        open={!!previewReport}
-        onOpenChange={(open) => !open && closePreview()}
-      >
-        <DialogContent className="max-w-6xl w-[95vw] h-[92vh] p-0 overflow-hidden flex flex-col">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Report Preview</DialogTitle>
-            <DialogDescription>
-              Preview the selected report document.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="absolute top-3 right-3 z-50 flex items-center gap-2">
-            {previewReport?.documentUrl && (
-              <a
-                href={previewReport.documentUrl}
-                download
-                title="Download Report"
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground p-2 hover:opacity-90 transition-opacity shadow-md"
+        {/* Pagination Controls */}
+        {paginationData.totalPages > 1 && (
+          <div className="flex items-center justify-between mt-8 p-4 bg-white rounded-lg border">
+            <div className="text-sm text-gray-600">
+              Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+              {Math.min(currentPage * itemsPerPage, paginationData.totalItems)}{" "}
+              of {paginationData.totalItems} reports
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
               >
-                <Download className="h-5 w-5" />
-              </a>
-            )}
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              onClick={closePreview}
-              title="Close Preview"
-              className="rounded-lg shadow-md"
-            >
-              <X className="h-5 w-5" />
-            </Button>
-          </div>
-
-          <div className="flex-1 min-h-0 w-full bg-white">
-            {previewReport?.documentUrl ? (
-              <iframe
-                src={`${previewReport.documentUrl}#toolbar=0`}
-                title={previewReport.title}
-                className="h-full w-full border-0"
-              />
-            ) : null}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {editingReport ? "Edit Report" : "Upload Report"}
-            </DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Title</label>
-              <Input
-                value={form.title}
-                onChange={(event) =>
-                  handleFormChange("title", event.target.value)
-                }
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Description</label>
-              <Textarea
-                value={form.description}
-                onChange={(event) =>
-                  handleFormChange("description", event.target.value)
-                }
-                rows={3}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Report Document</label>
-              <p className="text-xs text-gray-600 mb-2">
-                Upload the PDF file first. Format, Size, and Pages will be
-                automatically populated.
-              </p>
-              <div className="space-y-2">
-                <Input
-                  type="file"
-                  accept=".pdf,application/pdf"
-                  onChange={handleDocumentFileChange}
-                  required={!editingReport}
-                />
-                {form.documentUrl && (
-                  <p className="text-xs text-green-600">
-                    ✓ Document uploaded successfully
-                  </p>
-                )}
-                {isUploadingDocument && (
-                  <p className="text-xs text-blue-600">Uploading document...</p>
+                Previous
+              </Button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: paginationData.totalPages }).map(
+                  (_, index) => (
+                    <Button
+                      key={index + 1}
+                      variant={
+                        currentPage === index + 1 ? "default" : "outline"
+                      }
+                      size="sm"
+                      onClick={() => setCurrentPage(index + 1)}
+                      className="w-10"
+                    >
+                      {index + 1}
+                    </Button>
+                  ),
                 )}
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setCurrentPage(
+                    Math.min(paginationData.totalPages, currentPage + 1),
+                  )
+                }
+                disabled={currentPage === paginationData.totalPages}
+              >
+                Next
+              </Button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Type</label>
-                <Input
-                  value={form.type}
-                  onChange={(event) =>
-                    handleFormChange("type", event.target.value)
-                  }
-                  placeholder="Annual Report, Program Report, ..."
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Category</label>
-                <Input
-                  value={form.category}
-                  onChange={(event) =>
-                    handleFormChange("category", event.target.value)
-                  }
-                  placeholder="Financial, Impact Assessment, ..."
-                />
-              </div>
+          </div>
+        )}
+
+        <Dialog
+          open={!!previewReport}
+          onOpenChange={(open) => !open && closePreview()}
+        >
+          <DialogContent className="max-w-6xl w-[95vw] h-[92vh] p-0 overflow-hidden flex flex-col">
+            <DialogHeader className="sr-only">
+              <DialogTitle>Report Preview</DialogTitle>
+              <DialogDescription>
+                Preview the selected report document.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="absolute top-3 right-3 z-50 flex items-center gap-2">
+              {previewUrl && (
+                <a
+                  href={previewUrl}
+                  title="Download Report"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground p-2 hover:opacity-90 transition-opacity shadow-md"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Download className="h-5 w-5" />
+                </a>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={closePreview}
+                title="Close Preview"
+                className="rounded-lg shadow-md"
+              >
+                <X className="h-5 w-5" />
+              </Button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Author</label>
-                <Input
-                  value={form.author}
-                  onChange={(event) =>
-                    handleFormChange("author", event.target.value)
-                  }
-                  placeholder="e.g. Programs Department"
+
+            <div className="flex-1 min-h-0 w-full bg-white">
+              {previewUrl ? (
+                <iframe
+                  src={`${previewUrl}#toolbar=0`}
+                  title={previewReport?.title || 'Report Preview'}
+                  className="h-full w-full border-0"
                 />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Language</label>
-                <Input
-                  value={form.language}
-                  onChange={(event) =>
-                    handleFormChange("language", event.target.value)
-                  }
-                  placeholder="English, Kinyarwanda, ..."
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  Format{" "}
-                  {form.documentUrl && (
-                    <span className="text-xs text-gray-500">(Auto-filled)</span>
-                  )}
-                </label>
-                <Input
-                  value={form.format}
-                  onChange={(event) =>
-                    handleFormChange("format", event.target.value)
-                  }
-                  readOnly={!!form.documentUrl}
-                  className={
-                    form.documentUrl ? "bg-gray-50 cursor-not-allowed" : ""
-                  }
-                  placeholder="PDF, DOCX, ..."
-                />
-              </div>
+              ) : null}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {editingReport ? "Edit Report" : "Upload Report"}
+              </DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Year</label>
+                <label className="text-sm font-medium">Title</label>
                 <Input
-                  value={form.year}
+                  value={form.title}
                   onChange={(event) =>
-                    handleFormChange("year", event.target.value)
+                    handleFormChange("title", event.target.value)
                   }
-                  placeholder="2024"
+                  required
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  Pages{" "}
-                  {form.documentUrl && form.pages && (
-                    <span className="text-xs text-gray-500">
-                      (Auto-detected)
-                    </span>
-                  )}
-                </label>
-                <Input
-                  type="number"
-                  value={form.pages}
+                <label className="text-sm font-medium">Description</label>
+                <Textarea
+                  value={form.description}
                   onChange={(event) =>
-                    handleFormChange("pages", event.target.value)
+                    handleFormChange("description", event.target.value)
                   }
-                  readOnly={!!form.documentUrl && !!form.pages}
-                  className={
-                    form.documentUrl && form.pages
-                      ? "bg-gray-50 cursor-not-allowed"
-                      : ""
-                  }
-                  placeholder="Auto-filled from PDF"
+                  rows={3}
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  Size{" "}
-                  {form.documentUrl && (
-                    <span className="text-xs text-gray-500">(Auto-filled)</span>
-                  )}
-                </label>
-                <Input
-                  value={form.size}
-                  onChange={(event) =>
-                    handleFormChange("size", event.target.value)
-                  }
-                  readOnly={!!form.documentUrl}
-                  className={
-                    form.documentUrl ? "bg-gray-50 cursor-not-allowed" : ""
-                  }
-                  placeholder="e.g. 2.5 MB"
-                />
-              </div>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <input
-                    id="published"
-                    type="checkbox"
-                    checked={form.status === "Published"}
-                    onChange={(event) =>
-                      handleFormChange(
-                        "status",
-                        event.target.checked ? "Published" : "Draft",
-                      )
-                    }
-                    className="w-4 h-4 rounded border-gray-300"
+                <label className="text-sm font-medium">Report Document</label>
+                <p className="text-xs text-gray-600 mb-2">
+                  Upload the PDF file first. Format, Size, and Pages will be
+                  automatically populated.
+                </p>
+                <div className="space-y-2">
+                  <Input
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    onChange={handleDocumentFileChange}
+                    required={!editingReport}
                   />
-                  <label htmlFor="published" className="text-sm">
-                    Published
-                  </label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    id="high-priority"
-                    type="checkbox"
-                    checked={form.priority === "High"}
-                    onChange={(event) =>
-                      handleFormChange(
-                        "priority",
-                        event.target.checked ? "High" : "Medium",
-                      )
-                    }
-                    className="w-4 h-4 rounded border-gray-300"
-                  />
-                  <label htmlFor="high-priority" className="text-sm">
-                    High priority
-                  </label>
+                  {form.documentUrl && (
+                    <p className="text-xs text-green-600">
+                      ✓ Document uploaded successfully
+                    </p>
+                  )}
+                  {isUploadingDocument && (
+                    <p className="text-xs text-blue-600">
+                      Uploading document...
+                    </p>
+                  )}
                 </div>
               </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Type</label>
+                  <Input
+                    value={form.type}
+                    onChange={(event) =>
+                      handleFormChange("type", event.target.value)
+                    }
+                    placeholder="Annual Report, Program Report, ..."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Category</label>
+                  <Input
+                    value={form.category}
+                    onChange={(event) =>
+                      handleFormChange("category", event.target.value)
+                    }
+                    placeholder="Financial, Impact Assessment, ..."
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Author</label>
+                  <Input
+                    value={form.author}
+                    onChange={(event) =>
+                      handleFormChange("author", event.target.value)
+                    }
+                    placeholder="e.g. Programs Department"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Language</label>
+                  <Input
+                    value={form.language}
+                    onChange={(event) =>
+                      handleFormChange("language", event.target.value)
+                    }
+                    placeholder="English, Kinyarwanda, ..."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    Format{" "}
+                    {form.documentUrl && (
+                      <span className="text-xs text-gray-500">
+                        (Auto-filled)
+                      </span>
+                    )}
+                  </label>
+                  <Input
+                    value={form.format}
+                    onChange={(event) =>
+                      handleFormChange("format", event.target.value)
+                    }
+                    readOnly={!!form.documentUrl}
+                    className={
+                      form.documentUrl ? "bg-gray-50 cursor-not-allowed" : ""
+                    }
+                    placeholder="PDF, DOCX, ..."
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Year</label>
+                  <Input
+                    value={form.year}
+                    onChange={(event) =>
+                      handleFormChange("year", event.target.value)
+                    }
+                    placeholder="2024"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    Pages{" "}
+                    {form.documentUrl && form.pages && (
+                      <span className="text-xs text-gray-500">
+                        (Auto-detected)
+                      </span>
+                    )}
+                  </label>
+                  <Input
+                    type="number"
+                    value={form.pages}
+                    onChange={(event) =>
+                      handleFormChange("pages", event.target.value)
+                    }
+                    readOnly={!!form.documentUrl && !!form.pages}
+                    className={
+                      form.documentUrl && form.pages
+                        ? "bg-gray-50 cursor-not-allowed"
+                        : ""
+                    }
+                    placeholder="Auto-filled from PDF"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    Size{" "}
+                    {form.documentUrl && (
+                      <span className="text-xs text-gray-500">
+                        (Auto-filled)
+                      </span>
+                    )}
+                  </label>
+                  <Input
+                    value={form.size}
+                    onChange={(event) =>
+                      handleFormChange("size", event.target.value)
+                    }
+                    readOnly={!!form.documentUrl}
+                    className={
+                      form.documentUrl ? "bg-gray-50 cursor-not-allowed" : ""
+                    }
+                    placeholder="e.g. 2.5 MB"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <input
+                      id="published"
+                      type="checkbox"
+                      checked={form.status === "Published"}
+                      onChange={(event) =>
+                        handleFormChange(
+                          "status",
+                          event.target.checked ? "Published" : "Draft",
+                        )
+                      }
+                      className="w-4 h-4 rounded border-gray-300"
+                    />
+                    <label htmlFor="published" className="text-sm">
+                      Published
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      id="high-priority"
+                      type="checkbox"
+                      checked={form.priority === "High"}
+                      onChange={(event) =>
+                        handleFormChange(
+                          "priority",
+                          event.target.checked ? "High" : "Medium",
+                        )
+                      }
+                      className="w-4 h-4 rounded border-gray-300"
+                    />
+                    <label htmlFor="high-priority" className="text-sm">
+                      High priority
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  type="submit"
+                  className="ml-auto cursor-pointer"
+                  disabled={isSubmitting || isUploadingDocument}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      {editingReport ? "Saving..." : "Creating..."}
+                    </>
+                  ) : (
+                    <>{editingReport ? "Save Changes" : "Create Report"}</>
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-red-600">
+                <AlertTriangle className="w-5 h-5" />
+                Delete Report
+              </DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete "{reportToDelete?.title}"? This
+                action cannot be undone and will permanently remove the report
+                from your publications.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              {reportToDelete && (
+                <div className="bg-gray-50 rounded-lg p-3 border">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                      <FileText className="w-6 h-6 text-red-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">
+                        {reportToDelete.title}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {reportToDelete.category}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {reportToDelete.format} • {reportToDelete.pages} pages •{" "}
+                        {reportToDelete.year}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button
-                type="submit"
-                className="ml-auto cursor-pointer"
+                variant="outline"
+                onClick={closeDeleteDialog}
+                disabled={isSubmitting || isUploadingDocument}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
                 disabled={isSubmitting || isUploadingDocument}
               >
                 {isSubmitting ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    {editingReport ? "Saving..." : "Creating..."}
+                    Deleting...
                   </>
                 ) : (
-                  <>{editingReport ? "Save Changes" : "Create Report"}</>
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete Report
+                  </>
                 )}
               </Button>
             </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
-              <AlertTriangle className="w-5 h-5" />
-              Delete Report
-            </DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete "{reportToDelete?.title}"? This
-              action cannot be undone and will permanently remove the report
-              from your publications.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            {reportToDelete && (
-              <div className="bg-gray-50 rounded-lg p-3 border">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                    <FileText className="w-6 h-6 text-red-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">
-                      {reportToDelete.title}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {reportToDelete.category}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      {reportToDelete.format} • {reportToDelete.pages} pages •{" "}
-                      {reportToDelete.year}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={closeDeleteDialog}
-              disabled={isSubmitting || isUploadingDocument}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={isSubmitting || isUploadingDocument}
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Deleting...
-                </>
-              ) : (
-                <>
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete Report
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 }
