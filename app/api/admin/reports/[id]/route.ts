@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { sql, ensureAdminTables } from "@/lib/db"
 import { ADMIN_TOKEN_COOKIE_NAME, verifyAdminToken } from "@/lib/auth-tokens"
+import { deleteFile } from "@/lib/file-storage"
 
 export const runtime = "nodejs"
 
@@ -203,15 +204,33 @@ export async function DELETE(
 
     const { id } = await params
 
+    // First fetch the report to get the document URL
+    const reportRows = await sql`
+      SELECT document_url FROM reports WHERE id = ${id}
+    `
+
+    if ((reportRows as any[]).length === 0) {
+      return NextResponse.json({ error: "Report not found" }, { status: 404 })
+    }
+
+    const documentUrl = (reportRows as any[])[0].document_url as string | null
+
+    // Delete the associated file if it exists
+    if (documentUrl) {
+      try {
+        await deleteFile(documentUrl)
+      } catch (fileError) {
+        console.warn("Failed to delete associated file:", fileError)
+        // Continue with database deletion even if file deletion fails
+      }
+    }
+
+    // Delete from database
     const result = await sql`
       DELETE FROM reports
       WHERE id = ${id}
       RETURNING id
     `
-
-    if ((result as any[]).length === 0) {
-      return NextResponse.json({ error: "Report not found" }, { status: 404 })
-    }
 
     return NextResponse.json({ success: true })
   } catch (error: any) {

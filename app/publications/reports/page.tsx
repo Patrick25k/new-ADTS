@@ -1,9 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FileText, Download, Calendar, ChevronDown } from "lucide-react";
+import {
+  FileText,
+  Download,
+  Calendar,
+  ChevronDown,
+  Eye,
+  X,
+  ExternalLink,
+} from "lucide-react";
 import Image from "next/image";
 import { useToast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface PublicReport {
   id: string;
@@ -21,6 +37,19 @@ export default function Reports() {
   const [reports, setReports] = useState<PublicReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showMore, setShowMore] = useState(false);
+  const [previewReport, setPreviewReport] = useState<PublicReport | null>(null);
+
+  const closePreview = () => setPreviewReport(null);
+
+  const getViewerUrl = (url: string) => {
+    if (!url) return "";
+    if (url.toLowerCase().endsWith(".pdf")) {
+      return url;
+    }
+
+    // Use the Microsoft online viewer as a fallback for office documents.
+    return `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(url)}`;
+  };
 
   useEffect(() => {
     const loadReports = async () => {
@@ -33,16 +62,18 @@ export default function Reports() {
         }
 
         const data = await response.json();
-        const items: PublicReport[] = (data.reports ?? []).map((report: any) => ({
-          id: report.id as string,
-          title: (report.title as string) ?? "",
-          description: (report.description as string) ?? "",
-          category: (report.category as string) ?? "",
-          year: (report.year as string) ?? "",
-          pages: Number(report.pages ?? 0),
-          size: (report.size as string) ?? "",
-          documentUrl: (report.documentUrl as string) ?? "",
-        }));
+        const items: PublicReport[] = (data.reports ?? []).map(
+          (report: any) => ({
+            id: report.id as string,
+            title: (report.title as string) ?? "",
+            description: (report.description as string) ?? "",
+            category: (report.category as string) ?? "",
+            year: (report.year as string) ?? "",
+            pages: Number(report.pages ?? 0),
+            size: (report.size as string) ?? "",
+            documentUrl: (report.documentUrl as string) ?? "",
+          }),
+        );
 
         setReports(items);
       } catch (error) {
@@ -122,9 +153,7 @@ export default function Reports() {
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl font-bold mb-12">Available Reports</h2>
             {isLoading && reports.length === 0 && (
-              <p className="text-sm text-foreground/60">
-                Loading reports...
-              </p>
+              <p className="text-sm text-foreground/60">Loading reports...</p>
             )}
             {!isLoading && reports.length === 0 && (
               <p className="text-sm text-foreground/60">
@@ -166,22 +195,35 @@ export default function Reports() {
                         <span>•</span>
                         <span>{report.size || "Size: N/A"}</span>
                       </div>
-                      {report.documentUrl && (
-                        <a
-                          href={report.documentUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity"
-                        >
-                          <Download className="h-4 w-4" />
-                          Download Report
-                        </a>
-                      )}
+                      <div className="flex flex-wrap items-center gap-3">
+                        {report.documentUrl && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="inline-flex items-center gap-2"
+                            onClick={() => setPreviewReport(report)}
+                          >
+                            <Eye className="h-4 w-4" />
+                            Preview
+                          </Button>
+                        )}
+                        {report.documentUrl && (
+                          <a
+                            href={report.documentUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity"
+                          >
+                            <Download className="h-4 w-4" />
+                            Download Report
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
               ))}
-              
+
               {/* Show More/Less Button */}
               {reports.length > 2 && (
                 <div className="text-center pt-4">
@@ -207,6 +249,95 @@ export default function Reports() {
           </div>
         </div>
       </section>
+
+      <Dialog
+        open={!!previewReport}
+        onOpenChange={(open) => !open && closePreview()}
+      >
+        <DialogContent className="max-w-6xl w-[95vw] h-[90vh] p-0 overflow-hidden flex flex-col">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b bg-background">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-1">
+                <DialogTitle className="text-2xl">
+                  {previewReport?.title}
+                </DialogTitle>
+                <DialogDescription>
+                  {previewReport?.category}{" "}
+                  {previewReport?.year ? `• ${previewReport.year}` : ""}
+                </DialogDescription>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={closePreview}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </DialogHeader>
+
+          <div className="flex-1 min-h-0 bg-muted/30">
+            {previewReport?.documentUrl ? (
+              <div className="h-full flex flex-col">
+                <div className="flex items-center justify-between gap-3 px-6 py-4 border-b bg-background/80 backdrop-blur">
+                  <p className="text-sm text-muted-foreground line-clamp-1">
+                    {previewReport.description || "Document preview"}
+                  </p>
+                  <a
+                    href={previewReport.documentUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+                  >
+                    Open in new tab <ExternalLink className="h-4 w-4" />
+                  </a>
+                </div>
+
+                <div className="relative flex-1 min-h-0 bg-slate-100">
+                  <iframe
+                    src={getViewerUrl(previewReport.documentUrl)}
+                    title={previewReport.title}
+                    className="h-full w-full border-0"
+                  />
+                </div>
+
+                <div className="border-t bg-background p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="text-sm text-muted-foreground">
+                    {previewReport.pages
+                      ? `${previewReport.pages} pages`
+                      : "Pages not listed"}
+                    {previewReport.size ? ` • ${previewReport.size}` : ""}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <a
+                      href={previewReport.documentUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-primary/20 text-primary font-semibold hover:bg-primary/5 transition-colors"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      Open
+                    </a>
+                    <a
+                      href={previewReport.documentUrl}
+                      download
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity"
+                    >
+                      <Download className="h-4 w-4" />
+                      Download
+                    </a>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="h-full flex items-center justify-center p-6 text-center text-muted-foreground">
+                No preview is available for this report.
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Request Custom Reports */}
       <section className="py-20">

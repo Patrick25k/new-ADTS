@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ADMIN_TOKEN_COOKIE_NAME, verifyAdminToken } from '@/lib/auth-tokens'
-import { put } from '@vercel/blob'
+import { validateFile, saveFile, getFileSizeText } from '@/lib/file-storage'
 
 export const runtime = 'nodejs'
 
@@ -28,45 +28,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if Blob storage is configured
-    if (!process.env.BLOB_READ_WRITE_TOKEN) {
-      return NextResponse.json(
-        { error: 'Vercel Blob Storage not configured. Please set BLOB_READ_WRITE_TOKEN environment variable.' },
-        { status: 500 }
-      )
-    }
-
     const fileName = formData.get('fileName') as string || 'document'
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
 
-    // Generate unique filename with timestamp
-    const timestamp = Date.now()
-    const originalName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_')
-    const uniqueFileName = `documents/${timestamp}-${originalName}`
-
+    // Validate file
     try {
-      // Upload to Vercel Blob Storage
-      const blob = await put(uniqueFileName, buffer, {
-        access: 'public',
-        token: process.env.BLOB_READ_WRITE_TOKEN,
-        contentType: file.type || 'application/octet-stream',
-      })
-
-      return NextResponse.json({
-        url: blob.url,
-        fileName: originalName,
-        blobId: blob.pathname,
-        vercelBlob: true,
-      })
-
-    } catch (blobError) {
-      console.error('Vercel Blob upload error:', blobError)
+      await validateFile(file, fileName)
+    } catch (validationError: any) {
       return NextResponse.json(
-        { error: 'Failed to upload to Vercel Blob Storage: ' + (blobError as Error).message },
-        { status: 500 }
+        { error: validationError.message },
+        { status: 400 }
       )
     }
+
+    // Save file to local storage
+    const url = await saveFile(file, fileName)
+    const sizeText = getFileSizeText(file.size)
+
+    return NextResponse.json({
+      url,
+      fileName,
+      size: sizeText,
+      sizeBytes: file.size,
+      localStorage: true,
+    })
 
   } catch (error: any) {
     console.error('Document upload error:', error)
@@ -76,7 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: 'Failed to upload document' },
+      { error: error?.message || 'Failed to upload document' },
       { status: 500 }
     )
   }
