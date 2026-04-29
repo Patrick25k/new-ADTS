@@ -31,12 +31,25 @@ export async function GET(
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
-    if (!existsSync(filePath)) {
-      return NextResponse.json({ error: 'File not found' }, { status: 404 })
+    let resolvedFilePath = filePath
+
+    if (!existsSync(resolvedFilePath)) {
+      const publicFallbackPath = resolve(process.cwd(), 'public/uploads/documents', filename)
+      const publicRelativePath = relative(uploadDirPath, publicFallbackPath)
+      if (
+        publicRelativePath !== '..' &&
+        !publicRelativePath.startsWith('..' + sep) &&
+        !isAbsolute(publicRelativePath) &&
+        existsSync(publicFallbackPath)
+      ) {
+        resolvedFilePath = publicFallbackPath
+      } else {
+        return NextResponse.json({ error: 'File not found' }, { status: 404 })
+      }
     }
 
     // Read and serve the file
-    const fileBuffer = await readFile(filePath)
+    const fileBuffer = await readFile(resolvedFilePath)
 
     // Set appropriate headers for PDF
     const headers = new Headers()

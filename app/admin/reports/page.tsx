@@ -452,11 +452,38 @@ export default function ReportsManagement() {
   };
 
   const normalizeDocumentUrl = (url?: string | null) => {
-    if (!url) return '';
-    if (url.startsWith('/uploads/documents/')) {
-      const fileName = url.split('/').pop();
-      return fileName ? `/api/documents/${fileName}` : url;
+    if (!url) return "";
+
+    let path = url;
+    try {
+      path = new URL(url, window.location.origin).pathname;
+    } catch {
+      // ignore invalid absolute URLs
     }
+
+    const extractFileName = (candidate: string) => {
+      const match = candidate.match(/([^/\\?#]+\.pdf)$/i);
+      return match?.[1] ?? null;
+    };
+
+    const patterns = [
+      /\/api\/documents\/([^/?#]+)(?:[?#].*)?$/i,
+      /\/(?:storage\/)?uploads\/documents\/([^/?#]+)(?:[?#].*)?$/i,
+      /\/documents\/([^/?#]+\.pdf)(?:[?#].*)?$/i,
+    ];
+
+    for (const pattern of patterns) {
+      const match = path.match(pattern);
+      if (match?.[1]) {
+        return `/api/documents/${match[1]}`;
+      }
+    }
+
+    const fileName = extractFileName(path);
+    if (fileName) {
+      return `/api/documents/${fileName}`;
+    }
+
     return url;
   };
 
@@ -807,7 +834,7 @@ export default function ReportsManagement() {
               {previewUrl ? (
                 <iframe
                   src={`${previewUrl}#toolbar=0`}
-                  title={previewReport?.title || 'Report Preview'}
+                  title={previewReport?.title || "Report Preview"}
                   className="h-full w-full border-0"
                 />
               ) : null}
