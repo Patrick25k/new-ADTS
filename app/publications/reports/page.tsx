@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import React from "react";
 import {
   FileText,
   Download,
@@ -9,6 +10,7 @@ import {
   Eye,
   X,
 } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -34,8 +36,31 @@ export default function Reports() {
   const { toast } = useToast();
   const [reports, setReports] = useState<PublicReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [showMore, setShowMore] = useState(false);
   const [previewReport, setPreviewReport] = useState<PublicReport | null>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+
+  const checkScroll = () => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } =
+        scrollContainerRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+    }
+  };
+
+  const scroll = (direction: "left" | "right") => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 400;
+      const newScrollLeft =
+        direction === "left"
+          ? scrollContainerRef.current.scrollLeft - scrollAmount
+          : scrollContainerRef.current.scrollLeft + scrollAmount;
+      scrollContainerRef.current.scrollLeft = newScrollLeft;
+      setTimeout(checkScroll, 0);
+    }
+  };
 
   const closePreview = () => setPreviewReport(null);
 
@@ -78,6 +103,10 @@ export default function Reports() {
 
     loadReports();
   }, [toast]);
+
+  useEffect(() => {
+    checkScroll();
+  }, [reports]);
 
   return (
     <main className="min-h-screen">
@@ -148,92 +177,105 @@ export default function Reports() {
                 No reports are available at the moment. Please check back later.
               </p>
             )}
-            <div className="space-y-6">
-              {reports.slice(0, showMore ? reports.length : 2).map((report) => (
-                <div
-                  key={report.id}
-                  className="bg-background rounded-lg border p-6"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <FileText className="h-6 w-6 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-semibold">
-                          {report.category}
-                        </span>
-                        <span className="flex items-center gap-1 text-sm text-foreground/60">
-                          <Calendar className="h-4 w-4" />
-                          {report.year || ""}
-                        </span>
-                      </div>
-                      <h3 className="text-xl font-semibold mb-2">
-                        {report.title}
-                      </h3>
-                      <p className="text-foreground/70 mb-4">
-                        {report.description}
-                      </p>
-                      <div className="flex items-center gap-4 text-sm text-foreground/60 mb-4">
-                        <span>
-                          {report.pages
-                            ? `${report.pages} pages`
-                            : "Pages: N/A"}
-                        </span>
-                        <span>•</span>
-                        <span>{report.size || "Size: N/A"}</span>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-3">
-                        {report.documentUrl && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="inline-flex items-center gap-2"
-                            onClick={() => setPreviewReport(report)}
-                          >
-                            <Eye className="h-4 w-4" />
-                            Preview
-                          </Button>
-                        )}
-                        {report.documentUrl && (
-                          <a
-                            href={report.documentUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity"
-                          >
-                            <Download className="h-4 w-4" />
-                            Download Report
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
+            {reports.length > 0 && (
+              <div className="relative mt-8">
+                {reports.length > 2 && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute left-0 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/90 shadow-md hover:bg-white"
+                      onClick={() => scroll("left")}
+                      disabled={!canScrollLeft}
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-1/2 z-10 translate-x-1/2 -translate-y-1/2 rounded-full bg-white/90 shadow-md hover:bg-white"
+                      onClick={() => scroll("right")}
+                      disabled={!canScrollRight}
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </Button>
+                  </>
+                )}
 
-              {/* Show More/Less Button */}
-              {reports.length > 2 && (
-                <div className="text-center pt-4">
-                  <button
-                    onClick={() => setShowMore(!showMore)}
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-primary/10 text-primary rounded-lg font-semibold hover:bg-primary/20 transition-colors"
-                  >
-                    {showMore ? (
-                      <>
-                        <ChevronDown className="h-4 w-4 rotate-180" />
-                        Show Less Reports
-                      </>
-                    ) : (
-                      <>
-                        <ChevronDown className="h-4 w-4" />
-                        Show More Reports ({reports.length - 2} more)
-                      </>
-                    )}
-                  </button>
+                <div
+                  ref={scrollContainerRef}
+                  onScroll={checkScroll}
+                  className="flex gap-6 overflow-x-auto scroll-smooth pb-4 snap-x snap-mandatory"
+                >
+                  {reports.map((report) => (
+                    <article
+                      key={report.id}
+                      className="w-[85vw] min-w-[85vw] sm:w-[42rem] sm:min-w-[42rem] snap-start bg-background rounded-lg border p-6"
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <FileText className="h-6 w-6 text-primary" />
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3 mb-2 flex-wrap">
+                            <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-semibold">
+                              {report.category}
+                            </span>
+                            <span className="flex items-center gap-1 text-sm text-foreground/60">
+                              <Calendar className="h-4 w-4" />
+                              {report.year || ""}
+                            </span>
+                          </div>
+
+                          <h3 className="text-xl font-semibold mb-2">
+                            {report.title}
+                          </h3>
+                          <p className="text-foreground/70 mb-4">
+                            {report.description}
+                          </p>
+
+                          <div className="flex items-center gap-4 text-sm text-foreground/60 mb-4">
+                            <span>
+                              {report.pages
+                                ? `${report.pages} pages`
+                                : "Pages: N/A"}
+                            </span>
+                            <span>•</span>
+                            <span>{report.size || "Size: N/A"}</span>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-3">
+                            {report.documentUrl && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="inline-flex items-center gap-2"
+                                onClick={() => setPreviewReport(report)}
+                              >
+                                <Eye className="h-4 w-4" />
+                                Preview
+                              </Button>
+                            )}
+                            {report.documentUrl && (
+                              <a
+                                href={report.documentUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity"
+                              >
+                                <Download className="h-4 w-4" />
+                                Download Report
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </section>

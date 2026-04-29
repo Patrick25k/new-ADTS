@@ -65,6 +65,8 @@ export default function ReportsManagement() {
   const [filter, setFilter] = useState<
     "all" | "published" | "featured" | "recent"
   >("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 4;
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingReport, setEditingReport] = useState<ReportItem | null>(null);
@@ -190,6 +192,26 @@ export default function ReportsManagement() {
       },
     ];
   }, [reports]);
+
+  const paginationData = useMemo(() => {
+    const totalItems = filteredReports.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const startIdx = (currentPage - 1) * itemsPerPage;
+    const endIdx = startIdx + itemsPerPage;
+    const paginatedReports = filteredReports.slice(startIdx, endIdx);
+
+    return { totalPages, paginatedReports, totalItems };
+  }, [filteredReports, currentPage, itemsPerPage]);
+
+  const handleFilterChange = (newFilter: string) => {
+    setFilter(newFilter as any);
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (newSearch: string) => {
+    setSearch(newSearch);
+    setCurrentPage(1);
+  };
 
   const openNewDialog = () => {
     setEditingReport(null);
@@ -476,6 +498,59 @@ export default function ReportsManagement() {
               </CardContent>
             </Card>
           ))}
+
+          {/* Pagination Controls */}
+          {paginationData.totalPages > 1 && (
+            <div className="flex items-center justify-between mt-8 p-4 bg-white rounded-lg border">
+              <div className="text-sm text-gray-600">
+                Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+                {Math.min(
+                  currentPage * itemsPerPage,
+                  paginationData.totalItems,
+                )}{" "}
+                of {paginationData.totalItems} reports
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: paginationData.totalPages }).map(
+                    (_, index) => (
+                      <Button
+                        key={index + 1}
+                        variant={
+                          currentPage === index + 1 ? "default" : "outline"
+                        }
+                        size="sm"
+                        onClick={() => setCurrentPage(index + 1)}
+                        className="w-10"
+                      >
+                        {index + 1}
+                      </Button>
+                    ),
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setCurrentPage(
+                      Math.min(paginationData.totalPages, currentPage + 1),
+                    )
+                  }
+                  disabled={currentPage === paginationData.totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Search and Filters */}
@@ -488,35 +563,35 @@ export default function ReportsManagement() {
                   placeholder="Search reports..."
                   className="pl-10"
                   value={search}
-                  onChange={(event) => setSearch(event.target.value)}
+                  onChange={(event) => handleSearchChange(event.target.value)}
                 />
               </div>
               <div className="flex gap-2">
                 <Button
                   variant={filter === "all" ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setFilter("all")}
+                  onClick={() => handleFilterChange("all")}
                 >
                   All Reports
                 </Button>
                 <Button
                   variant={filter === "published" ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setFilter("published")}
+                  onClick={() => handleFilterChange("published")}
                 >
                   Published
                 </Button>
                 <Button
                   variant={filter === "featured" ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setFilter("featured")}
+                  onClick={() => handleFilterChange("featured")}
                 >
                   High Priority
                 </Button>
                 <Button
                   variant={filter === "recent" ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setFilter("recent")}
+                  onClick={() => handleFilterChange("recent")}
                 >
                   Recent
                 </Button>
@@ -546,7 +621,7 @@ export default function ReportsManagement() {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {filteredReports.slice(0, 4).map((report) => (
+            {paginationData.paginatedReports.map((report) => (
               <Card
                 key={report.id}
                 className="bg-white hover:shadow-lg transition-all duration-200 group"
