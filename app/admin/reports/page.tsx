@@ -13,13 +13,13 @@ import {
   Download,
   Eye,
   Search,
-  Filter,
   Calendar,
   FileText,
   TrendingUp,
   Clock,
   Users,
   AlertTriangle,
+  X,
 } from "lucide-react";
 import {
   Dialog,
@@ -70,6 +70,7 @@ export default function ReportsManagement() {
   const [editingReport, setEditingReport] = useState<ReportItem | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [reportToDelete, setReportToDelete] = useState<ReportItem | null>(null);
+  const [previewReport, setPreviewReport] = useState<ReportItem | null>(null);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -313,10 +314,13 @@ export default function ReportsManagement() {
 
       setIsSubmitting(true);
 
-      const payload = { 
+      const payload = {
         ...form,
         // Auto-set publish date when status is "Published"
-        publishDate: form.status === "Published" && !editingReport ? new Date().toISOString().split('T')[0] : form.publishDate
+        publishDate:
+          form.status === "Published" && !editingReport
+            ? new Date().toISOString().split("T")[0]
+            : form.publishDate,
       };
 
       const endpoint = editingReport
@@ -414,6 +418,10 @@ export default function ReportsManagement() {
   const closeDeleteDialog = () => {
     setDeleteDialogOpen(false);
     setReportToDelete(null);
+  };
+
+  const closePreview = () => {
+    setPreviewReport(null);
   };
 
   return (
@@ -525,154 +533,245 @@ export default function ReportsManagement() {
             <div className="flex flex-col items-center gap-3">
               <FileText className="w-12 h-12 text-gray-400" />
               <p className="text-gray-600">No reports found.</p>
-              <p className="text-sm text-gray-500">Try adjusting your filters or create a new report to get started.</p>
+              <p className="text-sm text-gray-500">
+                Try adjusting your filters or create a new report to get
+                started.
+              </p>
             </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredReports.slice(0, 4).map((report) => (
-            <Card
-              key={report.id}
-              className="bg-white hover:shadow-lg transition-all duration-200 group"
-            >
-              <div className="relative">
-                <div className="h-32 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-t-lg flex items-center justify-center">
-                  <FileText className="w-16 h-16 text-indigo-500" />
-                </div>
-                {report.priority === "High" && (
-                  <Badge className="absolute top-3 left-3 bg-yellow-100 text-yellow-800 border border-yellow-200">
-                    ⭐ High Priority
-                  </Badge>
-                )}
-                <Badge
-                  variant="secondary"
-                  className={`absolute top-3 right-3 ${
-                    report.status === "Published"
-                      ? "bg-green-100 text-green-700 border border-green-200"
-                      : "bg-orange-100 text-orange-700 border border-orange-200"
-                  }`}
-                >
-                  {report.status}
-                </Badge>
-                <Badge
-                  variant="outline"
-                  className="absolute bottom-3 left-3 text-xs border-blue-200 text-blue-700 bg-blue-50"
-                >
-                  {report.type || "Report"}
-                </Badge>
-              </div>
-
-              <CardContent className="p-6">
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <Badge variant="outline" className="text-xs">
-                        {report.category}
-                      </Badge>
-                      {report.year && (
-                        <span className="text-xs text-green-600 font-medium">
-                          {report.year}
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="font-bold text-lg text-gray-900 group-hover:text-primary transition-colors line-clamp-2">
-                      {report.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                      {report.description}
-                    </p>
+            {filteredReports.slice(0, 4).map((report) => (
+              <Card
+                key={report.id}
+                className="bg-white hover:shadow-lg transition-all duration-200 group"
+              >
+                <div className="relative">
+                  <div className="h-32 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-t-lg flex items-center justify-center">
+                    <FileText className="w-16 h-16 text-indigo-500" />
                   </div>
+                  {report.priority === "High" && (
+                    <Badge className="absolute top-3 left-3 bg-yellow-100 text-yellow-800 border border-yellow-200">
+                      ⭐ High Priority
+                    </Badge>
+                  )}
+                  <Badge
+                    variant="secondary"
+                    className={`absolute top-3 right-3 ${
+                      report.status === "Published"
+                        ? "bg-green-100 text-green-700 border border-green-200"
+                        : "bg-orange-100 text-orange-700 border border-orange-200"
+                    }`}
+                  >
+                    {report.status}
+                  </Badge>
 
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Calendar className="w-4 h-4 text-gray-400" />
-                      <span>
-                        Published:{" "}
-                        {report.publishDate
-                          ? new Date(report.publishDate).toLocaleDateString()
-                          : "TBA"}
-                      </span>
+                  <Dialog
+                    open={!!previewReport}
+                    onOpenChange={(open) => !open && closePreview()}
+                  >
+                    <DialogContent className="max-w-6xl w-[95vw] h-[92vh] p-0 overflow-hidden flex flex-col">
+                      <DialogHeader className="sr-only">
+                        <DialogTitle>Report Preview</DialogTitle>
+                        <DialogDescription>
+                          Preview the selected report document.
+                        </DialogDescription>
+                      </DialogHeader>
+
+                      <div className="absolute top-3 right-3 z-50 flex items-center gap-2">
+                        {previewReport?.documentUrl && (
+                          <a
+                            href={previewReport.documentUrl}
+                            download
+                            title="Download Report"
+                            className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground p-2 hover:opacity-90 transition-opacity shadow-md"
+                          >
+                            <Download className="h-5 w-5" />
+                          </a>
+                        )}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={closePreview}
+                          title="Close Preview"
+                          className="rounded-lg shadow-md"
+                        >
+                          <X className="h-5 w-5" />
+                        </Button>
+                      </div>
+
+                      <div className="flex-1 min-h-0 w-full bg-white">
+                        {previewReport?.documentUrl ? (
+                          <iframe
+                            src={`${previewReport.documentUrl}#toolbar=0`}
+                            title={previewReport.title}
+                            className="h-full w-full border-0"
+                          />
+                        ) : null}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                  <Badge
+                    variant="outline"
+                    className="absolute bottom-3 left-3 text-xs border-blue-200 text-blue-700 bg-blue-50"
+                  >
+                    {report.type || "Report"}
+                  </Badge>
+                </div>
+
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <Badge variant="outline" className="text-xs">
+                          {report.category}
+                        </Badge>
+                        {report.year && (
+                          <span className="text-xs text-green-600 font-medium">
+                            {report.year}
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="font-bold text-lg text-gray-900 group-hover:text-primary transition-colors line-clamp-2">
+                        {report.title}
+                      </h3>
+                      <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+                        {report.description}
+                      </p>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Users className="w-4 h-4 text-gray-400" />
-                      <span>By: {report.author || "ADTS Rwanda"}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <FileText className="w-4 h-4 text-gray-400" />
+
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Calendar className="w-4 h-4 text-gray-400" />
                         <span>
-                          {report.pages} pages • {report.size || "--"}
+                          Published:{" "}
+                          {report.publishDate
+                            ? new Date(report.publishDate).toLocaleDateString()
+                            : "TBA"}
                         </span>
                       </div>
-                      <Badge variant="secondary" className="text-xs">
-                        {report.format || "PDF"}
-                      </Badge>
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Users className="w-4 h-4 text-gray-400" />
+                        <span>By: {report.author || "ADTS Rwanda"}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm text-gray-600">
+                        <div className="flex items-center gap-1">
+                          <FileText className="w-4 h-4 text-gray-400" />
+                          <span>
+                            {report.pages} pages • {report.size || "--"}
+                          </span>
+                        </div>
+                        <Badge variant="secondary" className="text-xs">
+                          {report.format || "PDF"}
+                        </Badge>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <div className="flex items-center gap-2">
-                      {report.documentUrl && (
-                        <Button
-                          asChild
-                          variant="outline"
-                          size="sm"
-                          className="text-primary border-primary/20 hover:bg-primary/5"
-                        >
-                          <a
-                            href={report.documentUrl}
-                            target="_blank"
-                            rel="noreferrer"
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                      <div className="flex items-center gap-2">
+                        {report.documentUrl && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-primary border-primary/20 hover:bg-primary/5"
+                            onClick={() => setPreviewReport(report)}
                           >
                             <Eye className="w-4 h-4 mr-1" />
                             Preview
-                          </a>
-                        </Button>
-                      )}
-                      {report.documentUrl && (
-                        <Button
-                          asChild
-                          variant="outline"
-                          size="sm"
-                          className="text-blue-700 border-blue-200 hover:bg-blue-50"
-                        >
-                          <a
-                            href={report.documentUrl}
-                            target="_blank"
-                            rel="noreferrer"
+                          </Button>
+                        )}
+                        {report.documentUrl && (
+                          <Button
+                            asChild
+                            variant="outline"
+                            size="sm"
+                            className="text-blue-700 border-blue-200 hover:bg-blue-50"
                           >
-                            <Download className="w-4 h-4 mr-1" />
-                            Download
-                          </a>
+                            <a
+                              href={report.documentUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              <Download className="w-4 h-4 mr-1" />
+                              Download
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                          onClick={() => openEditDialog(report)}
+                        >
+                          <Edit className="w-4 h-4" />
                         </Button>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-                        onClick={() => openEditDialog(report)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => openDeleteDialog(report)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => openDeleteDialog(report)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         )}
       </div>
+
+      <Dialog
+        open={!!previewReport}
+        onOpenChange={(open) => !open && closePreview()}
+      >
+        <DialogContent className="max-w-6xl w-[95vw] h-[92vh] p-0 overflow-hidden flex flex-col">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Report Preview</DialogTitle>
+            <DialogDescription>
+              Preview the selected report document.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="absolute top-3 right-3 z-50 flex items-center gap-2">
+            {previewReport?.documentUrl && (
+              <a
+                href={previewReport.documentUrl}
+                download
+                title="Download Report"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground p-2 hover:opacity-90 transition-opacity shadow-md"
+              >
+                <Download className="h-5 w-5" />
+              </a>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={closePreview}
+              title="Close Preview"
+              className="rounded-lg shadow-md"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+
+          <div className="flex-1 min-h-0 w-full bg-white">
+            {previewReport?.documentUrl ? (
+              <iframe
+                src={`${previewReport.documentUrl}#toolbar=0`}
+                title={previewReport.title}
+                className="h-full w-full border-0"
+              />
+            ) : null}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
@@ -793,7 +892,7 @@ export default function ReportsManagement() {
               <div className="space-y-2">
                 <Input
                   type="file"
-                  accept=".pdf,.doc,.docx,application/pdf,image/*"
+                  accept=".pdf,application/pdf"
                   onChange={handleDocumentFileChange}
                 />
                 {form.documentUrl && (
@@ -845,8 +944,8 @@ export default function ReportsManagement() {
               </div>
             </div>
             <DialogFooter>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="ml-auto cursor-pointer"
                 disabled={isSubmitting || isUploadingDocument}
               >
@@ -856,9 +955,7 @@ export default function ReportsManagement() {
                     {editingReport ? "Saving..." : "Creating..."}
                   </>
                 ) : (
-                  <>
-                    {editingReport ? "Save Changes" : "Create Report"}
-                  </>
+                  <>{editingReport ? "Save Changes" : "Create Report"}</>
                 )}
               </Button>
             </DialogFooter>
@@ -875,7 +972,9 @@ export default function ReportsManagement() {
               Delete Report
             </DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{reportToDelete?.title}"? This action cannot be undone and will permanently remove the report from your publications.
+              Are you sure you want to delete "{reportToDelete?.title}"? This
+              action cannot be undone and will permanently remove the report
+              from your publications.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -886,9 +985,16 @@ export default function ReportsManagement() {
                     <FileText className="w-6 h-6 text-red-600" />
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900">{reportToDelete.title}</p>
-                    <p className="text-sm text-gray-500">{reportToDelete.category}</p>
-                    <p className="text-xs text-gray-400">{reportToDelete.format} • {reportToDelete.pages} pages • {reportToDelete.year}</p>
+                    <p className="font-medium text-gray-900">
+                      {reportToDelete.title}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {reportToDelete.category}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {reportToDelete.format} • {reportToDelete.pages} pages •{" "}
+                      {reportToDelete.year}
+                    </p>
                   </div>
                 </div>
               </div>

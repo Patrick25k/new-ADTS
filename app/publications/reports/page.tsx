@@ -8,7 +8,6 @@ import {
   ChevronDown,
   Eye,
   X,
-  ExternalLink,
 } from "lucide-react";
 import Image from "next/image";
 import { useToast } from "@/components/ui/use-toast";
@@ -16,7 +15,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -40,16 +38,6 @@ export default function Reports() {
   const [previewReport, setPreviewReport] = useState<PublicReport | null>(null);
 
   const closePreview = () => setPreviewReport(null);
-
-  const getViewerUrl = (url: string) => {
-    if (!url) return "";
-    if (url.toLowerCase().endsWith(".pdf")) {
-      return url;
-    }
-
-    // Use the Microsoft online viewer as a fallback for office documents.
-    return `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(url)}`;
-  };
 
   useEffect(() => {
     const loadReports = async () => {
@@ -254,87 +242,42 @@ export default function Reports() {
         open={!!previewReport}
         onOpenChange={(open) => !open && closePreview()}
       >
-        <DialogContent className="max-w-6xl w-[95vw] h-[90vh] p-0 overflow-hidden flex flex-col">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b bg-background">
-            <div className="flex items-start justify-between gap-4">
-              <div className="space-y-1">
-                <DialogTitle className="text-2xl">
-                  {previewReport?.title}
-                </DialogTitle>
-                <DialogDescription>
-                  {previewReport?.category}{" "}
-                  {previewReport?.year ? `• ${previewReport.year}` : ""}
-                </DialogDescription>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={closePreview}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+        <DialogContent className="max-w-6xl w-[95vw] h-[92vh] p-0 overflow-hidden flex flex-col">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Report Preview</DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 min-h-0 bg-muted/30">
-            {previewReport?.documentUrl ? (
-              <div className="h-full flex flex-col">
-                <div className="flex items-center justify-between gap-3 px-6 py-4 border-b bg-background/80 backdrop-blur">
-                  <p className="text-sm text-muted-foreground line-clamp-1">
-                    {previewReport.description || "Document preview"}
-                  </p>
-                  <a
-                    href={previewReport.documentUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
-                  >
-                    Open in new tab <ExternalLink className="h-4 w-4" />
-                  </a>
-                </div>
-
-                <div className="relative flex-1 min-h-0 bg-slate-100">
-                  <iframe
-                    src={getViewerUrl(previewReport.documentUrl)}
-                    title={previewReport.title}
-                    className="h-full w-full border-0"
-                  />
-                </div>
-
-                <div className="border-t bg-background p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div className="text-sm text-muted-foreground">
-                    {previewReport.pages
-                      ? `${previewReport.pages} pages`
-                      : "Pages not listed"}
-                    {previewReport.size ? ` • ${previewReport.size}` : ""}
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <a
-                      href={previewReport.documentUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-primary/20 text-primary font-semibold hover:bg-primary/5 transition-colors"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                      Open
-                    </a>
-                    <a
-                      href={previewReport.documentUrl}
-                      download
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity"
-                    >
-                      <Download className="h-4 w-4" />
-                      Download
-                    </a>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="h-full flex items-center justify-center p-6 text-center text-muted-foreground">
-                No preview is available for this report.
-              </div>
+          <div className="absolute top-3 right-3 z-50 flex items-center gap-2">
+            {previewReport?.documentUrl && (
+              <a
+                href={previewReport.documentUrl}
+                download
+                title="Download Report"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground p-2 hover:opacity-90 transition-opacity shadow-md"
+              >
+                <Download className="h-5 w-5" />
+              </a>
             )}
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={closePreview}
+              title="Close Preview"
+              className="rounded-lg shadow-md"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+
+          <div className="flex-1 min-h-0 w-full bg-white">
+            {previewReport?.documentUrl ? (
+              <iframe
+                src={`${previewReport.documentUrl}#toolbar=0`}
+                title={previewReport.title}
+                className="h-full w-full border-0"
+              />
+            ) : null}
           </div>
         </DialogContent>
       </Dialog>

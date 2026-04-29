@@ -5,16 +5,9 @@ import { existsSync } from 'fs'
 // Configuration
 const UPLOAD_DIR = process.env.UPLOAD_DIR || 'public/uploads/documents'
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50 MB
-const ALLOWED_MIME_TYPES = [
-  'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'text/plain',
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-]
+const ALLOWED_MIME_TYPES = ['application/pdf']
 
-const ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx', '.txt', '.xls', '.xlsx']
+const ALLOWED_EXTENSIONS = ['.pdf']
 
 /**
  * Validates file before upload

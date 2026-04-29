@@ -30,6 +30,13 @@ export async function POST(request: NextRequest) {
 
     const fileName = formData.get('fileName') as string || 'document'
 
+    if (!fileName.toLowerCase().endsWith('.pdf')) {
+      return NextResponse.json(
+        { error: 'Only PDF files are allowed for report uploads.' },
+        { status: 400 }
+      )
+    }
+
     // Validate file
     try {
       await validateFile(file, fileName)
