@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { sql, ensurePasswordResetOtpsTable, ensureAdminTables } from '@/lib/db'
 import nodemailer from 'nodemailer'
 
-const createTransporter = () => {
-  const emailUser = process.env.EMAIL_USER || 'kwihpatric69@gmail.com'
+function createTransporter() {
+  const emailUser = process.env.EMAIL_USER
   const emailPass = process.env.EMAIL_PASS
 
-  if (!emailPass) {
-    throw new Error('EMAIL_PASS environment variable is required.')
+  if (!emailUser || !emailPass) {
+    throw new Error(
+      'EMAIL_USER and EMAIL_PASS must be set in .env. ' +
+      'Generate a Gmail App Password at myaccount.google.com → Security → App passwords.'
+    )
   }
 
   return nodemailer.createTransport({
@@ -18,9 +21,7 @@ const createTransporter = () => {
       user: emailUser,
       pass: emailPass,
     },
-    tls: {
-      rejectUnauthorized: false,
-    },
+    tls: { rejectUnauthorized: false },
   })
 }
 
@@ -82,10 +83,12 @@ export async function POST(request: NextRequest) {
     })
 
     let emailSent = false
+    let emailError: unknown = null
+
     try {
       const transporter = createTransporter()
       await transporter.sendMail({
-        from: process.env.EMAIL_USER || 'kwihpatric69@gmail.com',
+        from: `"ADTS Rwanda" <${process.env.EMAIL_USER}>`,
         to: email,
         subject: 'ADTS Rwanda – Your Password Reset Code',
         html: `
@@ -109,7 +112,7 @@ export async function POST(request: NextRequest) {
 
               <div style="background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 15px; margin: 20px 0;">
                 <p style="color: #92400e; margin: 0; font-size: 14px;">
-                  ⚠️ <strong>Security notice:</strong> If you did not request this reset, please ignore this email.
+                  &#9888;&#65039; <strong>Security notice:</strong> If you did not request this reset, please ignore this email.
                   Your password will not be changed.
                 </p>
               </div>
@@ -126,18 +129,26 @@ export async function POST(request: NextRequest) {
       })
       emailSent = true
       console.log(`✅ OTP email sent to ${email}`)
-    } catch (emailError) {
-      console.error('❌ Failed to send OTP email:', emailError)
+    } catch (err) {
+      emailError = err
+      console.error('❌ Failed to send OTP email:', err)
     }
 
+    // Always log OTP in development so you can test without email
     if (process.env.NODE_ENV === 'development') {
       console.log(`🔑 OTP for ${email}: ${otp}`)
     }
 
+    // In development expose the OTP in the response if email failed, so you can still test
     return NextResponse.json({
       success: true,
       message: 'If this email is registered, you will receive an OTP.',
-      ...(process.env.NODE_ENV === 'development' && !emailSent ? { devOtp: otp } : {}),
+      ...(process.env.NODE_ENV === 'development' && !emailSent
+        ? {
+            devOtp: otp,
+            devError: emailError instanceof Error ? emailError.message : String(emailError),
+          }
+        : {}),
     })
   } catch (error) {
     console.error('Forgot password error:', error)
