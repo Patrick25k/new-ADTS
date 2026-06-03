@@ -35,7 +35,6 @@ interface EmailData {
   to: string[]
   subject: string
   message: string
-  attachments: File[]
 }
 
 export function EmailComposer({
@@ -53,93 +52,65 @@ export function EmailComposer({
     to: recipients,
     subject: defaultSubject,
     message: defaultMessage,
-    attachments: [],
   })
   const [isSending, setIsSending] = useState(false)
   const [activeTab, setActiveTab] = useState("compose")
   const { toast } = useToast()
 
-  // Update emailData when recipients or defaults change
   useEffect(() => {
     setEmailData({
       to: recipients,
       subject: defaultSubject,
       message: defaultMessage,
-      attachments: [],
     })
   }, [recipients, defaultSubject, defaultMessage])
 
   const handleSend = async () => {
     if (emailData.to.length === 0) {
-      toast({
-        title: "Error",
-        description: "Please add at least one recipient",
-        variant: "destructive",
-      })
+      toast({ title: "Error", description: "Please add at least one recipient", variant: "destructive" })
       return
     }
-
     if (!emailData.subject.trim()) {
-      toast({
-        title: "Error", 
-        description: "Please enter a subject",
-        variant: "destructive",
-      })
+      toast({ title: "Error", description: "Please enter a subject", variant: "destructive" })
       return
     }
-
     if (!emailData.message.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a message",
-        variant: "destructive",
-      })
+      toast({ title: "Error", description: "Please enter a message", variant: "destructive" })
       return
     }
 
     setIsSending(true)
 
     try {
-      // Send via EmailJS
-      const templateParams = {
-        to_email: emailData.to.join(", "), // This should be the recipient's email
-        subject: emailData.subject,
-        message: emailData.message,
-        from_name: "ADTS Rwanda",
-        reply_to: "admin@adtsrwanda.org",
+      const res = await fetch("/api/admin/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: emailData.to,
+          subject: emailData.subject,
+          message: emailData.message,
+          recipientName: mode === "reply" ? (replyToName || replyToEmail) : undefined,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to send email")
       }
 
-      // Import EmailJS dynamically
-      const emailjs = await import("@emailjs/browser")
-      
-      const result = await emailjs.default.send(
-        process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID!,
-        process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID!,
-        templateParams,
-        process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY!
-      )
-
-      alert(`✅ Email sent successfully to ${emailData.to.join(", ")}! Check your inbox and spam folder.`)
-       
       toast({
-        title: "Success!",
-        description: `Email sent to ${emailData.to.length} recipient${emailData.to.length > 1 ? 's' : ''}`,
+        title: "Email sent!",
+        description: `Successfully sent to ${data.sent} recipient${data.sent !== 1 ? "s" : ""}`,
       })
 
-      // Reset and close
-      setEmailData({
-        to: recipients,
-        subject: defaultSubject,
-        message: defaultMessage,
-        attachments: [],
-      })
+      setEmailData({ to: recipients, subject: defaultSubject, message: defaultMessage })
       onClose()
-
     } catch (error) {
       console.error("Email send error:", error)
       toast({
-        title: "Error",
-        description: `Failed to send email: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        title: "Failed to send",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
         variant: "destructive",
       })
     } finally {
@@ -148,40 +119,29 @@ export function EmailComposer({
   }
 
   const addRecipient = (email: string) => {
-    if (email && !emailData.to.includes(email)) {
-      setEmailData(prev => ({
-        ...prev,
-        to: [...prev.to, email]
-      }))
+    const trimmed = email.trim()
+    if (trimmed && !emailData.to.includes(trimmed)) {
+      setEmailData((prev) => ({ ...prev, to: [...prev.to, trimmed] }))
     }
   }
 
   const removeRecipient = (email: string) => {
-    setEmailData(prev => ({
-      ...prev,
-      to: prev.to.filter(e => e !== email)
-    }))
+    setEmailData((prev) => ({ ...prev, to: prev.to.filter((e) => e !== email) }))
   }
 
   const getModeTitle = () => {
     switch (mode) {
-      case "reply":
-        return `Reply to ${replyToName || replyToEmail}`
-      case "bulk":
-        return `Email ${emailData.to.length} Subscriber${emailData.to.length > 1 ? 's' : ''}`
-      default:
-        return "Compose Email"
+      case "reply": return `Reply to ${replyToName || replyToEmail}`
+      case "bulk": return `Email ${emailData.to.length} Subscriber${emailData.to.length !== 1 ? "s" : ""}`
+      default: return "Compose Email"
     }
   }
 
   const getModeIcon = () => {
     switch (mode) {
-      case "reply":
-        return <Reply className="w-4 h-4" />
-      case "bulk":
-        return <Users className="w-4 h-4" />
-      default:
-        return <Mail className="w-4 h-4" />
+      case "reply": return <Reply className="w-4 h-4" />
+      case "bulk": return <Users className="w-4 h-4" />
+      default: return <Mail className="w-4 h-4" />
     }
   }
 
@@ -214,11 +174,7 @@ export function EmailComposer({
                       {email}
                       <button
                         className="w-4 h-4 rounded-full bg-red-100 hover:bg-red-200 text-red-600 flex items-center justify-center transition-colors"
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          removeRecipient(email)
-                        }}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeRecipient(email) }}
                         type="button"
                       >
                         <X className="w-3 h-3" />
@@ -229,27 +185,24 @@ export function EmailComposer({
                     <Input
                       placeholder="Type email and press Enter..."
                       className="border-0 bg-transparent p-0 h-6 text-sm focus-visible:ring-0 min-w-[200px]"
-                      onKeyPress={(e) => {
+                      onKeyDown={(e) => {
                         if (e.key === "Enter") {
+                          e.preventDefault()
                           const target = e.target as HTMLInputElement
-                          const email = target.value.trim()
-                          if (email) {
-                            addRecipient(email)
-                            target.value = ""
-                          }
+                          addRecipient(target.value)
+                          target.value = ""
                         }
                       }}
                       onBlur={(e) => {
-                        const email = e.target.value.trim()
-                        if (email) {
-                          addRecipient(email)
+                        if (e.target.value) {
+                          addRecipient(e.target.value)
                           e.target.value = ""
                         }
                       }}
                     />
                   )}
-                  {emailData.to.length === 0 && mode === "compose" && (
-                    <span className="text-sm text-gray-500">Add email addresses above</span>
+                  {emailData.to.length === 0 && mode !== "compose" && (
+                    <span className="text-sm text-gray-500">No recipients</span>
                   )}
                 </div>
               </div>
@@ -258,7 +211,7 @@ export function EmailComposer({
                 <label className="text-sm font-medium">Subject</label>
                 <Input
                   value={emailData.subject}
-                  onChange={(e) => setEmailData(prev => ({ ...prev, subject: e.target.value }))}
+                  onChange={(e) => setEmailData((prev) => ({ ...prev, subject: e.target.value }))}
                   placeholder="Enter subject..."
                   className="mt-2"
                 />
@@ -268,20 +221,18 @@ export function EmailComposer({
                 <label className="text-sm font-medium">Message</label>
                 <Textarea
                   value={emailData.message}
-                  onChange={(e) => setEmailData(prev => ({ ...prev, message: e.target.value }))}
+                  onChange={(e) => setEmailData((prev) => ({ ...prev, message: e.target.value }))}
                   placeholder="Type your message here..."
                   className="mt-2 min-h-[200px]"
                 />
               </div>
 
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="gap-2">
+                <Button variant="outline" size="sm" className="gap-2" disabled>
                   <Paperclip className="w-4 h-4" />
                   Attach Files
                 </Button>
-                <span className="text-sm text-muted-foreground">
-                  Attachments coming soon
-                </span>
+                <span className="text-sm text-muted-foreground">Attachments coming soon</span>
               </div>
             </div>
           </TabsContent>
@@ -293,17 +244,11 @@ export function EmailComposer({
                   <CardTitle className="text-lg">Original Message</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div>
-                    <span className="font-medium">From:</span> {replyToName} ({replyToEmail})
-                  </div>
-                  <div>
-                    <span className="font-medium">Subject:</span> {defaultSubject}
-                  </div>
+                  <div><span className="font-medium">From:</span> {replyToName} ({replyToEmail})</div>
+                  <div><span className="font-medium">Subject:</span> {defaultSubject}</div>
                   <div>
                     <span className="font-medium">Message:</span>
-                    <div className="mt-2 p-3 bg-gray-50 rounded-md text-sm">
-                      {replyToMessage}
-                    </div>
+                    <div className="mt-2 p-3 bg-gray-50 rounded-md text-sm">{replyToMessage}</div>
                   </div>
                 </CardContent>
               </Card>
@@ -323,11 +268,7 @@ export function EmailComposer({
                     emailData.to.map((email, index) => (
                       <div key={index} className="flex items-center justify-between p-2 border rounded">
                         <span>{email}</span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeRecipient(email)}
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => removeRecipient(email)}>
                           <X className="w-4 h-4" />
                         </Button>
                       </div>
@@ -340,20 +281,12 @@ export function EmailComposer({
         </Tabs>
 
         <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={handleSend} disabled={isSending} className="gap-2">
             {isSending ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Sending...
-              </>
+              <><Loader2 className="w-4 h-4 animate-spin" />Sending...</>
             ) : (
-              <>
-                <Mail className="w-4 h-4" />
-                Send Email
-              </>
+              <><Mail className="w-4 h-4" />Send Email</>
             )}
           </Button>
         </div>

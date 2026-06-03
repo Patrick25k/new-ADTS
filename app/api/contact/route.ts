@@ -1,251 +1,173 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sql, ensureContactsTables } from '@/lib/db'
-import nodemailer from 'nodemailer'
-
-// Create transporter for sending emails
-const createTransporter = () => {
-  const emailUser = process.env.EMAIL_USER || 'kwihpatric69@gmail.com'
-  const emailPass = process.env.EMAIL_PASS
-  
-  if (!emailPass) {
-    throw new Error('EMAIL_PASS environment variable is required. Please set up Gmail App Password in .env.local file.')
-  }
-  
-  return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // true for 465, false for other ports
-    auth: {
-      user: emailUser,
-      pass: emailPass,
-    },
-    tls: {
-      rejectUnauthorized: false
-    }
-  })
-}
+import { createTransporter, formatRwandaTime } from '@/lib/email'
 
 export async function POST(request: NextRequest) {
   try {
     const { name, email, subject, message } = await request.json()
-    // Validate required fields
+
     if (!name || !email || !subject || !message) {
-      return NextResponse.json(
-        { error: 'All fields are required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'All fields are required' }, { status: 400 })
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: 'Invalid email format' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Invalid email format' }, { status: 400 })
     }
 
-    // Persist message to database for admin contacts module
+    // Save to database
     await ensureContactsTables()
     await sql`
       INSERT INTO contact_messages (name, email, subject, message)
       VALUES (${name}, ${email}, ${subject}, ${message})
     `
 
-    // Create email transporter
-    let transporter
-    let useEmailFallback = false
+    const sentAt = formatRwandaTime()
     let emailSent = false
-    let sendError: any = null
-    
+
     try {
-      transporter = createTransporter()
-    } catch (error) {
-      // Always use fallback mode if Gmail auth fails
-      useEmailFallback = true
-      sendError = error
-    }
+      const transporter = createTransporter()
 
-    // Email to admin (kwihpatric69@gmail.com)
-    const adminMailOptions = {
-      from: process.env.EMAIL_USER || 'kwihpatric69@gmail.com',
-      to: 'kwihpatric69@gmail.com',
-      subject: `New Contact Form Submission: ${subject}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <div style="background: linear-gradient(135deg, #1e40af, #3b82f6); padding: 20px; text-align: center;">
-            <h1 style="color: white; margin: 0;">New Contact Message</h1>
-            <p style="color: white; margin: 5px 0;">ADTS Rwanda Website</p>
-          </div>
-          
-          <div style="padding: 20px; background: #f9fafb; border: 1px solid #e5e7eb;">
-            <h2 style="color: #1f2937; margin-top: 0;">Contact Details</h2>
-            
-            <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #3b82f6;">
-              <p style="margin: 0; color: #6b7280; font-size: 14px;">FROM</p>
-              <p style="margin: 5px 0 0 0; color: #1f2937; font-weight: bold;">${name}</p>
-              <p style="margin: 5px 0 0 0; color: #3b82f6;">${email}</p>
+      // Admin notification email
+      const adminNotification = {
+        from: `"ADTS Rwanda Website" <${process.env.EMAIL_USER}>`,
+        to: process.env.EMAIL_USER!,
+        subject: `New Contact Form Submission: ${subject}`,
+        html: `
+          <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9fafb;">
+            <div style="background: #1f2937; padding: 30px; text-align: center;">
+              <p style="color: #FCB20B; margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;">Admin Notification</p>
+              <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 700;">New Contact Message</h1>
+              <p style="color: #9ca3af; margin: 6px 0 0; font-size: 13px;">ADTS Rwanda Website</p>
             </div>
-            
-            <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #10b981;">
-              <p style="margin: 0; color: #6b7280; font-size: 14px;">SUBJECT</p>
-              <p style="margin: 5px 0 0 0; color: #1f2937; font-weight: bold;">${subject}</p>
-            </div>
-            
-            <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b;">
-              <p style="margin: 0; color: #6b7280; font-size: 14px;">MESSAGE</p>
-              <p style="margin: 10px 0 0 0; color: #1f2937; line-height: 1.6;">${message.replace(/\n/g, '<br>')}</p>
-            </div>
-            
-            <div style="margin-top: 20px; padding: 15px; background: #dbeafe; border-radius: 8px;">
-              <p style="margin: 0; color: #1e40af; font-size: 14px;">
-                <strong>Received:</strong> ${new Date().toLocaleString('en-US', { 
-                  timeZone: 'Africa/Kigali',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })} (Rwanda Time)
-              </p>
-            </div>
-          </div>
-          
-          <div style="background: #1f2937; padding: 15px; text-align: center;">
-            <p style="color: #9ca3af; margin: 0; font-size: 14px;">
-              This message was sent from the ADTS Rwanda website contact form.
-            </p>
-          </div>
-        </div>
-      `,
-    }
+            <div style="height: 4px; background: linear-gradient(90deg, #FCB20B 0%, #d4822a 100%);"></div>
 
-    // Auto-reply email to sender
-    const autoReplyOptions = {
-      from: process.env.EMAIL_USER || 'kwihpatric69@gmail.com',
-      to: email,
-      subject: 'Thank you for contacting ADTS Rwanda - We received your message!',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <div style="background: linear-gradient(135deg, #10b981, #059669); padding: 30px; text-align: center;">
-            <h1 style="color: white; margin: 0; font-size: 28px;">Thank You!</h1>
-            <p style="color: white; margin: 10px 0 0 0; font-size: 16px;">We've received your message</p>
-          </div>
-          
-          <div style="padding: 30px; background: white;">
-            <p style="color: #1f2937; font-size: 16px; margin-top: 0;">Dear ${name},</p>
-            
-            <p style="color: #4b5563; line-height: 1.6; margin: 20px 0;">
-              Thank you for reaching out to <strong>ADTS Rwanda</strong>. We have successfully received your message regarding "<strong>${subject}</strong>" and truly appreciate you taking the time to contact us.
-            </p>
-            
-            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; margin: 25px 0;">
-              <h3 style="color: #166534; margin: 0 0 10px 0; font-size: 18px;">What happens next?</h3>
-              <ul style="color: #166534; margin: 0; padding-left: 20px;">
-                <li style="margin: 8px 0;">Our team will review your message within 24 hours</li>
-                <li style="margin: 8px 0;">We'll get back to you as soon as possible</li>
-                <li style="margin: 8px 0;">For urgent matters, feel free to call us at +250 788 308 255</li>
-              </ul>
-            </div>
-            
-            <div style="background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 20px; margin: 25px 0;">
-              <h3 style="color: #92400e; margin: 0 0 10px 0; font-size: 16px;">Your Message Summary:</h3>
-              <p style="color: #92400e; margin: 5px 0;"><strong>Subject:</strong> ${subject}</p>
-              <p style="color: #92400e; margin: 5px 0;"><strong>Sent on:</strong> ${new Date().toLocaleString('en-US', { 
-                timeZone: 'Africa/Kigali',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              })} (Rwanda Time)</p>
-            </div>
-            
-            <p style="color: #4b5563; line-height: 1.6; margin: 25px 0;">
-              In the meantime, feel free to explore our website to learn more about our programs and initiatives that are transforming lives across Rwanda and the Great Lakes region.
-            </p>
-            
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="https://adtsrwanda.org" style="background: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Visit Our Website</a>
-            </div>
-          </div>
-          
-          <div style="background: #f9fafb; padding: 25px; border-top: 1px solid #e5e7eb;">
-            <div style="text-align: center; margin-bottom: 20px;">
-              <h3 style="color: #1f2937; margin: 0 0 15px 0;">ADTS Rwanda</h3>
-              <p style="color: #6b7280; margin: 0; font-size: 14px;">Transforming Lives, Empowering Communities</p>
-            </div>
-            
-            <div style="display: flex; justify-content: center; gap: 30px; text-align: center; flex-wrap: wrap;">
-              <div>
-                <p style="color: #6b7280; margin: 0; font-size: 14px;">📍 Location</p>
-                <p style="color: #1f2937; margin: 5px 0 0 0; font-size: 14px;">Kigali, Rwanda</p>
+            <div style="background: white; padding: 36px;">
+              <h2 style="color: #1f2937; margin: 0 0 20px; font-size: 16px; font-weight: 700;">Contact Details</h2>
+
+              <div style="background: #f9fafb; border-left: 4px solid #FCB20B; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 12px;">
+                <p style="margin: 0; color: #FCB20B; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">From</p>
+                <p style="margin: 6px 0 0; color: #1f2937; font-size: 15px; font-weight: 600;">${name}</p>
+                <p style="margin: 2px 0 0; color: #6b7280; font-size: 14px;">${email}</p>
               </div>
-              <div>
-                <p style="color: #6b7280; margin: 0; font-size: 14px;">📞 Phone</p>
-                <p style="color: #1f2937; margin: 5px 0 0 0; font-size: 14px;">+250 788 308 255</p>
+
+              <div style="background: #f9fafb; border-left: 4px solid #d4822a; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 12px;">
+                <p style="margin: 0; color: #d4822a; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">Subject</p>
+                <p style="margin: 6px 0 0; color: #1f2937; font-size: 15px; font-weight: 600;">${subject}</p>
               </div>
-              <div>
-                <p style="color: #6b7280; margin: 0; font-size: 14px;">✉️ Email</p>
-                <p style="color: #1f2937; margin: 5px 0 0 0; font-size: 14px;">rwandaadts@gmail.com</p>
+
+              <div style="background: #f9fafb; border-left: 4px solid #374151; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 20px;">
+                <p style="margin: 0; color: #374151; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">Message</p>
+                <p style="margin: 10px 0 0; color: #1f2937; font-size: 15px; line-height: 1.7; white-space: pre-line;">${message}</p>
+              </div>
+
+              <div style="background: #fffbeb; border: 1px solid #FCB20B; border-radius: 8px; padding: 14px 18px;">
+                <p style="margin: 0; color: #92400e; font-size: 13px;">
+                  <strong>Received:</strong> ${sentAt} (Rwanda Time)
+                </p>
               </div>
             </div>
-            
-            <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-              <p style="color: #9ca3af; margin: 0; font-size: 12px;">
-                This is an automated response. Please do not reply to this email.
-              </p>
+
+            <div style="background: #1f2937; padding: 16px; text-align: center;">
+              <p style="color: #FCB20B; margin: 0 0 4px; font-size: 12px; font-weight: 700; letter-spacing: 1px;">ADTS RWANDA</p>
+              <p style="color: #6b7280; margin: 0; font-size: 11px;">This message was sent from the ADTS Rwanda website contact form.</p>
             </div>
           </div>
-        </div>
-      `,
-    }
-
-    // Send both emails
-    console.log('📧 Email sending mode:', useEmailFallback ? 'FALLBACK' : 'LIVE EMAIL')
-    if (useEmailFallback) {
-      
-      // Simulate email delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      emailSent = false
-    } else {
-      // Send actual emails
-      try {
-        await Promise.all([
-          transporter!.sendMail(adminMailOptions),
-          transporter!.sendMail(autoReplyOptions)
-        ])
-        console.log('✅ Emails sent successfully!')
-        emailSent = true
-      } catch (emailError) {
-        sendError = emailError
-        console.log('❌ Email sending failed, switching to fallback mode')
-        console.log('Email Error:', emailError)
-        
+        `,
       }
+
+      // Auto-reply to sender
+      const autoReply = {
+        from: `"ADTS Rwanda" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: 'Thank you for contacting ADTS Rwanda – We received your message!',
+        html: `
+          <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f9fafb;">
+            <div style="background: #1f2937; padding: 36px 30px; text-align: center;">
+              <p style="color: #FCB20B; margin: 0 0 8px; font-size: 12px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;">Message Received</p>
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700;">Thank You!</h1>
+              <p style="color: #9ca3af; margin: 10px 0 0; font-size: 15px;">We've received your message</p>
+            </div>
+            <div style="height: 4px; background: linear-gradient(90deg, #FCB20B 0%, #d4822a 100%);"></div>
+
+            <div style="background: white; padding: 40px 36px;">
+              <p style="color: #1f2937; font-size: 16px; margin: 0 0 16px; font-weight: 600;">Dear ${name},</p>
+              <p style="color: #6b7280; font-size: 15px; line-height: 1.7; margin: 0 0 24px;">
+                Thank you for reaching out to <strong style="color: #1f2937;">ADTS Rwanda</strong>.
+                We have successfully received your message regarding
+                "<strong style="color: #1f2937;">${subject}</strong>" and truly appreciate you taking the time to contact us.
+              </p>
+
+              <div style="background: #f9fafb; border: 1px solid #FCB20B; border-radius: 12px; padding: 22px 24px; margin: 0 0 20px;">
+                <h3 style="color: #1f2937; margin: 0 0 12px; font-size: 15px; font-weight: 700;">What happens next?</h3>
+                <ul style="color: #6b7280; margin: 0; padding-left: 20px; line-height: 1.9; font-size: 14px;">
+                  <li>Our team will review your message within 24 hours</li>
+                  <li>We'll get back to you as soon as possible</li>
+                  <li>For urgent matters, call us at <strong style="color: #1f2937;">+250 788 308 255</strong></li>
+                </ul>
+              </div>
+
+              <div style="background: #fffbeb; border-left: 4px solid #FCB20B; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 0 0 28px;">
+                <p style="color: #92400e; margin: 0 0 6px; font-size: 13px; font-weight: 700;">Your Message Summary</p>
+                <p style="color: #374151; margin: 0 0 4px; font-size: 14px;"><strong>Subject:</strong> ${subject}</p>
+                <p style="color: #374151; margin: 0; font-size: 14px;"><strong>Sent on:</strong> ${sentAt} (Rwanda Time)</p>
+              </div>
+
+              <p style="color: #6b7280; font-size: 14px; line-height: 1.7; margin: 0 0 28px;">
+                In the meantime, feel free to explore our website to learn more about our programs and initiatives.
+              </p>
+
+              <div style="text-align: center;">
+                <a href="https://adtsrwanda.org" style="display: inline-block; background: #FCB20B; color: #1f2937; text-decoration: none; padding: 13px 32px; border-radius: 8px; font-size: 14px; font-weight: 700;">Visit Our Website</a>
+              </div>
+            </div>
+
+            <div style="background: #f9fafb; padding: 28px 36px; border-top: 1px solid #e5e7eb;">
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="text-align: center; padding: 0 12px;">
+                    <p style="color: #FCB20B; margin: 0 0 4px; font-size: 12px; font-weight: 700;">📍 Location</p>
+                    <p style="color: #374151; margin: 0; font-size: 13px; font-weight: 500;">Kigali, Rwanda</p>
+                  </td>
+                  <td style="text-align: center; padding: 0 12px; border-left: 1px solid #e5e7eb;">
+                    <p style="color: #FCB20B; margin: 0 0 4px; font-size: 12px; font-weight: 700;">📞 Phone</p>
+                    <p style="color: #374151; margin: 0; font-size: 13px; font-weight: 500;">+250 788 308 255</p>
+                  </td>
+                  <td style="text-align: center; padding: 0 12px; border-left: 1px solid #e5e7eb;">
+                    <p style="color: #FCB20B; margin: 0 0 4px; font-size: 12px; font-weight: 700;">✉️ Email</p>
+                    <p style="color: #374151; margin: 0; font-size: 13px; font-weight: 500;">rwandaadts@gmail.com</p>
+                  </td>
+                </tr>
+              </table>
+            </div>
+
+            <div style="background: #1f2937; padding: 18px; text-align: center;">
+              <p style="color: #FCB20B; margin: 0 0 4px; font-size: 12px; font-weight: 700; letter-spacing: 1px;">ADTS RWANDA</p>
+              <p style="color: #6b7280; margin: 0; font-size: 11px;">This is an automated response. Please do not reply to this email.</p>
+            </div>
+          </div>
+        `,
+      }
+
+      await Promise.all([
+        transporter.sendMail(adminNotification),
+        transporter.sendMail(autoReply),
+      ])
+      emailSent = true
+      console.log('✅ Contact emails sent successfully')
+    } catch (emailError) {
+      console.error('❌ Email sending failed:', emailError)
     }
 
-    const sentBy = emailSent ? 'smtp' : 'fallback-logged'
-    const responseBody: any = {
+    return NextResponse.json({
       success: true,
-      message: 'Message processed',
-      sentBy,
-    }
-
-    // In development include a short error message to aid debugging
-    if (!emailSent && sendError && process.env.NODE_ENV === 'development') {
-      responseBody.sendError = typeof sendError === 'string' ? sendError : (sendError && sendError.message) ? sendError.message : String(sendError)
-    }
-
-    return NextResponse.json(responseBody, { status: 200 })
-
+      message: 'Message received successfully.',
+      sentBy: emailSent ? 'smtp' : 'fallback-logged',
+    })
   } catch (error) {
     console.error('Contact form error:', error)
     return NextResponse.json(
-      { 
-        error: 'Failed to send message. Please try again later or contact us directly.',
-        details: process.env.NODE_ENV === 'development' ? error : undefined
-      },
+      { error: 'Failed to send message. Please try again later or contact us directly.' },
       { status: 500 }
     )
   }
