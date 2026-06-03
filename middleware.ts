@@ -4,8 +4,9 @@ import { ADMIN_TOKEN_COOKIE_NAME, verifyAdminToken } from '@/lib/auth-tokens'
 
 export async function middleware(request: NextRequest) {
   // Check if the request is for an admin route (excluding login)
-  if (request.nextUrl.pathname.startsWith('/admin') && 
-      !request.nextUrl.pathname.startsWith('/admin/login')) {
+  if (request.nextUrl.pathname.startsWith('/admin') &&
+      !request.nextUrl.pathname.startsWith('/admin/login') &&
+      !request.nextUrl.pathname.startsWith('/admin/forgot-password')) {
     
     // Check for authentication token in cookies
     const token = request.cookies.get(ADMIN_TOKEN_COOKIE_NAME)?.value

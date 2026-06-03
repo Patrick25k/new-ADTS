@@ -480,6 +480,36 @@ export async function ensureGalleryTables() {
 }
 
 /* ============================================================
+   PASSWORD RESET OTPs
+============================================================ */
+
+let passwordResetOtpsInitialized = false;
+
+export async function ensurePasswordResetOtpsTable() {
+  if (passwordResetOtpsInitialized) {
+    return;
+  }
+
+  await ensureAdminTables();
+
+  try {
+    await sql`
+      CREATE TABLE IF NOT EXISTS password_reset_otps (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        email TEXT NOT NULL,
+        otp TEXT NOT NULL,
+        expires_at TIMESTAMPTZ NOT NULL,
+        used BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+    passwordResetOtpsInitialized = true;
+  } catch (error) {
+    console.debug("Password reset OTPs table initialization:", error);
+  }
+}
+
+/* ============================================================
    JOBS
 ============================================================ */
 

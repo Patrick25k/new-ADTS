@@ -201,8 +201,13 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
 
-  // Hide sidebar for the login page so it shows a clean, full-width login view
-  if (pathname === "/admin/login" || pathname === "/admin/login/") {
+  // Hide sidebar for auth pages so they show a clean, full-width view
+  if (
+    pathname === "/admin/login" ||
+    pathname === "/admin/login/" ||
+    pathname === "/admin/forgot-password" ||
+    pathname === "/admin/forgot-password/"
+  ) {
     return (
       <AuthProvider>
         <div className="min-h-screen">{children}</div>
