@@ -158,3 +158,43 @@ export async function PUT(
     )
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    await ensureAdminTables()
+    const requester = await requireAdmin(request)
+    const { id } = await params
+
+    // Only super_admin can delete users
+    const requesterRows = await sql`
+      SELECT role FROM admin_users WHERE id = ${requester.sub as string} LIMIT 1
+    `
+    if (requesterRows[0]?.role !== 'super_admin') {
+      return NextResponse.json({ error: 'Only super admins can delete admin users' }, { status: 403 })
+    }
+
+    // Prevent deleting yourself
+    if (id === requester.sub) {
+      return NextResponse.json({ error: 'You cannot delete your own account' }, { status: 400 })
+    }
+
+    const result = await sql`
+      DELETE FROM admin_users WHERE id = ${id} RETURNING id
+    `
+
+    if ((result as any[]).length === 0) {
+      return NextResponse.json({ error: 'Admin user not found' }, { status: 404 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error: any) {
+    if (error?.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    console.error('Delete admin user error:', error)
+    return NextResponse.json({ error: 'Failed to delete admin user' }, { status: 500 })
+  }
+}

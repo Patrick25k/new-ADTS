@@ -103,6 +103,27 @@ export default function SettingsPage() {
   const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
+  const handleDeleteUser = async () => {
+    if (!deleteTarget) return
+    setIsDeleting(true)
+    try {
+      const res = await fetch(`/api/admin/users/${deleteTarget.id}`, { method: "DELETE" })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Failed to delete user")
+
+      setAdminUsers((prev) => prev.filter((u) => u.id !== deleteTarget.id))
+      toast({
+        title: "User deleted",
+        description: `${deleteTarget.full_name || deleteTarget.email} has been permanently removed.`,
+      })
+      setDeleteTarget(null)
+    } catch (err: any) {
+      toast({ title: "Failed to delete user", description: err.message, variant: "destructive" })
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   useEffect(() => {
     loadAdminUsers()
   }, [])
@@ -409,14 +430,24 @@ export default function SettingsPage() {
                               <td className="px-4 py-3">
                                 <div className="flex items-center justify-end gap-1">
                                   {!isCurrentUser && (
-                                    <Button
-                                      variant="ghost" size="sm"
-                                      className={`h-8 w-8 p-0 ${adminUser.is_active ? "text-gray-500 hover:text-orange-600 hover:bg-orange-50" : "text-gray-500 hover:text-green-600 hover:bg-green-50"}`}
-                                      title={adminUser.is_active ? "Deactivate user" : "Activate user"}
-                                      onClick={() => setToggleTarget(adminUser)}
-                                    >
-                                      {adminUser.is_active ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
-                                    </Button>
+                                    <>
+                                      <Button
+                                        variant="ghost" size="sm"
+                                        className={`h-8 w-8 p-0 ${adminUser.is_active ? "text-gray-500 hover:text-orange-600 hover:bg-orange-50" : "text-gray-500 hover:text-green-600 hover:bg-green-50"}`}
+                                        title={adminUser.is_active ? "Deactivate user" : "Activate user"}
+                                        onClick={() => setToggleTarget(adminUser)}
+                                      >
+                                        {adminUser.is_active ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                                      </Button>
+                                      <Button
+                                        variant="ghost" size="sm"
+                                        className="h-8 w-8 p-0 text-gray-500 hover:text-red-600 hover:bg-red-50"
+                                        title="Delete user"
+                                        onClick={() => setDeleteTarget(adminUser)}
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </Button>
+                                    </>
                                   )}
                                 </div>
                               </td>
@@ -501,6 +532,43 @@ export default function SettingsPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Delete User Dialog ── */}
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="w-5 h-5" />
+              Delete Admin User
+            </DialogTitle>
+            <DialogDescription>
+              This action is permanent and cannot be undone. The user will lose all access immediately.
+            </DialogDescription>
+          </DialogHeader>
+          {deleteTarget && (
+            <div className="bg-gray-50 rounded-lg p-3 border">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <Users className="w-5 h-5 text-red-500" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900 text-sm">{deleteTarget.full_name || "Admin User"}</p>
+                  <p className="text-xs text-gray-500">{deleteTarget.email}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{deleteTarget.role === "super_admin" ? "Super Admin" : "Admin"}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={isDeleting}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDeleteUser} disabled={isDeleting} className="gap-2">
+              {isDeleting
+                ? <><Loader2 className="w-4 h-4 animate-spin" />Deleting...</>
+                : <><Trash2 className="w-4 h-4" />Delete Permanently</>}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
