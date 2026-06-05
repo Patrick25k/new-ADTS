@@ -260,11 +260,7 @@ export default function GalleryPage() {
                             <Play className="w-16 h-16 text-white fill-white opacity-80 group-hover:opacity-100 transition-opacity" />
                           </div>
                         )}
-                        <figcaption className="absolute inset-0 bg-gradient-to-t from-foreground/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end pointer-events-none group-hover:pointer-events-auto">
-                          <p className="text-background p-4 text-sm font-medium">
-                            {item.alt}
-                          </p>
-                        </figcaption>
+                        <figcaption className="absolute inset-0 bg-gradient-to-t from-foreground/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                       </figure>
                     );
                   })
@@ -330,26 +326,6 @@ export default function GalleryPage() {
                     allowFullScreen
                     className="rounded"
                   />
-                </div>
-              )}
-              {currentItem.title && (
-                <div className="text-white text-center p-4">
-                  <h3 className="text-lg font-semibold">{currentItem.title}</h3>
-                  {currentItem.description && (
-                    <p className="text-sm text-gray-300 mt-1">
-                      {currentItem.description}
-                    </p>
-                  )}
-                  {currentItem.type === "image" && currentItem.photographer && (
-                    <p className="text-xs text-gray-400 mt-2">
-                      Photo by: {currentItem.photographer}
-                    </p>
-                  )}
-                  {currentItem.type === "video" && currentItem.author && (
-                    <p className="text-xs text-gray-400 mt-2">
-                      By: {currentItem.author}
-                    </p>
-                  )}
                 </div>
               )}
             </div>
