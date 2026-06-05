@@ -35,13 +35,32 @@ function buildBaseUrl(request: NextRequest): string {
 
 export async function GET(request: NextRequest) {
   try {
+    const token = request.cookies.get(ADMIN_TOKEN_COOKIE_NAME)?.value
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const payload = await verifyAdminToken(token)
     await ensureAdminTables()
 
-    const rows = await sql`
-      SELECT id, email, full_name, role, is_active, created_at
-      FROM admin_users
-      ORDER BY created_at DESC
+    // Check the requester's current role from DB (not the JWT, which may be stale)
+    const requesterRows = await sql`
+      SELECT role FROM admin_users WHERE id = ${payload.sub as string} LIMIT 1
     `
+    const requesterRole = requesterRows[0]?.role ?? 'admin'
+    const isSuperAdmin = requesterRole === 'super_admin'
+
+    // Super admins see everyone; regular admins only see active users
+    const rows = isSuperAdmin
+      ? await sql`
+          SELECT id, email, full_name, role, is_active, created_at
+          FROM admin_users
+          ORDER BY created_at DESC
+        `
+      : await sql`
+          SELECT id, email, full_name, role, is_active, created_at
+          FROM admin_users
+          WHERE is_active = TRUE
+          ORDER BY created_at DESC
+        `
 
     const users = (rows as any[]).map((row) => ({
       id: row.id as string,
@@ -55,7 +74,10 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.json({ users })
     response.headers.set('Cache-Control', 'no-store')
     return response
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     console.error('Admin users list error:', error)
     return NextResponse.json({ error: 'Failed to load admin users' }, { status: 500 })
   }
