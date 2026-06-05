@@ -86,12 +86,18 @@ export async function ensureAdminTables() {
     await sql`ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS avatar_url TEXT`;
     await sql`ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ`;
 
-    // Ensure SUPER_ADMIN_EMAIL has the super_admin role
+    // Keep super_admin role in sync with SUPER_ADMIN_EMAIL env var:
+    // 1. Demote anyone who is currently super_admin but no longer matches the env
+    // 2. Promote the designated email to super_admin
     const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
     if (superAdminEmail) {
       await sql`
+        UPDATE admin_users SET role = 'admin'
+        WHERE role = 'super_admin' AND email != ${superAdminEmail}
+      `;
+      await sql`
         UPDATE admin_users SET role = 'super_admin'
-        WHERE email = ${superAdminEmail} AND role != 'super_admin'
+        WHERE email = ${superAdminEmail}
       `;
     }
 
