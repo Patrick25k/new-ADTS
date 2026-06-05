@@ -3,8 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdminHeader } from "@/components/admin-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Plus,
@@ -12,17 +10,18 @@ import {
   Trash2,
   Users,
   Search,
-  Filter,
-  Calendar,
   MapPin,
   Briefcase,
   TrendingUp,
   Clock,
-  Share2,
   Eye,
   DollarSign,
   AlertTriangle,
+  Inbox,
+  Download,
 } from "lucide-react";
+import { TablePagination } from "@/components/ui/table-pagination";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -85,6 +84,8 @@ export default function JobsManagement() {
   const [editingJob, setEditingJob] = useState<JobItem | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<JobItem | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -159,8 +160,13 @@ export default function JobsManagement() {
       })();
 
       return matchesSearch && matchesFilter;
-    }).sort((a, b) => new Date(b.createdAt || b.postDate || '0').getTime() - new Date(a.createdAt || a.postDate || '0').getTime()).slice(0, 8)
+    }).sort((a, b) => new Date(b.createdAt || b.postDate || '0').getTime() - new Date(a.createdAt || a.postDate || '0').getTime());
   }, [jobs, search, filter]);
+
+  const paginatedJobs = filteredJobs.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const stats = useMemo(() => {
     const activeJobs = jobs.filter((j) => j.status === "Open").length;
@@ -533,236 +539,113 @@ export default function JobsManagement() {
           </CardContent>
         </Card>
 
-        {/* Jobs Grid */}
-        {isLoading && jobs.length === 0 ? (
-          <div className="col-span-full text-center py-12">
-            <div className="flex flex-col items-center gap-3">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              <p className="text-gray-600">Loading jobs...</p>
+        {/* Jobs Table */}
+        <div className="bg-white rounded-lg border overflow-hidden">
+          {isLoading && jobs.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-3" />
+              <p className="text-gray-500">Loading jobs...</p>
             </div>
-          </div>
-        ) : !isLoading && filteredJobs.length === 0 ? (
-          <div className="col-span-full text-center py-12">
-            <div className="flex flex-col items-center gap-3">
-              <Briefcase className="w-12 h-12 text-gray-400" />
-              <p className="text-gray-600">No jobs found.</p>
-              <p className="text-sm text-gray-500">Try adjusting your filters or create a new job posting to get started.</p>
+          ) : filteredJobs.length === 0 ? (
+            <div className="text-center py-16 px-4">
+              <Inbox className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 font-medium">No jobs found</p>
+              <p className="text-sm text-gray-400 mt-1">
+                {search || filter !== "all" ? "Try adjusting your filters" : "Create your first job posting to get started"}
+              </p>
             </div>
-          </div>
-        ) : (
-          <div>
-            <div className="mb-4 text-sm text-gray-600">
-              Showing {filteredJobs.length} of {jobs.length} jobs (most recent)
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {filteredJobs.map((job) => {
-            const daysLeft = getDaysLeft(job.deadline);
-
-            return (
-              <Card
-                key={job.id}
-                className="bg-white hover:shadow-lg transition-all duration-200 group"
-              >
-                <div className="relative">
-                  <div className="h-32 bg-gradient-to-r from-purple-100 to-indigo-100 rounded-t-lg flex items-center justify-center">
-                    <Briefcase className="w-16 h-16 text-purple-500" />
-                  </div>
-                  {job.featured && (
-                    <Badge className="absolute top-3 left-3 bg-yellow-100 text-yellow-800 border border-yellow-200">
-                      ⭐ Featured
-                    </Badge>
-                  )}
-                  <Badge
-                    variant="secondary"
-                    className={`absolute top-3 right-3 ${
-                      job.status === "Open"
-                        ? "bg-green-100 text-green-700 border border-green-200"
-                        : "bg-gray-100 text-gray-700 border border-gray-200"
-                    }`}
-                  >
-                    {job.status}
-                  </Badge>
-                  {daysLeft !== null && daysLeft > 0 && daysLeft <= 7 && (
-                    <Badge className="absolute bottom-3 left-3 bg-red-100 text-red-800 border border-red-200">
-                      <Clock className="w-3 h-3 mr-1" />
-                      {daysLeft} days left
-                    </Badge>
-                  )}
-                </div>
-
-                <CardContent className="p-4">
-                  <div className="space-y-3">
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge variant="outline" className="text-xs flex-shrink-0">
-                          {job.department}
-                        </Badge>
-                        <Badge
-                          variant="outline"
-                          className={`text-xs flex-shrink-0 ${
-                            job.priority === "High"
-                              ? "border-red-200 text-red-700"
-                              : job.priority === "Medium"
-                              ? "border-orange-200 text-orange-700"
-                              : "border-gray-200 text-gray-700"
-                          }`}
-                        >
-                          {job.priority}
-                        </Badge>
-                      </div>
-                      <h3 className="font-bold text-base text-gray-900 group-hover:text-primary transition-colors line-clamp-2">
-                        {job.title}
-                      </h3>
-                      <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                        {job.description}
-                      </p>
-                    </div>
-
-                    <div className="space-y-1 text-xs">
-                      <div className="flex items-center gap-1 text-gray-600">
-                        <MapPin className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                        <span className="truncate">{job.location}</span>
-                        <Badge variant="secondary" className="text-xs ml-auto flex-shrink-0">
-                          {job.type}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-1 text-gray-600">
-                        <DollarSign className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                        <span className="truncate">{job.salary}</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-gray-600">
-                        <Calendar className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                        <span className="truncate">
-                          {job.deadline
-                            ? new Date(job.deadline).toLocaleDateString()
-                            : "TBA"}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between text-xs text-gray-500 border-t pt-2">
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1">
-                          <Users className="w-3 h-3" />
-                          <span>{job.applicants}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Eye className="w-3 h-3" />
-                          <span>{job.views}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <p className="text-xs font-medium text-gray-700">
-                        Requirements:
-                      </p>
-                      <div className="flex flex-wrap gap-1">
-                        {job.requirements.slice(0, 2).map((req, index) => (
-                          <Badge
-                            key={index}
-                            variant="secondary"
-                            className="text-xs bg-gray-100 text-gray-700"
-                          >
-                            {req.length > 15 ? req.substring(0, 15) + "..." : req}
-                          </Badge>
-                        ))}
-                        {job.requirements.length > 2 && (
-                          <Badge
-                            variant="secondary"
-                            className="text-xs bg-gray-100 text-gray-700"
-                          >
-                            +{job.requirements.length - 2} more
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <p className="text-xs font-medium text-gray-700">Benefits:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {job.benefits.slice(0, 2).map((benefit, index) => (
-                          <Badge
-                            key={index}
-                            variant="secondary"
-                            className="text-xs bg-blue-50 text-blue-700"
-                          >
-                            {benefit.length > 15 ? benefit.substring(0, 15) + "..." : benefit}
-                          </Badge>
-                        ))}
-                        {job.benefits.length > 2 && (
-                          <Badge
-                            variant="secondary"
-                            className="text-xs bg-blue-50 text-blue-700"
-                          >
-                            +{job.benefits.length - 2} more
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-primary border-primary/20 hover:bg-primary/5"
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          View
-                        </Button>
-                        {job.documentUrl && (
-                          <Button
-                            asChild
-                            variant="outline"
-                            size="sm"
-                            className="text-gray-700 border-gray-200 hover:bg-gray-50"
-                          >
-                            <a
-                              href={job.documentUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              <Users className="w-4 h-4 mr-1" />
-                              Job Details
-                            </a>
-                          </Button>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-                          onClick={() => openEditDialog(job)}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-                        >
-                          <Share2 className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => openDeleteDialog(job)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-            </div>
-          </div>
-        )}
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Job Title</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Department</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Location / Type</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Deadline</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Applicants</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {paginatedJobs.map((job) => {
+                      const daysLeft = getDaysLeft(job.deadline);
+                      return (
+                        <tr key={job.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <div>
+                                <p className="text-sm font-medium text-gray-900 max-w-[200px] truncate">{job.title}</p>
+                                <div className="flex items-center gap-1 mt-0.5">
+                                  {job.featured && <span className="text-xs text-yellow-600">⭐ Featured</span>}
+                                  <span className={`text-xs ${job.priority === "High" ? "text-red-500" : job.priority === "Medium" ? "text-orange-500" : "text-gray-400"}`}>
+                                    {job.priority} priority
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-600">{job.department || "—"}</td>
+                          <td className="px-4 py-3">
+                            <p className="text-sm text-gray-600 flex items-center gap-1">
+                              <MapPin className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                              {job.location || "—"}
+                            </p>
+                            <Badge variant="secondary" className="text-xs mt-1">{job.type}</Badge>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              job.status === "Open" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
+                            }`}>
+                              {job.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <p className="text-sm text-gray-600">{job.deadline ? new Date(job.deadline).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</p>
+                            {daysLeft !== null && daysLeft >= 0 && daysLeft <= 7 && (
+                              <p className="text-xs text-red-500 flex items-center gap-1 mt-0.5">
+                                <Clock className="w-3 h-3" />{daysLeft}d left
+                              </p>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1 text-sm text-gray-600">
+                              <Users className="w-3 h-3 text-gray-400" />
+                              {job.applicants}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center justify-end gap-1">
+                              {job.documentUrl && (
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600 hover:bg-blue-50" asChild title="Download document">
+                                  <a href={job.documentUrl} target="_blank" rel="noreferrer"><Download className="w-4 h-4" /></a>
+                                </Button>
+                              )}
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-500 hover:text-primary hover:bg-primary/5" title="Edit" onClick={() => openEditDialog(job)}>
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-500 hover:text-red-600 hover:bg-red-50" title="Delete" onClick={() => openDeleteDialog(job)}>
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <TablePagination
+                currentPage={currentPage}
+                totalItems={filteredJobs.length}
+                itemsPerPage={ITEMS_PER_PAGE}
+                onPageChange={setCurrentPage}
+              />
+            </>
+          )}
+        </div>
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

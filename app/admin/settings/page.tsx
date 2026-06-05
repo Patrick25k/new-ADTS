@@ -21,10 +21,11 @@ import {
   Twitter,
   Instagram,
   Linkedin,
-  Clock,
   CheckCircle,
   Loader2,
+  ShieldCheck,
 } from "lucide-react"
+import { TablePagination } from "@/components/ui/table-pagination"
 
 interface SiteSettings {
   siteName: string
@@ -349,79 +350,79 @@ export default function SettingsPage() {
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {isLoadingUsers ? (
-              <div className="text-center py-8">
-                <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
-                <p className="text-gray-600">Loading admin users...</p>
+              <div className="text-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-3" />
+                <p className="text-gray-500">Loading admin users...</p>
               </div>
             ) : adminUsers.length === 0 ? (
-              <div className="text-center py-8">
-                <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">No admin users found</p>
-                <p className="text-sm text-gray-500 mt-2">Check your database connection</p>
+              <div className="text-center py-12 px-4">
+                <ShieldCheck className="w-14 h-14 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 font-medium">No admin users found</p>
+                <p className="text-sm text-gray-400 mt-1">Check your database connection</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {adminUsers.map((adminUser) => {
-                  const isCurrentUser = user?.email === adminUser.email
-                  return (
-                    <div
-                      key={adminUser.id}
-                      className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
-                        isCurrentUser 
-                          ? 'border-primary bg-primary/5' 
-                          : 'border-gray-200 hover:bg-gray-50'
-                      }`}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                          isCurrentUser 
-                            ? 'bg-primary text-primary-foreground' 
-                            : 'bg-gradient-to-r from-blue-100 to-purple-100'
-                        }`}>
-                          <Users className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">
-                            {adminUser.full_name || 'Admin User'}
-                            {isCurrentUser && (
-                              <span className="ml-2 text-primary font-semibold">(You)</span>
-                            )}
-                          </p>
-                          <p className="text-sm text-gray-500">{adminUser.email}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="outline" className="text-xs">
-                              {adminUser.role || 'Admin'}
-                            </Badge>
-                            <Badge
-                              variant="secondary"
-                              className={`text-xs ${
-                                adminUser.is_active
-                                  ? "bg-green-100 text-green-700"
-                                  : "bg-gray-100 text-gray-700"
-                              }`}
-                            >
-                              {adminUser.is_active ? "Active" : "Inactive"}
-                            </Badge>
-                            {isCurrentUser && (
-                              <Badge className="text-xs bg-primary text-primary-foreground">
-                                Current User
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-1 text-sm text-gray-500 mb-2">
-                          <Clock className="w-3 h-3" />
-                          <span>Joined: {new Date(adminUser.created_at).toLocaleDateString()}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">User</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Role</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Joined</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {adminUsers.map((adminUser) => {
+                        const isCurrentUser = user?.email === adminUser.email
+                        return (
+                          <tr key={adminUser.id} className={`transition-colors ${isCurrentUser ? "bg-primary/5" : "hover:bg-gray-50"}`}>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                  isCurrentUser ? "bg-primary text-primary-foreground" : "bg-blue-50"
+                                }`}>
+                                  <Users className={`w-4 h-4 ${isCurrentUser ? "" : "text-blue-500"}`} />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">
+                                    {adminUser.full_name || "Admin User"}
+                                    {isCurrentUser && <span className="ml-2 text-xs text-primary font-semibold">(You)</span>}
+                                  </p>
+                                  <p className="text-xs text-gray-500">{adminUser.email}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                                {adminUser.role || "Admin"}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                adminUser.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
+                              }`}>
+                                {adminUser.is_active ? "Active" : "Inactive"}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-500">
+                              {new Date(adminUser.created_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <TablePagination
+                  currentPage={1}
+                  totalItems={adminUsers.length}
+                  itemsPerPage={adminUsers.length}
+                  onPageChange={() => {}}
+                />
+              </>
             )}
           </CardContent>
         </Card>

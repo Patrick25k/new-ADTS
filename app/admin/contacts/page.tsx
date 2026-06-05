@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdminHeader } from "@/components/admin-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { EmailComposer } from "@/components/email-composer";
 import {
@@ -12,17 +11,17 @@ import {
   Trash2,
   Mail,
   Search,
-  Filter,
-  Calendar,
   Phone,
   MessageSquare,
   Clock,
-  Share2,
   Reply,
   User,
   AlertCircle,
   AlertTriangle,
+  Inbox,
+  Edit,
 } from "lucide-react";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { useToast } from "@/components/ui/use-toast";
 import {
   Dialog,
@@ -72,6 +71,8 @@ export default function ContactsManagement() {
   const [selectedContactForReply, setSelectedContactForReply] = useState<ContactItem | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [contactToDelete, setContactToDelete] = useState<ContactItem | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const loadContacts = useCallback(async () => {
     try {
@@ -134,6 +135,11 @@ export default function ContactsManagement() {
       return matchesSearch && matchesFilter;
     });
   }, [contacts, search, filter]);
+
+  const paginatedContacts = filteredContacts.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const stats = useMemo(() => {
     const total = contacts.length;
@@ -352,161 +358,137 @@ export default function ContactsManagement() {
           </CardContent>
         </Card>
 
-        {/* Contacts Grid */}
-        {isLoading && contacts.length === 0 ? (
-          <div className="col-span-full text-center py-12">
-            <div className="flex flex-col items-center gap-3">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              <p className="text-gray-600">Loading messages...</p>
+        {/* Contacts Table */}
+        <div className="bg-white rounded-lg border overflow-hidden">
+          {isLoading && contacts.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-3" />
+              <p className="text-gray-500">Loading messages...</p>
             </div>
-          </div>
-        ) : !isLoading && filteredContacts.length === 0 ? (
-          <div className="col-span-full text-center py-12">
-            <div className="flex flex-col items-center gap-3">
-              <Mail className="w-12 h-12 text-gray-400" />
-              <p className="text-gray-600">No messages found.</p>
-              <p className="text-sm text-gray-500">Try adjusting your filters or check back later for new messages.</p>
+          ) : filteredContacts.length === 0 ? (
+            <div className="text-center py-16 px-4">
+              <Inbox className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 font-medium">No messages found</p>
+              <p className="text-sm text-gray-400 mt-1">
+                {search || filter !== "all"
+                  ? "Try adjusting your filters"
+                  : "Contact messages from the website will appear here"}
+              </p>
             </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredContacts.map((contact) => {
-            const created = new Date(contact.createdAt);
-
-            return (
-              <Card
-                key={contact.id}
-                className="bg-white hover:shadow-lg transition-all duration-200 group"
-              >
-                <div className="relative">
-                  <div className="h-20 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-t-lg flex items-center justify-center">
-                    <MessageSquare className="w-12 h-12 text-blue-500" />
-                  </div>
-                  <Badge
-                    variant="secondary"
-                    className={`absolute top-3 right-3 ${
-                      contact.status === "Unread"
-                        ? "bg-red-100 text-red-700 border border-red-200"
-                        : contact.status === "Read"
-                          ? "bg-yellow-100 text-yellow-700 border border-yellow-200"
-                          : "bg-green-100 text-green-700 border border-green-200"
-                    }`}
-                  >
-                    {contact.status}
-                  </Badge>
-                  <Badge
-                    variant="outline"
-                    className={`absolute top-3 left-3 text-xs ${
-                      contact.priority === "High"
-                        ? "border-red-200 text-red-700 bg-red-50"
-                        : "border-orange-200 text-orange-700 bg-orange-50"
-                    }`}
-                  >
-                    {contact.priority} Priority
-                  </Badge>
-                </div>
-
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <Badge
-                          variant="outline"
-                          className="text-xs bg-blue-50 text-blue-700"
-                        >
-                          {contact.category || "General"}
-                        </Badge>
-                        <span className="text-xs text-gray-500">
-                          {created.toLocaleDateString()} at {created.toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
-                      </div>
-                      <h3 className="font-bold text-lg text-gray-900 group-hover:text-primary transition-colors">
-                        {contact.name}
-                      </h3>
-                      <p className="text-sm font-medium text-gray-700 mt-1">
-                        {contact.subject}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Mail className="w-4 h-4 text-gray-400" />
-                        <span className="truncate">{contact.email}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Phone className="w-4 h-4 text-gray-400" />
-                        <span>{contact.phone || "-"}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <User className="w-4 h-4 text-gray-400" />
-                        <span>{contact.organization || "Individual"}</span>
-                      </div>
-                    </div>
-
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-sm text-gray-700 line-clamp-3">
-                        {contact.message}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-primary border-primary/20 hover:bg-primary/5"
-                          onClick={() => {
-                            setSelectedContact(contact);
-                            if (contact.status === "Unread") {
-                              updateContactStatus(contact, { status: "Read" });
-                            }
-                          }}
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          Read
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-blue-700 border-blue-200 hover:bg-blue-50"
-                          onClick={() => {
-                            setEmailMode("reply");
-                            setSelectedContactForReply(contact);
-                            setIsEmailComposerOpen(true);
-                          }}
-                        >
-                          <Reply className="w-4 h-4 mr-1" />
-                          Reply
-                        </Button>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-                        >
-                          <Share2 className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => openDeleteDialog(contact)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Sender</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Subject</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Priority</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {paginatedContacts.map((contact) => {
+                      const created = new Date(contact.createdAt);
+                      return (
+                        <tr key={contact.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0">
+                                <User className="w-4 h-4 text-blue-500" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">{contact.name}</p>
+                                <p className="text-xs text-gray-500 truncate max-w-[180px]">{contact.email}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <p className="text-sm text-gray-900 font-medium truncate max-w-[200px]">{contact.subject}</p>
+                            <p className="text-xs text-gray-400 truncate max-w-[200px]">{contact.message}</p>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              contact.status === "Unread"
+                                ? "bg-red-100 text-red-700"
+                                : contact.status === "Read"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : "bg-green-100 text-green-700"
+                            }`}>
+                              {contact.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              contact.priority === "High"
+                                ? "bg-red-50 text-red-600"
+                                : contact.priority === "Medium"
+                                ? "bg-orange-50 text-orange-600"
+                                : "bg-gray-100 text-gray-600"
+                            }`}>
+                              {contact.priority}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
+                            {created.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-gray-500 hover:text-primary hover:bg-primary/5"
+                                title="Read message"
+                                onClick={() => {
+                                  setSelectedContact(contact);
+                                  if (contact.status === "Unread") {
+                                    updateContactStatus(contact, { status: "Read" });
+                                  }
+                                }}
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600 hover:bg-blue-50"
+                                title="Reply"
+                                onClick={() => {
+                                  setEmailMode("reply");
+                                  setSelectedContactForReply(contact);
+                                  setIsEmailComposerOpen(true);
+                                }}
+                              >
+                                <Reply className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-gray-500 hover:text-red-600 hover:bg-red-50"
+                                title="Delete"
+                                onClick={() => openDeleteDialog(contact)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <TablePagination
+                currentPage={currentPage}
+                totalItems={filteredContacts.length}
+                itemsPerPage={ITEMS_PER_PAGE}
+                onPageChange={setCurrentPage}
+              />
+            </>
+          )}
         </div>
-        )}
       </div>
 
       <Dialog

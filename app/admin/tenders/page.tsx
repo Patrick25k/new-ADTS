@@ -3,8 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdminHeader } from "@/components/admin-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Plus,
@@ -12,18 +10,16 @@ import {
   Trash2,
   Download,
   Search,
-  Filter,
-  Calendar,
   FileText,
-  TrendingUp,
   DollarSign,
   Users,
   Clock,
-  Share2,
   Eye,
   AlertCircle,
   AlertTriangle,
+  Inbox,
 } from "lucide-react";
+import { TablePagination } from "@/components/ui/table-pagination";
 import {
   Dialog,
   DialogContent,
@@ -84,6 +80,8 @@ export default function TendersManagement() {
   const [editingTender, setEditingTender] = useState<TenderItem | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [tenderToDelete, setTenderToDelete] = useState<TenderItem | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -154,8 +152,13 @@ export default function TendersManagement() {
       })();
 
       return matchesSearch && matchesFilter;
-    }).sort((a, b) => new Date(b.createdAt || a.publishDate || '0').getTime() - new Date(a.createdAt || a.publishDate || '0').getTime()).slice(0, 8)
+    }).sort((a, b) => new Date(b.createdAt || b.publishDate || '0').getTime() - new Date(a.createdAt || a.publishDate || '0').getTime());
   }, [tenders, search, filter]);
+
+  const paginatedTenders = filteredTenders.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const stats = useMemo(() => {
     const activeTenders = tenders.filter((t) => t.status === "Open").length;
@@ -528,216 +531,105 @@ export default function TendersManagement() {
           </CardContent>
         </Card>
 
-        {/* Tenders Grid */}
-        {isLoading && tenders.length === 0 ? (
-          <div className="col-span-full text-center py-12">
-            <div className="flex flex-col items-center gap-3">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              <p className="text-gray-600">Loading tenders...</p>
+        {/* Tenders Table */}
+        <div className="bg-white rounded-lg border overflow-hidden">
+          {isLoading && tenders.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-3" />
+              <p className="text-gray-500">Loading tenders...</p>
             </div>
-          </div>
-        ) : !isLoading && filteredTenders.length === 0 ? (
-          <div className="col-span-full text-center py-12">
-            <div className="flex flex-col items-center gap-3">
-              <FileText className="w-12 h-12 text-gray-400" />
-              <p className="text-gray-600">No tenders found.</p>
-              <p className="text-sm text-gray-500">Try adjusting your filters or create a new tender to get started.</p>
+          ) : filteredTenders.length === 0 ? (
+            <div className="text-center py-16 px-4">
+              <Inbox className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 font-medium">No tenders found</p>
+              <p className="text-sm text-gray-400 mt-1">
+                {search || filter !== "all" ? "Try adjusting your filters" : "Create your first tender to get started"}
+              </p>
             </div>
-          </div>
-        ) : (
-          <div>
-            <div className="mb-4 text-sm text-gray-600">
-              Showing {filteredTenders.length} of {tenders.length} tenders (most recent)
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-6">
-          {filteredTenders.map((tender) => {
-            const daysLeft = getDaysLeft(tender.deadline);
-
-            return (
-              <Card
-                key={tender.id}
-                className="bg-white hover:shadow-lg transition-all duration-200 group"
-              >
-                <div className="relative">
-                  <div className="h-32 bg-gradient-to-r from-green-100 to-emerald-100 rounded-t-lg flex items-center justify-center">
-                    <FileText className="w-16 h-16 text-green-500" />
-                  </div>
-                  {tender.featured && (
-                    <Badge className="absolute top-3 left-3 bg-yellow-100 text-yellow-800 border border-yellow-200">
-                      ⭐ Featured
-                    </Badge>
-                  )}
-                  <Badge
-                    variant="secondary"
-                    className={`absolute top-3 right-3 ${
-                      tender.status === "Open"
-                        ? "bg-green-100 text-green-700 border border-green-200"
-                        : "bg-gray-100 text-gray-700 border border-gray-200"
-                    }`}
-                  >
-                    {tender.status}
-                  </Badge>
-                  {daysLeft !== null && daysLeft > 0 && daysLeft <= 7 && (
-                    <Badge className="absolute bottom-3 left-3 bg-red-100 text-red-800 border border-red-200">
-                      <Clock className="w-3 h-3 mr-1" />
-                      {daysLeft} days left
-                    </Badge>
-                  )}
-                </div>
-
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <Badge variant="outline" className="text-xs">
-                          {tender.category}
-                        </Badge>
-                        <Badge
-                          variant="outline"
-                          className={`text-xs ${
-                            tender.priority === "High"
-                              ? "border-red-200 text-red-700"
-                              : tender.priority === "Medium"
-                              ? "border-orange-200 text-orange-700"
-                              : "border-gray-200 text-gray-700"
-                          }`}
-                        >
-                          {tender.priority} Priority
-                        </Badge>
-                      </div>
-                      <h3 className="font-bold text-lg text-gray-900 group-hover:text-primary transition-colors line-clamp-2">
-                        {tender.title}
-                      </h3>
-                      <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                        {tender.description}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Reference:</span>
-                        <span className="font-mono text-gray-900">
-                          {tender.reference}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Budget:</span>
-                        <span className="font-semibold text-gray-900">
-                          {tender.budget}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Deadline:</span>
-                        <span className="text-gray-900">
-                          {tender.deadline
-                            ? new Date(tender.deadline).toLocaleDateString()
-                            : "TBA"}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between text-sm text-gray-500">
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-1">
-                          <Users className="w-4 h-4" />
-                          <span>{tender.submissions} submissions</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Eye className="w-4 h-4" />
-                          <span>{tender.views} views</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        <span>
-                          {tender.publishDate
-                            ? `Published ${new Date(
-                                tender.publishDate,
-                              ).toLocaleDateString()}`
-                            : ""}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <p className="text-xs font-medium text-gray-700">
-                        Requirements:
-                      </p>
-                      <div className="flex flex-wrap gap-1">
-                        {tender.requirements.slice(0, 2).map((req, index) => (
-                          <Badge
-                            key={index}
-                            variant="secondary"
-                            className="text-xs bg-gray-100 text-gray-700"
-                          >
-                            {req}
-                          </Badge>
-                        ))}
-                        {tender.requirements.length > 2 && (
-                          <Badge
-                            variant="secondary"
-                            className="text-xs bg-gray-100 text-gray-700"
-                          >
-                            +{tender.requirements.length - 2} more
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-primary border-primary/20 hover:bg-primary/5"
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          View
-                        </Button>
-                        {tender.documentUrl && (
-                          <Button
-                            asChild
-                            variant="outline"
-                            size="sm"
-                            className="text-gray-700 border-gray-200 hover:bg-gray-50"
-                          >
-                            <a
-                              href={tender.documentUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              <Download className="w-4 h-4 mr-1" />
-                              Download
-                            </a>
-                          </Button>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-                        >
-                          <Share2 className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => openDeleteDialog(tender)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-            </div>
-          </div>
-        )}
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Title</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Reference</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Budget</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Deadline</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Submissions</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {paginatedTenders.map((tender) => {
+                      const daysLeft = getDaysLeft(tender.deadline);
+                      return (
+                        <tr key={tender.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-4 py-3">
+                            <p className="text-sm font-medium text-gray-900 max-w-[200px] truncate">{tender.title}</p>
+                            <div className="flex items-center gap-1 mt-0.5">
+                              {tender.featured && <span className="text-xs text-yellow-600">⭐ Featured</span>}
+                              <span className={`text-xs ${tender.priority === "High" ? "text-red-500" : tender.priority === "Medium" ? "text-orange-500" : "text-gray-400"}`}>
+                                {tender.priority} priority
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-sm font-mono text-gray-600">{tender.reference || "—"}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">{tender.category || "—"}</td>
+                          <td className="px-4 py-3 text-sm text-gray-900 font-medium">{tender.budget || "—"}</td>
+                          <td className="px-4 py-3">
+                            <p className="text-sm text-gray-600">{tender.deadline ? new Date(tender.deadline).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</p>
+                            {daysLeft !== null && daysLeft >= 0 && daysLeft <= 7 && (
+                              <p className="text-xs text-red-500 flex items-center gap-1 mt-0.5">
+                                <Clock className="w-3 h-3" />{daysLeft}d left
+                              </p>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              tender.status === "Open" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
+                            }`}>
+                              {tender.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1 text-sm text-gray-600">
+                              <Users className="w-3 h-3 text-gray-400" />
+                              {tender.submissions}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center justify-end gap-1">
+                              {tender.documentUrl && (
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600 hover:bg-blue-50" asChild title="Download document">
+                                  <a href={tender.documentUrl} target="_blank" rel="noreferrer"><Download className="w-4 h-4" /></a>
+                                </Button>
+                              )}
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-500 hover:text-primary hover:bg-primary/5" title="Edit" onClick={() => openEditDialog(tender)}>
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-500 hover:text-red-600 hover:bg-red-50" title="Delete" onClick={() => openDeleteDialog(tender)}>
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <TablePagination
+                currentPage={currentPage}
+                totalItems={filteredTenders.length}
+                itemsPerPage={ITEMS_PER_PAGE}
+                onPageChange={setCurrentPage}
+              />
+            </>
+          )}
+        </div>
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

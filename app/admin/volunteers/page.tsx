@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdminHeader } from "@/components/admin-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Eye,
@@ -12,20 +11,20 @@ import {
   Check,
   X,
   Search,
-  Filter,
-  Calendar,
   Phone,
   Mail,
   Users,
   TrendingUp,
   Clock,
-  Share2,
   Heart,
   Star,
   MapPin,
   Award,
   AlertTriangle,
+  Inbox,
+  Edit,
 } from "lucide-react";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { useToast } from "@/components/ui/use-toast";
 import {
   Dialog,
@@ -78,6 +77,8 @@ export default function VolunteersManagement() {
   );
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [volunteerToDelete, setVolunteerToDelete] = useState<VolunteerItem | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -148,6 +149,11 @@ export default function VolunteersManagement() {
       return matchesSearch && matchesFilter;
     });
   }, [volunteers, search, filter]);
+
+  const paginatedVolunteers = filteredVolunteers.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const stats = useMemo(() => {
     const total = volunteers.length;
@@ -485,231 +491,112 @@ export default function VolunteersManagement() {
           </CardContent>
         </Card>
 
-        {/* Volunteers Grid */}
-        {isLoading && volunteers.length === 0 ? (
-          <div className="col-span-full text-center py-12">
-            <div className="flex flex-col items-center gap-3">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              <p className="text-gray-600">Loading volunteers...</p>
+        {/* Volunteers Table */}
+        <div className="bg-white rounded-lg border overflow-hidden">
+          {isLoading && volunteers.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-3" />
+              <p className="text-gray-500">Loading volunteers...</p>
             </div>
-          </div>
-        ) : !isLoading && filteredVolunteers.length === 0 ? (
-          <div className="col-span-full text-center py-12">
-            <div className="flex flex-col items-center gap-3">
-              <Users className="w-12 h-12 text-gray-400" />
-              <p className="text-gray-600">No volunteers found.</p>
-              <p className="text-sm text-gray-500">Try adjusting your filters or check back later for new volunteer applications.</p>
+          ) : filteredVolunteers.length === 0 ? (
+            <div className="text-center py-16 px-4">
+              <Inbox className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 font-medium">No volunteers found</p>
+              <p className="text-sm text-gray-400 mt-1">
+                {search || filter !== "all" ? "Try adjusting your filters" : "Volunteer applications will appear here"}
+              </p>
             </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredVolunteers.map((volunteer) => {
-            const applied = new Date(volunteer.appliedAt);
-
-            return (
-              <Card
-                key={volunteer.id}
-                className="bg-white hover:shadow-lg transition-all duration-200 group"
-              >
-                <div className="relative">
-                  <div className="h-24 bg-gradient-to-r from-green-100 to-blue-100 rounded-t-lg flex items-center justify-center">
-                    <Heart className="w-12 h-12 text-green-500" />
-                  </div>
-                  <Badge
-                    variant="secondary"
-                    className={`absolute top-3 right-3 ${
-                      volunteer.status === "Pending"
-                        ? "bg-yellow-100 text-yellow-700 border border-yellow-200"
-                        : volunteer.status === "Approved"
-                          ? "bg-green-100 text-green-700 border border-green-200"
-                          : volunteer.status === "Active"
-                            ? "bg-blue-100 text-blue-700 border border-blue-200"
-                            : "bg-red-100 text-red-700 border border-red-200"
-                    }`}
-                  >
-                    {volunteer.status}
-                  </Badge>
-                  <div className="absolute top-3 left-3 flex items-center gap-1">
-                    <Star className="w-3 h-3 text-yellow-500 fill-current" />
-                    <span className="text-xs font-medium text-gray-700">
-                      {volunteer.rating ?? "-"}
-                    </span>
-                  </div>
-                </div>
-
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <Badge variant="outline" className="text-xs">
-                          {volunteer.profession}
-                        </Badge>
-                        <Badge
-                          variant="outline"
-                          className={`text-xs ${
-                            volunteer.background === "Verified"
-                              ? "border-green-200 text-green-700 bg-green-50"
-                              : "border-orange-200 text-orange-700 bg-orange-50"
-                          }`}
-                        >
-                          {volunteer.background || "Pending"}
-                        </Badge>
-                      </div>
-                      <h3 className="font-bold text-lg text-gray-900 group-hover:text-primary transition-colors">
-                        {volunteer.name}
-                      </h3>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {volunteer.experience} experience • Age {volunteer.age ?? "-"}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Mail className="w-4 h-4 text-gray-400" />
-                        <span className="truncate">{volunteer.email}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Phone className="w-4 h-4 text-gray-400" />
-                        <span>{volunteer.phone}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <MapPin className="w-4 h-4 text-gray-400" />
-                        <span>{volunteer.location}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Clock className="w-4 h-4 text-gray-400" />
-                        <span>Available: {volunteer.availability}</span>
-                      </div>
-                    </div>
-
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <p className="text-xs font-medium text-gray-700 mb-2">
-                        Motivation:
-                      </p>
-                      <p className="text-sm text-gray-600 line-clamp-2">
-                        {volunteer.motivation}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <p className="text-xs font-medium text-gray-700">Skills:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {volunteer.skills.slice(0, 3).map((skill, index) => (
-                          <Badge
-                            key={index}
-                            variant="secondary"
-                            className="text-xs bg-blue-50 text-blue-700"
-                          >
-                            {skill}
-                          </Badge>
-                        ))}
-                        {volunteer.skills.length > 3 && (
-                          <Badge
-                            variant="secondary"
-                            className="text-xs bg-blue-50 text-blue-700"
-                          >
-                            +{volunteer.skills.length - 3} more
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <p className="text-xs font-medium text-gray-700">
-                        Preferred Programs:
-                      </p>
-                      <div className="flex flex-wrap gap-1">
-                        {volunteer.preferredPrograms.map((program, index) => (
-                          <Badge
-                            key={index}
-                            variant="secondary"
-                            className="text-xs bg-purple-50 text-purple-700"
-                          >
-                            {program}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between text-sm text-gray-500">
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          <span>{volunteer.hoursCommitted}h/month</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Award className="w-4 h-4" />
-                          <span>{volunteer.references} refs</span>
-                        </div>
-                      </div>
-                      <span className="text-xs text-gray-400">
-                        Applied {applied.toLocaleDateString()}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-primary border-primary/20 hover:bg-primary/5"
-                          onClick={() => openEditDialog(volunteer)}
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          View
-                        </Button>
-                        {volunteer.status === "Pending" && (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-green-700 border-green-200 hover:bg-green-50"
-                              onClick={() =>
-                                updateVolunteerStatus(volunteer, "Approved")
-                              }
-                            >
-                              <Check className="w-4 h-4 mr-1" />
-                              Approve
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Contact</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Profession</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Location</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Rating</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Applied</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {paginatedVolunteers.map((volunteer) => (
+                      <tr key={volunteer.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-green-50 rounded-full flex items-center justify-center flex-shrink-0">
+                              <Heart className="w-4 h-4 text-green-500" />
+                            </div>
+                            <p className="text-sm font-medium text-gray-900">{volunteer.name}</p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="text-xs text-gray-600 truncate max-w-[160px]">{volunteer.email}</p>
+                          <p className="text-xs text-gray-400">{volunteer.phone || "—"}</p>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-600">{volunteer.profession || "—"}</td>
+                        <td className="px-4 py-3">
+                          <p className="text-sm text-gray-600 flex items-center gap-1">
+                            <MapPin className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                            {volunteer.location || "—"}
+                          </p>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            volunteer.status === "Pending" ? "bg-yellow-100 text-yellow-700" :
+                            volunteer.status === "Approved" ? "bg-green-100 text-green-700" :
+                            volunteer.status === "Active" ? "bg-blue-100 text-blue-700" :
+                            "bg-red-100 text-red-700"
+                          }`}>
+                            {volunteer.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1 text-sm text-gray-600">
+                            <Star className="w-3 h-3 text-yellow-400 fill-current" />
+                            {volunteer.rating ?? "—"}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
+                          {new Date(volunteer.appliedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-end gap-1">
+                            {volunteer.status === "Pending" && (
+                              <>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-green-500 hover:text-green-700 hover:bg-green-50" title="Approve" onClick={() => updateVolunteerStatus(volunteer, "Approved")}>
+                                  <Check className="w-4 h-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-400 hover:text-red-600 hover:bg-red-50" title="Reject" onClick={() => updateVolunteerStatus(volunteer, "Rejected")}>
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </>
+                            )}
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-500 hover:text-primary hover:bg-primary/5" title="Edit" onClick={() => openEditDialog(volunteer)}>
+                              <Edit className="w-4 h-4" />
                             </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-red-700 border-red-200 hover:bg-red-50"
-                              onClick={() =>
-                                updateVolunteerStatus(volunteer, "Rejected")
-                              }
-                            >
-                              <X className="w-4 h-4 mr-1" />
-                              Reject
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-500 hover:text-red-600 hover:bg-red-50" title="Delete" onClick={() => openDeleteDialog(volunteer)}>
+                              <Trash2 className="w-4 h-4" />
                             </Button>
-                          </>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-                        >
-                          <Share2 className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => openDeleteDialog(volunteer)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <TablePagination
+                currentPage={currentPage}
+                totalItems={filteredVolunteers.length}
+                itemsPerPage={ITEMS_PER_PAGE}
+                onPageChange={setCurrentPage}
+              />
+            </>
+          )}
         </div>
-        )}
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdminHeader } from "@/components/admin-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Plus,
@@ -13,14 +12,15 @@ import {
   Download,
   Eye,
   Search,
-  Calendar,
   FileText,
   TrendingUp,
   Clock,
   Users,
   AlertTriangle,
   X,
+  Inbox,
 } from "lucide-react";
+import { TablePagination } from "@/components/ui/table-pagination";
 import {
   Dialog,
   DialogContent,
@@ -66,7 +66,7 @@ export default function ReportsManagement() {
     "all" | "published" | "featured" | "recent"
   >("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 4;
+  const itemsPerPage = 10;
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingReport, setEditingReport] = useState<ReportItem | null>(null);
@@ -585,214 +585,101 @@ export default function ReportsManagement() {
           </CardContent>
         </Card>
 
-        {/* Reports Grid */}
-        {isLoading && reports.length === 0 ? (
-          <div className="col-span-full text-center py-12">
-            <div className="flex flex-col items-center gap-3">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              <p className="text-gray-600">Loading reports...</p>
+        {/* Reports Table */}
+        <div className="bg-white rounded-lg border overflow-hidden">
+          {isLoading && reports.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-3" />
+              <p className="text-gray-500">Loading reports...</p>
             </div>
-          </div>
-        ) : !isLoading && filteredReports.length === 0 ? (
-          <div className="col-span-full text-center py-12">
-            <div className="flex flex-col items-center gap-3">
-              <FileText className="w-12 h-12 text-gray-400" />
-              <p className="text-gray-600">No reports found.</p>
-              <p className="text-sm text-gray-500">
-                Try adjusting your filters or create a new report to get
-                started.
+          ) : filteredReports.length === 0 ? (
+            <div className="text-center py-16 px-4">
+              <Inbox className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 font-medium">No reports found</p>
+              <p className="text-sm text-gray-400 mt-1">
+                {search || filter !== "all" ? "Try adjusting your filters" : "Upload your first report to get started"}
               </p>
             </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {paginationData.paginatedReports.map((report) => (
-              <Card
-                key={report.id}
-                className="bg-white hover:shadow-lg transition-all duration-200 group"
-              >
-                <div className="relative">
-                  <div className="h-32 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-t-lg flex items-center justify-center">
-                    <FileText className="w-16 h-16 text-indigo-500" />
-                  </div>
-                  {report.priority === "High" && (
-                    <Badge className="absolute top-3 left-3 bg-yellow-100 text-yellow-800 border border-yellow-200">
-                      ⭐ High Priority
-                    </Badge>
-                  )}
-                  <Badge
-                    variant="secondary"
-                    className={`absolute top-3 right-3 ${
-                      report.status === "Published"
-                        ? "bg-green-100 text-green-700 border border-green-200"
-                        : "bg-orange-100 text-orange-700 border border-orange-200"
-                    }`}
-                  >
-                    {report.status}
-                  </Badge>
-
-                  <Badge
-                    variant="outline"
-                    className="absolute bottom-3 left-3 text-xs border-blue-200 text-blue-700 bg-blue-50"
-                  >
-                    {report.type || "Report"}
-                  </Badge>
-                </div>
-
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <Badge variant="outline" className="text-xs">
-                          {report.category}
-                        </Badge>
-                        {report.year && (
-                          <span className="text-xs text-green-600 font-medium">
-                            {report.year}
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Title</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Type / Category</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Author</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Year</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Format</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {paginationData.paginatedReports.map((report) => (
+                      <tr key={report.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3">
+                          <p className="text-sm font-medium text-gray-900 max-w-[220px] truncate">{report.title}</p>
+                          <p className="text-xs text-gray-400 truncate max-w-[220px]">{report.description}</p>
+                          {report.priority === "High" && (
+                            <span className="text-xs text-yellow-600">⭐ High Priority</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="text-sm text-gray-700">{report.type || "—"}</p>
+                          <p className="text-xs text-gray-400">{report.category || "—"}</p>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-600">{report.author || "ADTS Rwanda"}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600">{report.year || "—"}</td>
+                        <td className="px-4 py-3">
+                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-50 text-blue-700">
+                            {report.format || "PDF"}
                           </span>
-                        )}
-                      </div>
-                      <h3 className="font-bold text-lg text-gray-900 group-hover:text-primary transition-colors line-clamp-2">
-                        {report.title}
-                      </h3>
-                      <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                        {report.description}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Calendar className="w-4 h-4 text-gray-400" />
-                        <span>
-                          Published:{" "}
-                          {report.publishDate
-                            ? new Date(report.publishDate).toLocaleDateString()
-                            : "TBA"}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Users className="w-4 h-4 text-gray-400" />
-                        <span>By: {report.author || "ADTS Rwanda"}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm text-gray-600">
-                        <div className="flex items-center gap-1">
-                          <FileText className="w-4 h-4 text-gray-400" />
-                          <span>
-                            {report.pages} pages • {report.size || "--"}
+                          {report.pages ? <p className="text-xs text-gray-400 mt-0.5">{report.pages}p · {report.size || ""}</p> : null}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            report.status === "Published" ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"
+                          }`}>
+                            {report.status}
                           </span>
-                        </div>
-                        <Badge variant="secondary" className="text-xs">
-                          {report.format || "PDF"}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                      <div className="flex items-center gap-2">
-                        {report.documentUrl && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-primary border-primary/20 hover:bg-primary/5"
-                            onClick={() => setPreviewReport(report)}
-                          >
-                            <Eye className="w-4 h-4 mr-1" />
-                            Preview
-                          </Button>
-                        )}
-                        {report.documentUrl && (
-                          <Button
-                            asChild
-                            variant="outline"
-                            size="sm"
-                            className="text-blue-700 border-blue-200 hover:bg-blue-50"
-                          >
-                            <a
-                              href={normalizeDocumentUrl(report.documentUrl)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <Download className="w-4 h-4 mr-1" />
-                              Download
-                            </a>
-                          </Button>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-                          onClick={() => openEditDialog(report)}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => openDeleteDialog(report)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-
-        {/* Pagination Controls */}
-        {paginationData.totalPages > 1 && (
-          <div className="flex items-center justify-between mt-8 p-4 bg-white rounded-lg border">
-            <div className="text-sm text-gray-600">
-              Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-              {Math.min(currentPage * itemsPerPage, paginationData.totalItems)}{" "}
-              of {paginationData.totalItems} reports
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-              >
-                Previous
-              </Button>
-              <div className="flex items-center gap-1">
-                {Array.from({ length: paginationData.totalPages }).map(
-                  (_, index) => (
-                    <Button
-                      key={index + 1}
-                      variant={
-                        currentPage === index + 1 ? "default" : "outline"
-                      }
-                      size="sm"
-                      onClick={() => setCurrentPage(index + 1)}
-                      className="w-10"
-                    >
-                      {index + 1}
-                    </Button>
-                  ),
-                )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-end gap-1">
+                            {report.documentUrl && (
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-500 hover:text-primary hover:bg-primary/5" title="Preview" onClick={() => setPreviewReport(report)}>
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                            )}
+                            {report.documentUrl && (
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600 hover:bg-blue-50" asChild title="Download">
+                                <a href={normalizeDocumentUrl(report.documentUrl)} target="_blank" rel="noopener noreferrer">
+                                  <Download className="w-4 h-4" />
+                                </a>
+                              </Button>
+                            )}
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-500 hover:text-primary hover:bg-primary/5" title="Edit" onClick={() => openEditDialog(report)}>
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-500 hover:text-red-600 hover:bg-red-50" title="Delete" onClick={() => openDeleteDialog(report)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  setCurrentPage(
-                    Math.min(paginationData.totalPages, currentPage + 1),
-                  )
-                }
-                disabled={currentPage === paginationData.totalPages}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        )}
+              <TablePagination
+                currentPage={currentPage}
+                totalItems={filteredReports.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+              />
+            </>
+          )}
+        </div>
 
         <Dialog
           open={!!previewReport}

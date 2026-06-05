@@ -1,11 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Mail, Users, Download, Search, Calendar, CheckCircle, X, User } from "lucide-react"
+import { Mail, Users, Download, Search, Calendar, CheckCircle, X, User, Inbox } from "lucide-react"
 import { AdminHeader } from "@/components/admin-header"
 import { EmailComposer } from "@/components/email-composer"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import { TablePagination } from "@/components/ui/table-pagination"
 
 interface Subscriber {
   id: string
@@ -26,6 +27,8 @@ export default function NewsletterSubscribers() {
   // Email composer states
   const [isEmailComposerOpen, setIsEmailComposerOpen] = useState(false)
   const [selectedSubscribers, setSelectedSubscribers] = useState<string[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const ITEMS_PER_PAGE = 10
 
   useEffect(() => {
     loadSubscribers()
@@ -82,6 +85,11 @@ export default function NewsletterSubscribers() {
 
     return matchesSearch && matchesStatus
   })
+
+  const paginatedSubscribers = filteredSubscribers.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  )
 
   const exportToCSV = () => {
     const headers = ["Email", "Name", "Status", "Subscribed Date"]
@@ -273,83 +281,88 @@ export default function NewsletterSubscribers() {
               </div>
             )}
 
-            {/* Subscribers List */}
-            <div className="bg-white rounded-lg border">
+            {/* Subscribers Table */}
+            <div className="bg-white rounded-lg border overflow-hidden">
               {filteredSubscribers.length === 0 ? (
-                <div className="text-center py-12">
-                  <Mail className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">
+                <div className="text-center py-16 px-4">
+                  <Inbox className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 font-medium">
                     {searchTerm || filterStatus !== "all"
-                      ? "No subscribers found matching your criteria"
+                      ? "No subscribers match your search"
                       : "No subscribers yet"}
+                  </p>
+                  <p className="text-sm text-gray-400 mt-1">
+                    {searchTerm || filterStatus !== "all"
+                      ? "Try adjusting your filters"
+                      : "Subscribers will appear here once people sign up"}
                   </p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left p-4 font-medium">
-                          <Checkbox
-                            checked={selectedSubscribers.length === filteredSubscribers.length && filteredSubscribers.length > 0}
-                            onCheckedChange={handleSelectAll}
-                          />
-                        </th>
-                        <th className="text-left p-4 font-medium">Subscriber</th>
-                        <th className="text-left p-4 font-medium">Status</th>
-                        <th className="text-left p-4 font-medium">Subscribed</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredSubscribers.map((subscriber) => (
-                        <tr key={subscriber.id} className="border-b hover:bg-gray-50">
-                          <td className="p-4">
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b">
+                        <tr>
+                          <th className="px-4 py-3 text-left">
                             <Checkbox
-                              checked={selectedSubscribers.includes(subscriber.id)}
-                              onCheckedChange={(checked) => handleSelectSubscriber(subscriber.id, checked as boolean)}
+                              checked={selectedSubscribers.length === filteredSubscribers.length && filteredSubscribers.length > 0}
+                              onCheckedChange={handleSelectAll}
                             />
-                          </td>
-                          <td className="p-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                                <User className="w-4 h-4 text-primary" />
-                              </div>
-                              <div>
-                                <p className="font-medium">{subscriber.email}</p>
-                                {subscriber.name && (
-                                  <p className="text-sm text-gray-600">{subscriber.name}</p>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="p-4">
-                            <span
-                              className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                                subscriber.status === "active"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-gray-100 text-gray-800"
-                              }`}
-                            >
-                              {subscriber.status === "active" ? (
-                                <CheckCircle className="w-3 h-3" />
-                              ) : (
-                                <X className="w-3 h-3" />
-                              )}
-                              {subscriber.status}
-                            </span>
-                          </td>
-                          <td className="p-4 text-gray-600">
-                            {new Date(subscriber.subscribed_at).toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </td>
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Subscriber</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Subscribed Date</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {paginatedSubscribers.map((subscriber) => (
+                          <tr key={subscriber.id} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-4 py-3">
+                              <Checkbox
+                                checked={selectedSubscribers.includes(subscriber.id)}
+                                onCheckedChange={(checked) => handleSelectSubscriber(subscriber.id, checked as boolean)}
+                              />
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                  <User className="w-4 h-4 text-primary" />
+                                </div>
+                                <div>
+                                  <p className="font-medium text-gray-900 text-sm">{subscriber.email}</p>
+                                  {subscriber.name && (
+                                    <p className="text-xs text-gray-500">{subscriber.name}</p>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                                subscriber.status === "active"
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-gray-100 text-gray-600"
+                              }`}>
+                                {subscriber.status === "active" ? <CheckCircle className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                                {subscriber.status === "active" ? "Active" : "Inactive"}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-500">
+                              {new Date(subscriber.subscribed_at).toLocaleDateString("en-US", {
+                                year: "numeric", month: "short", day: "numeric",
+                              })}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <TablePagination
+                    currentPage={currentPage}
+                    totalItems={filteredSubscribers.length}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                    onPageChange={setCurrentPage}
+                  />
+                </>
               )}
             </div>
           </>
