@@ -27,6 +27,14 @@ export async function PUT(
     const body = await request.json()
     const { email, full_name, role, is_active, password } = body
 
+    // Only super_admin can change is_active or role
+    if ((is_active !== undefined || role !== undefined) && admin.role !== 'super_admin') {
+      return NextResponse.json(
+        { error: 'Only super admins can activate, deactivate, or change roles' },
+        { status: 403 }
+      )
+    }
+
     // Check if user exists
     const existing = await sql`
       SELECT id, email FROM admin_users WHERE id = ${id} LIMIT 1

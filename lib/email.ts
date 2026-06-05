@@ -171,6 +171,71 @@ export function adminReplyEmailTemplate(
   `
 }
 
+export function invitationEmailTemplate(
+  recipientName: string,
+  setPasswordUrl: string,
+  invitedBy: string,
+  sentAt: string
+): string {
+  return `
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f4f6fb;">
+      <!-- Header -->
+      <div style="background: #1f2937; padding: 36px 30px; text-align: center;">
+        <img
+          src="https://adtsrwanda.org/images/ADTS%20LOGO.jpg"
+          alt="ADTS Rwanda"
+          width="80" height="80"
+          style="display: block; margin: 0 auto 16px; border-radius: 12px; object-fit: contain;"
+        />
+        <p style="color: #FCB20B; margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;">You're Invited</p>
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">Admin Account Created</h1>
+      </div>
+
+      <!-- Body -->
+      <div style="background: white; padding: 40px 36px;">
+        <p style="color: #1f2937; font-size: 16px; margin: 0 0 16px; font-weight: 600;">Hi ${recipientName},</p>
+        <p style="color: #6b7280; font-size: 15px; line-height: 1.7; margin: 0 0 24px;">
+          <strong style="color: #1f2937;">${invitedBy}</strong> has created an admin account for you on the
+          <strong style="color: #1f2937;">ADTS Rwanda</strong> admin portal.
+          Click the button below to set your password and activate your account.
+        </p>
+
+        <!-- CTA -->
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${setPasswordUrl}"
+            style="display: inline-block; background: #1f2937; color: #FCB20B; text-decoration: none;
+                   padding: 14px 36px; border-radius: 8px; font-size: 15px; font-weight: 700; letter-spacing: 0.5px;">
+            Set My Password
+          </a>
+        </div>
+
+        <!-- Expiry notice -->
+        <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 14px 18px; margin: 0 0 24px;">
+          <p style="color: #92400e; margin: 0; font-size: 13px; line-height: 1.6;">
+            ⏰ <strong>This link expires in 72 hours.</strong> If you don't set your password within that time,
+            ask the administrator to resend the invitation.
+          </p>
+        </div>
+
+        <div style="background: #f9fafb; border-left: 4px solid #e5e7eb; border-radius: 0 8px 8px 0; padding: 14px 18px;">
+          <p style="color: #6b7280; margin: 0; font-size: 13px;">
+            If the button doesn't work, copy and paste this link into your browser:<br/>
+            <a href="${setPasswordUrl}" style="color: #2563eb; word-break: break-all;">${setPasswordUrl}</a>
+          </p>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div style="background: #1f2937; padding: 20px 36px; border-radius: 0 0 8px 8px; text-align: center;">
+        <p style="color: #6b7280; margin: 0; font-size: 12px;">Sent on ${sentAt} (Rwanda Time)</p>
+        <p style="color: #4b5563; margin: 6px 0 0; font-size: 11px;">
+          If you were not expecting this invitation, you can safely ignore this email.
+        </p>
+      </div>
+    </div>
+  `
+}
+
 export function formatRwandaTime(date: Date = new Date()): string {
   return date.toLocaleString('en-US', {
     timeZone: 'Africa/Kigali',

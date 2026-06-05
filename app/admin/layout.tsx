@@ -370,7 +370,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     pathname === "/admin/login" ||
     pathname === "/admin/login/" ||
     pathname === "/admin/forgot-password" ||
-    pathname === "/admin/forgot-password/"
+    pathname === "/admin/forgot-password/" ||
+    pathname === "/admin/set-password" ||
+    pathname === "/admin/set-password/"
   ) {
     return (
       <AuthProvider>

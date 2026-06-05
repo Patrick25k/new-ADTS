@@ -82,9 +82,19 @@ export async function ensureAdminTables() {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `;
-    // Safe migrations for new columns
+    // Safe column migrations
     await sql`ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS avatar_url TEXT`;
     await sql`ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ`;
+
+    // Ensure SUPER_ADMIN_EMAIL has the super_admin role
+    const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
+    if (superAdminEmail) {
+      await sql`
+        UPDATE admin_users SET role = 'super_admin'
+        WHERE email = ${superAdminEmail} AND role != 'super_admin'
+      `;
+    }
+
     adminTablesInitialized = true;
   } catch (error) {
     // Only log, don't throw - table may already exist
@@ -479,6 +489,32 @@ export async function ensureGalleryTables() {
     galleryTablesInitialized = true;
   } catch (error) {
     console.debug("Gallery tables initialization:", error);
+  }
+}
+
+/* ============================================================
+   USER INVITATIONS
+============================================================ */
+
+let userInvitationsInitialized = false;
+
+export async function ensureUserInvitationsTable() {
+  if (userInvitationsInitialized) return;
+  await ensureAdminTables();
+  try {
+    await sql`
+      CREATE TABLE IF NOT EXISTS user_invitations (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        admin_user_id UUID NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
+        token TEXT NOT NULL UNIQUE,
+        expires_at TIMESTAMPTZ NOT NULL,
+        used BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+    userInvitationsInitialized = true;
+  } catch (error) {
+    console.debug("User invitations table initialization:", error);
   }
 }
 
