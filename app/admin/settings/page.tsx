@@ -6,11 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
 import { AdminHeader } from "@/components/admin-header"
 import { useAuth } from "@/lib/auth-context"
 import {
-  Settings,
   Globe,
   Users,
   Mail,
@@ -24,6 +22,7 @@ import {
   CheckCircle,
   Loader2,
   ShieldCheck,
+  AlertCircle,
 } from "lucide-react"
 import { TablePagination } from "@/components/ui/table-pagination"
 
@@ -48,12 +47,15 @@ interface AdminUser {
   created_at: string
 }
 
+const USERS_PER_PAGE = 10
+
 export default function SettingsPage() {
   const { user } = useAuth()
   const [isLoadingUsers, setIsLoadingUsers] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
-  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
-  
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+  const [usersPage, setUsersPage] = useState(1)
+
   const [settings, setSettings] = useState<SiteSettings>({
     siteName: "ADTS Rwanda",
     siteEmail: "rwandaadts@gmail.com",
@@ -75,7 +77,6 @@ export default function SettingsPage() {
   const loadAdminUsers = async () => {
     try {
       const response = await fetch("/api/admin/users")
-      
       if (response.ok) {
         const data = await response.json()
         setAdminUsers(data.users || [])
@@ -87,18 +88,14 @@ export default function SettingsPage() {
     }
   }
 
-  const handleSaveSettings = async (section: 'general' | 'social') => {
+  const handleSaveSettings = async (section: "general" | "social") => {
     setIsSaving(true)
     setMessage(null)
-
     try {
-      // Simulate API call - replace with actual API later
       await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      setMessage({ type: 'success', text: `${section === 'general' ? 'General' : 'Social Media'} settings saved successfully!` })
-    } catch (error) {
-      console.error("Failed to save settings:", error)
-      setMessage({ type: 'error', text: 'Failed to save settings. Please try again.' })
+      setMessage({ type: "success", text: `${section === "general" ? "General" : "Social Media"} settings saved successfully!` })
+    } catch {
+      setMessage({ type: "error", text: "Failed to save settings. Please try again." })
     } finally {
       setIsSaving(false)
     }
@@ -108,6 +105,11 @@ export default function SettingsPage() {
     setSettings(prev => ({ ...prev, [field]: value }))
   }
 
+  const paginatedUsers = adminUsers.slice(
+    (usersPage - 1) * USERS_PER_PAGE,
+    usersPage * USERS_PER_PAGE
+  )
+
   return (
     <div className="min-h-screen bg-gray-50/50">
       <AdminHeader
@@ -115,220 +117,172 @@ export default function SettingsPage() {
         description="Manage site configuration and preferences"
       />
 
-      <div className="p-6 space-y-6">
-        {/* Success/Error Message */}
+      <div className="px-6 pb-6 space-y-6">
+        {/* Feedback message */}
         {message && (
-          <div className={`p-4 rounded-lg flex items-center gap-2 ${
-            message.type === 'success' 
-              ? 'bg-green-100 text-green-800 border border-green-200' 
-              : 'bg-red-100 text-red-800 border border-red-200'
+          <div className={`p-4 rounded-lg flex items-center gap-2 text-sm ${
+            message.type === "success"
+              ? "bg-green-50 text-green-800 border border-green-200"
+              : "bg-red-50 text-red-800 border border-red-200"
           }`}>
-            {message.type === 'success' ? (
-              <CheckCircle className="w-5 h-5" />
-            ) : (
-              <Settings className="w-5 h-5" />
-            )}
-            <span>{message.text}</span>
+            {message.type === "success"
+              ? <CheckCircle className="w-4 h-4 flex-shrink-0" />
+              : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
+            {message.text}
           </div>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* General Settings */}
           <Card className="bg-white">
-            <CardHeader className="pb-4">
+            <CardHeader className="px-6 py-4 border-b border-gray-100">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-50 rounded-lg">
                   <Globe className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-lg">General Settings</CardTitle>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Basic site information and contact details
-                  </p>
+                  <CardTitle className="text-base">General Settings</CardTitle>
+                  <p className="text-xs text-gray-500 mt-0.5">Basic site information and contact details</p>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="siteName" className="text-sm font-medium">
-                  Site Name
-                </Label>
+            <CardContent className="px-6 py-5 space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="siteName" className="text-sm font-medium">Site Name</Label>
                 <Input
                   id="siteName"
                   value={settings.siteName}
-                  onChange={(e) => handleInputChange('siteName', e.target.value)}
-                  className="h-10"
+                  onChange={(e) => handleInputChange("siteName", e.target.value)}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="siteEmail" className="text-sm font-medium">
-                  Contact Email
-                </Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="siteEmail" className="text-sm font-medium">Contact Email</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input
                     id="siteEmail"
                     type="email"
                     value={settings.siteEmail}
-                    onChange={(e) => handleInputChange('siteEmail', e.target.value)}
-                    className="pl-10 h-10"
+                    onChange={(e) => handleInputChange("siteEmail", e.target.value)}
+                    className="pl-10"
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label
-                  htmlFor="siteDescription"
-                  className="text-sm font-medium"
-                >
-                  Site Description
-                </Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="siteDescription" className="text-sm font-medium">Site Description</Label>
                 <Textarea
                   id="siteDescription"
                   value={settings.siteDescription}
-                  onChange={(e) => handleInputChange('siteDescription', e.target.value)}
+                  onChange={(e) => handleInputChange("siteDescription", e.target.value)}
                   rows={3}
                   className="resize-none"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone" className="text-sm font-medium">
-                  Phone Number
-                </Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="phone" className="text-sm font-medium">Phone Number</Label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input
                     id="phone"
                     value={settings.phone}
-                    onChange={(e) => handleInputChange('phone', e.target.value)}
-                    className="pl-10 h-10"
+                    onChange={(e) => handleInputChange("phone", e.target.value)}
+                    className="pl-10"
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="address" className="text-sm font-medium">
-                  Address
-                </Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="address" className="text-sm font-medium">Address</Label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input
                     id="address"
                     value={settings.address}
-                    onChange={(e) => handleInputChange('address', e.target.value)}
-                    className="pl-10 h-10"
+                    onChange={(e) => handleInputChange("address", e.target.value)}
+                    className="pl-10"
                   />
                 </div>
               </div>
-              <Button 
-                onClick={() => handleSaveSettings('general')}
-                disabled={isSaving}
-                className="w-full"
-              >
+              <Button onClick={() => handleSaveSettings("general")} disabled={isSaving} className="w-full">
                 {isSaving ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Saving...
-                  </>
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>
                 ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-2" />
-                    Save General Settings
-                  </>
+                  <><Save className="w-4 h-4 mr-2" />Save General Settings</>
                 )}
               </Button>
             </CardContent>
           </Card>
 
-          {/* Social Media Settings */}
+          {/* Social Media */}
           <Card className="bg-white">
-            <CardHeader className="pb-4">
+            <CardHeader className="px-6 py-4 border-b border-gray-100">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-purple-50 rounded-lg">
                   <Globe className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-lg">Social Media</CardTitle>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Connect your social media accounts
-                  </p>
+                  <CardTitle className="text-base">Social Media</CardTitle>
+                  <p className="text-xs text-gray-500 mt-0.5">Connect your social media accounts</p>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="facebook" className="text-sm font-medium">
-                  Facebook
-                </Label>
+            <CardContent className="px-6 py-5 space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="facebook" className="text-sm font-medium">Facebook</Label>
                 <div className="relative">
-                  <Facebook className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Facebook className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input
                     id="facebook"
                     placeholder="https://facebook.com/adtsrwanda"
                     value={settings.facebook}
-                    onChange={(e) => handleInputChange('facebook', e.target.value)}
-                    className="pl-10 h-10"
+                    onChange={(e) => handleInputChange("facebook", e.target.value)}
+                    className="pl-10"
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="twitter" className="text-sm font-medium">
-                  Twitter/X
-                </Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="twitter" className="text-sm font-medium">Twitter / X</Label>
                 <div className="relative">
-                  <Twitter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Twitter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input
                     id="twitter"
                     placeholder="https://twitter.com/adtsrwanda"
                     value={settings.twitter}
-                    onChange={(e) => handleInputChange('twitter', e.target.value)}
-                    className="pl-10 h-10"
+                    onChange={(e) => handleInputChange("twitter", e.target.value)}
+                    className="pl-10"
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="instagram" className="text-sm font-medium">
-                  Instagram
-                </Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="instagram" className="text-sm font-medium">Instagram</Label>
                 <div className="relative">
-                  <Instagram className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Instagram className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input
                     id="instagram"
                     placeholder="https://instagram.com/adtsrwanda"
                     value={settings.instagram}
-                    onChange={(e) => handleInputChange('instagram', e.target.value)}
-                    className="pl-10 h-10"
+                    onChange={(e) => handleInputChange("instagram", e.target.value)}
+                    className="pl-10"
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="linkedin" className="text-sm font-medium">
-                  LinkedIn
-                </Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="linkedin" className="text-sm font-medium">LinkedIn</Label>
                 <div className="relative">
-                  <Linkedin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Linkedin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input
                     id="linkedin"
                     placeholder="https://linkedin.com/company/adtsrwanda"
                     value={settings.linkedin}
-                    onChange={(e) => handleInputChange('linkedin', e.target.value)}
-                    className="pl-10 h-10"
+                    onChange={(e) => handleInputChange("linkedin", e.target.value)}
+                    className="pl-10"
                   />
                 </div>
               </div>
-              <Button 
-                onClick={() => handleSaveSettings('social')}
-                disabled={isSaving}
-                className="w-full"
-              >
+              <Button onClick={() => handleSaveSettings("social")} disabled={isSaving} className="w-full">
                 {isSaving ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Saving...
-                  </>
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>
                 ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-2" />
-                    Save Social Media
-                  </>
+                  <><Save className="w-4 h-4 mr-2" />Save Social Media</>
                 )}
               </Button>
             </CardContent>
@@ -336,17 +290,15 @@ export default function SettingsPage() {
         </div>
 
         {/* Admin Users */}
-        <Card className="bg-white">
-          <CardHeader className="pb-4">
+        <Card className="bg-white overflow-hidden">
+          <CardHeader className="px-6 py-4 border-b border-gray-100">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-green-50 rounded-lg">
                 <Users className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <CardTitle className="text-lg">Admin Users</CardTitle>
-                <p className="text-sm text-gray-600 mt-1">
-                  Current administrator accounts
-                </p>
+                <CardTitle className="text-base">Admin Users</CardTitle>
+                <p className="text-xs text-gray-500 mt-0.5">Current administrator accounts</p>
               </div>
             </div>
           </CardHeader>
@@ -354,7 +306,7 @@ export default function SettingsPage() {
             {isLoadingUsers ? (
               <div className="text-center py-12">
                 <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-3" />
-                <p className="text-gray-500">Loading admin users...</p>
+                <p className="text-gray-500 text-sm">Loading admin users...</p>
               </div>
             ) : adminUsers.length === 0 ? (
               <div className="text-center py-12 px-4">
@@ -375,7 +327,7 @@ export default function SettingsPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {adminUsers.map((adminUser) => {
+                      {paginatedUsers.map((adminUser) => {
                         const isCurrentUser = user?.email === adminUser.email
                         return (
                           <tr key={adminUser.id} className={`transition-colors ${isCurrentUser ? "bg-primary/5" : "hover:bg-gray-50"}`}>
@@ -384,7 +336,7 @@ export default function SettingsPage() {
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                                   isCurrentUser ? "bg-primary text-primary-foreground" : "bg-blue-50"
                                 }`}>
-                                  <Users className={`w-4 h-4 ${isCurrentUser ? "" : "text-blue-500"}`} />
+                                  <Users className={`w-4 h-4 ${isCurrentUser ? "text-white" : "text-blue-500"}`} />
                                 </div>
                                 <div>
                                   <p className="text-sm font-medium text-gray-900">
@@ -408,7 +360,9 @@ export default function SettingsPage() {
                               </span>
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-500">
-                              {new Date(adminUser.created_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+                              {new Date(adminUser.created_at).toLocaleDateString("en-US", {
+                                year: "numeric", month: "short", day: "numeric",
+                              })}
                             </td>
                           </tr>
                         )
@@ -417,10 +371,10 @@ export default function SettingsPage() {
                   </table>
                 </div>
                 <TablePagination
-                  currentPage={1}
+                  currentPage={usersPage}
                   totalItems={adminUsers.length}
-                  itemsPerPage={adminUsers.length}
-                  onPageChange={() => {}}
+                  itemsPerPage={USERS_PER_PAGE}
+                  onPageChange={setUsersPage}
                 />
               </>
             )}

@@ -82,6 +82,9 @@ export async function ensureAdminTables() {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `;
+    // Safe migrations for new columns
+    await sql`ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS avatar_url TEXT`;
+    await sql`ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ`;
     adminTablesInitialized = true;
   } catch (error) {
     // Only log, don't throw - table may already exist

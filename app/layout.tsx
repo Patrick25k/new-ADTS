@@ -4,8 +4,7 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
+import { PublicLayout } from "@/components/public-layout";
 import { Suspense } from "react";
 import { initializeOnStartup } from "@/lib/startup";
 
@@ -33,9 +32,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
         <Suspense fallback={<div>Loading...</div>}>
-          <Header />
-          <main>{children}</main>
-          <Footer />
+          <PublicLayout>{children}</PublicLayout>
           <Analytics />
         </Suspense>
       </body>
