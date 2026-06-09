@@ -1,0 +1,473 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import React from "react";
+import {
+  FileText,
+  Download,
+  Calendar,
+  ChevronDown,
+  Eye,
+  X,
+} from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import Image from "next/image";
+import { useToast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+interface PublicReport {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  year: string;
+  pages: number;
+  size: string;
+  documentUrl: string;
+}
+
+export default function Reports() {
+  const { toast } = useToast();
+  const [reports, setReports] = useState<PublicReport[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [previewReport, setPreviewReport] = useState<PublicReport | null>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+
+  const checkScroll = () => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } =
+        scrollContainerRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+    }
+  };
+
+  const scroll = (direction: "left" | "right") => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 400;
+      const newScrollLeft =
+        direction === "left"
+          ? scrollContainerRef.current.scrollLeft - scrollAmount
+          : scrollContainerRef.current.scrollLeft + scrollAmount;
+      scrollContainerRef.current.scrollLeft = newScrollLeft;
+      setTimeout(checkScroll, 0);
+    }
+  };
+
+  const closePreview = () => setPreviewReport(null);
+
+  const normalizeDocumentUrl = (url?: string | null) => {
+    if (!url) return "";
+
+    let path = url;
+    try {
+      path = new URL(url, window.location.origin).pathname;
+    } catch {
+      // ignore invalid absolute URLs
+    }
+
+    const extractFileName = (candidate: string) => {
+      const match = candidate.match(/([^/\\?#]+\.pdf)$/i);
+      return match?.[1] ?? null;
+    };
+
+    const patterns = [
+      /\/api\/documents\/([^/?#]+)(?:[?#].*)?$/i,
+      /\/(?:storage\/)?uploads\/documents\/([^/?#]+)(?:[?#].*)?$/i,
+      /\/documents\/([^/?#]+\.pdf)(?:[?#].*)?$/i,
+    ];
+
+    for (const pattern of patterns) {
+      const match = path.match(pattern);
+      if (match?.[1]) {
+        return `/api/documents/${match[1]}`;
+      }
+    }
+
+    const fileName = extractFileName(path);
+    if (fileName) {
+      return `/api/documents/${fileName}`;
+    }
+
+    return url;
+  };
+
+  const previewUrl = normalizeDocumentUrl(previewReport?.documentUrl);
+
+  useEffect(() => {
+    const loadReports = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch("/api/reports");
+
+        if (!response.ok) {
+          throw new Error("Failed to load reports");
+        }
+
+        const data = await response.json();
+        const items: PublicReport[] = (data.reports ?? []).map(
+          (report: any) => ({
+            id: report.id as string,
+            title: (report.title as string) ?? "",
+            description: (report.description as string) ?? "",
+            category: (report.category as string) ?? "",
+            year: (report.year as string) ?? "",
+            pages: Number(report.pages ?? 0),
+            size: (report.size as string) ?? "",
+            documentUrl: (report.documentUrl as string) ?? "",
+          }),
+        );
+
+        setReports(items);
+      } catch (error) {
+        console.error("Failed to load reports", error);
+        toast({
+          title: "Failed to load reports",
+          description: "Please try again later.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadReports();
+  }, [toast]);
+
+  useEffect(() => {
+    checkScroll();
+  }, [reports]);
+
+  return (
+    <main className="min-h-screen">
+      {/* Hero Section */}
+      <section className="relative h-[400px] flex items-center justify-center">
+        <Image
+          src="/images/image3.jpg"
+          alt="ADTS Rwanda reports and publications"
+          fill
+          className="object-cover brightness-90"
+        />
+        <div className="relative z-10 container mx-auto px-4 text-center text-white">
+          <h1 className="text-4xl md:text-5xl font-bold mb-6 text-[#FCB20B]">
+            Reports & Publications
+          </h1>
+          <p className="text-xl max-w-3xl mx-auto text-pretty">
+            Access our annual reports, program evaluations, and research
+            documentation
+          </p>
+        </div>
+      </section>
+
+      {/* Introduction */}
+      <section className="py-20">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-3xl font-bold mb-6">
+              Transparency & Evidence-Based Programming
+            </h2>
+            <p className="text-lg text-foreground/80 mb-8 text-pretty">
+              At ADTS Rwanda, we are committed to transparency, accountability,
+              and evidence-based programming. Our reports document our impact,
+              share lessons learned, and contribute to the broader knowledge
+              base on social transformation and community development.
+            </p>
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="p-6 rounded-lg border bg-card text-center">
+                <div className="text-3xl font-bold text-primary mb-2">27+</div>
+                <div className="text-sm text-foreground/70">
+                  Years Documented
+                </div>
+              </div>
+              <div className="p-6 rounded-lg border bg-card text-center">
+                <div className="text-3xl font-bold text-primary mb-2">100%</div>
+                <div className="text-sm text-foreground/70">
+                  Transparent Reporting
+                </div>
+              </div>
+              <div className="p-6 rounded-lg border bg-card text-center">
+                <div className="text-3xl font-bold text-primary mb-2">RGB</div>
+                <div className="text-sm text-foreground/70">Compliant</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Reports List */}
+      <section className="py-20 bg-accent/30">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-3xl font-bold mb-12">Available Reports</h2>
+            {isLoading && reports.length === 0 && (
+              <p className="text-sm text-foreground/60">Loading reports...</p>
+            )}
+            {!isLoading && reports.length === 0 && (
+              <p className="text-sm text-foreground/60">
+                No reports are available at the moment. Please check back later.
+              </p>
+            )}
+            {reports.length > 0 && (
+              <div className="relative mt-8">
+                {reports.length > 2 && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute left-0 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/90 shadow-md hover:bg-white"
+                      onClick={() => scroll("left")}
+                      disabled={!canScrollLeft}
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-1/2 z-10 translate-x-1/2 -translate-y-1/2 rounded-full bg-white/90 shadow-md hover:bg-white"
+                      onClick={() => scroll("right")}
+                      disabled={!canScrollRight}
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </Button>
+                  </>
+                )}
+
+                <div
+                  ref={scrollContainerRef}
+                  onScroll={checkScroll}
+                  className="flex gap-6 overflow-x-auto scroll-smooth pb-4 snap-x snap-mandatory"
+                >
+                  {reports.map((report) => (
+                    <article
+                      key={report.id}
+                      className="w-[85vw] min-w-[85vw] sm:w-[42rem] sm:min-w-[42rem] snap-start bg-background rounded-lg border p-6"
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <FileText className="h-6 w-6 text-primary" />
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3 mb-2 flex-wrap">
+                            <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-semibold">
+                              {report.category}
+                            </span>
+                            <span className="flex items-center gap-1 text-sm text-foreground/60">
+                              <Calendar className="h-4 w-4" />
+                              {report.year || ""}
+                            </span>
+                          </div>
+
+                          <h3 className="text-xl font-semibold mb-2">
+                            {report.title}
+                          </h3>
+                          <p className="text-foreground/70 mb-4">
+                            {report.description}
+                          </p>
+
+                          <div className="flex items-center gap-4 text-sm text-foreground/60 mb-4">
+                            <span>
+                              {report.pages
+                                ? `${report.pages} pages`
+                                : "Pages: N/A"}
+                            </span>
+                            <span>•</span>
+                            <span>{report.size || "Size: N/A"}</span>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-3">
+                            {report.documentUrl && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="inline-flex items-center gap-2"
+                                onClick={() => setPreviewReport(report)}
+                              >
+                                <Eye className="h-4 w-4" />
+                                Preview
+                              </Button>
+                            )}
+                            {report.documentUrl && (
+                              <a
+                                href={report.documentUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity"
+                              >
+                                <Download className="h-4 w-4" />
+                                Download Report
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <Dialog
+        open={!!previewReport}
+        onOpenChange={(open) => !open && closePreview()}
+      >
+        <DialogContent className="max-w-6xl w-[95vw] h-[92vh] p-0 overflow-hidden flex flex-col">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Report Preview</DialogTitle>
+          </DialogHeader>
+
+          <div className="absolute top-3 right-3 z-50 flex items-center gap-2">
+            {previewUrl && (
+              <a
+                href={previewUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Open Report"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground p-2 hover:opacity-90 transition-opacity shadow-md"
+              >
+                <Download className="h-5 w-5" />
+              </a>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={closePreview}
+              title="Close Preview"
+              className="rounded-lg shadow-md"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+
+          <div className="flex-1 min-h-0 w-full bg-white">
+            {previewUrl ? (
+              <iframe
+                src={`${previewUrl}#toolbar=0`}
+                title={previewReport?.title || "Report Preview"}
+                className="h-full w-full border-0"
+              />
+            ) : null}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Request Custom Reports */}
+      <section className="py-20">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-3xl font-bold mb-6 text-center">
+              Request Custom Reports or Data
+            </h2>
+            <p className="text-lg text-foreground/80 mb-8 text-center text-pretty">
+              Researchers, partners, and stakeholders can request additional
+              data, custom reports, or access to our research documentation. We
+              support evidence-based policy and program development.
+            </p>
+            <div className="text-center">
+              <a
+                href="mailto:rwandaadts@gmail.com?subject=Report Request"
+                className="inline-block px-8 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity"
+              >
+                Request Report or Data
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Research & Documentation */}
+      <section className="py-20 bg-accent/30">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-3xl font-bold mb-8">
+              Our Approach to Research & Documentation
+            </h2>
+            <div className="space-y-6">
+              <div className="p-6 rounded-lg border bg-background">
+                <h3 className="text-xl font-semibold mb-2">
+                  Rigorous Monitoring & Evaluation
+                </h3>
+                <p className="text-foreground/70">
+                  We use robust M&E systems to track program outputs, outcomes,
+                  and impact. Our data collection methods include surveys, focus
+                  groups, case studies, and participatory evaluation.
+                </p>
+              </div>
+              <div className="p-6 rounded-lg border bg-background">
+                <h3 className="text-xl font-semibold mb-2">
+                  Participatory Documentation
+                </h3>
+                <p className="text-foreground/70">
+                  We involve beneficiaries and communities in documenting their
+                  own stories and outcomes, ensuring that their voices and
+                  perspectives are central to our reporting.
+                </p>
+              </div>
+              <div className="p-6 rounded-lg border bg-background">
+                <h3 className="text-xl font-semibold mb-2">
+                  Learning & Adaptation
+                </h3>
+                <p className="text-foreground/70">
+                  Our research and documentation inform continuous program
+                  improvement. We use evidence to adapt strategies, refine
+                  methodologies, and scale what works.
+                </p>
+              </div>
+              <div className="p-6 rounded-lg border bg-background">
+                <h3 className="text-xl font-semibold mb-2">
+                  Knowledge Sharing
+                </h3>
+                <p className="text-foreground/70">
+                  We share our findings with partners, policymakers, and the
+                  broader development community to contribute to collective
+                  learning and evidence-based practice.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact */}
+      <section className="py-20 bg-primary text-primary-foreground">
+        <div className="container mx-auto px-4 text-center">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-3xl font-bold mb-6">
+              Questions About Our Reports?
+            </h2>
+            <p className="text-lg mb-8 text-pretty">
+              For inquiries about our reports, research methodology, or to
+              request additional documentation, please contact us.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <a
+                href="tel:+250788308255"
+                className="inline-block px-6 py-3 bg-background text-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity"
+              >
+                +250 788 308 255
+              </a>
+              <a
+                href="mailto:rwandaadts@gmail.com?subject=Report Inquiry"
+                className="inline-block px-6 py-3 bg-background text-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity"
+              >
+                rwandaadts@gmail.com
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
