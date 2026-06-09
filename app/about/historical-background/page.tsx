@@ -116,7 +116,7 @@ export default function HistoricalBackground() {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl font-bold mb-8">Legal Status & Compliance</h2>
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-3 gap-6">
               <div className="p-6 rounded-lg border bg-card">
                 <h3 className="text-xl font-semibold mb-3">Registration</h3>
                 <p className="text-foreground/70 mb-2">
@@ -134,6 +134,13 @@ export default function HistoricalBackground() {
                 <p className="text-foreground/70">
                   ADTS operates in full compliance with Rwanda Governance Board (RGB) requirements and law number
                   04/2012 of 17/02/2012 governing non-governmental organizations in Rwanda.
+                </p>
+              </div>
+              <div className="p-6 rounded-lg border bg-card">
+                <h3 className="text-xl font-semibold mb-3">Compliance</h3>
+                <p className="text-foreground/70">
+                  ADTS operates in full compliance with Rwanda Governance Board (RGB) requirements and Law No 058/2024
+                  of 20 June 2024 governing non-governmental organizations in Rwanda.
                 </p>
               </div>
             </div>
