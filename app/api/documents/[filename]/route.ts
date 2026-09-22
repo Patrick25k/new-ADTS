@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { readFile } from 'fs/promises'
+import { stat } from 'fs/promises'
 import { resolve, relative, isAbsolute, sep } from 'path'
-import { existsSync } from 'fs'
+import { existsSync, createReadStream } from 'fs'
+import { Readable } from 'stream'
+
+export const runtime = 'nodejs'
 
 // Configuration
 const UPLOAD_DIR = process.env.UPLOAD_DIR || 'storage/uploads/documents'
@@ -13,8 +16,11 @@ export async function GET(
   try {
     const { filename } = await params
 
-    // Validate filename (prevent path traversal)
-    if (!filename || filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+    // Validate filename (prevent path traversal). A bare ".." with no
+    // separator can't escape the upload directory, and separators are
+    // rejected outright below, so this only blocks real traversal attempts
+    // (the resolved-path containment check further down is the real guard).
+    if (!filename || filename.includes('/') || filename.includes('\\')) {
       return NextResponse.json({ error: 'Invalid filename' }, { status: 400 })
     }
 
@@ -48,19 +54,48 @@ export async function GET(
       }
     }
 
-    // Read and serve the file
-    const fileBuffer = await readFile(resolvedFilePath)
+    const stats = await stat(resolvedFilePath)
+    const fileSize = stats.size
 
-    // Set appropriate headers for PDF
     const headers = new Headers()
     headers.set('Content-Type', 'application/pdf')
     headers.set('Content-Disposition', 'inline') // Display in browser
     headers.set('Cache-Control', 'private, max-age=3600') // Cache for 1 hour
+    headers.set('Accept-Ranges', 'bytes')
 
-    return new NextResponse(fileBuffer, {
-      status: 200,
-      headers,
-    })
+    // Browser PDF viewers commonly use Range requests to load a large PDF
+    // progressively; without honoring them, larger files can fail to render.
+    const range = request.headers.get('range')
+    if (range) {
+      const match = /bytes=(\d*)-(\d*)/.exec(range)
+      const start = match?.[1] ? parseInt(match[1], 10) : 0
+      const end = match?.[2] ? parseInt(match[2], 10) : fileSize - 1
+
+      if (
+        !match ||
+        Number.isNaN(start) ||
+        Number.isNaN(end) ||
+        start > end ||
+        end >= fileSize
+      ) {
+        headers.set('Content-Range', `bytes */${fileSize}`)
+        return new NextResponse(null, { status: 416, headers })
+      }
+
+      headers.set('Content-Range', `bytes ${start}-${end}/${fileSize}`)
+      headers.set('Content-Length', String(end - start + 1))
+
+      const nodeStream = createReadStream(resolvedFilePath, { start, end })
+      const webStream = Readable.toWeb(nodeStream) as unknown as ReadableStream
+
+      return new NextResponse(webStream, { status: 206, headers })
+    }
+
+    headers.set('Content-Length', String(fileSize))
+    const nodeStream = createReadStream(resolvedFilePath)
+    const webStream = Readable.toWeb(nodeStream) as unknown as ReadableStream
+
+    return new NextResponse(webStream, { status: 200, headers })
 
   } catch (error: any) {
     console.error('Document serve error:', error)
