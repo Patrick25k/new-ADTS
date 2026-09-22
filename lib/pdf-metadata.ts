@@ -12,12 +12,11 @@
 
 const MAX_FALLBACK_SCAN_BYTES = 20 * 1024 * 1024 // cap the /Page counting fallback to the first 20 MB
 
-export async function extractPDFMetadata(file: Blob): Promise<{
+export async function extractPDFMetadata(buffer: Buffer): Promise<{
   pages: number;
 }> {
   try {
-    const buffer = await file.arrayBuffer();
-    const pages = extractPageCount(Buffer.from(buffer));
+    const pages = extractPageCount(buffer);
     return { pages };
   } catch (error) {
     console.warn('Failed to extract PDF metadata:', error);

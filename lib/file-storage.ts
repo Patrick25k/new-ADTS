@@ -1,26 +1,21 @@
-import { writeFile, unlink, mkdir } from 'fs/promises'
+import { unlink, mkdir } from 'fs/promises'
 import { resolve } from 'path'
 import { existsSync } from 'fs'
+import { randomBytes } from 'crypto'
 
 // Configuration
 const UPLOAD_DIR = process.env.UPLOAD_DIR || 'storage/uploads/documents'
-const MAX_FILE_SIZE = 200 * 1024 * 1024 // 200 MB
-const ALLOWED_MIME_TYPES = ['application/pdf']
-
-const ALLOWED_EXTENSIONS = ['.pdf']
+export const MAX_FILE_SIZE = 200 * 1024 * 1024 // 200 MB
+export const ALLOWED_MIME_TYPES = ['application/pdf']
+export const ALLOWED_EXTENSIONS = ['.pdf']
 
 /**
- * Validates file before upload
+ * Validates a filename and declared MIME type before any bytes are read.
+ * Size is enforced separately, during the streamed write, so a large file
+ * is rejected as soon as it crosses the limit instead of after it's fully
+ * received.
  */
-export async function validateFile(file: Blob, fileName: string) {
-  // Check file size
-  if (file.size > MAX_FILE_SIZE) {
-    throw new Error(
-      `File size exceeds limit. Maximum: ${MAX_FILE_SIZE / (1024 * 1024)} MB`
-    )
-  }
-
-  // Check file type by extension
+export function validateFileNameAndType(fileName: string, mimeType?: string) {
   const lastDotIndex = fileName.lastIndexOf('.')
   if (lastDotIndex < 0) {
     throw new Error(
@@ -34,20 +29,17 @@ export async function validateFile(file: Blob, fileName: string) {
     )
   }
 
-  // Require MIME type and validate it
-  if (!file.type) {
+  if (!mimeType) {
     throw new Error(
       `File type not allowed. MIME type is missing. Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}`
     )
   }
 
-  if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+  if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
     throw new Error(
-      `File type not allowed. MIME type ${file.type} is not permitted. Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}`
+      `File type not allowed. MIME type ${mimeType} is not permitted. Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}`
     )
   }
-
-  return true
 }
 
 /**
@@ -66,44 +58,31 @@ export async function ensureUploadDir() {
 }
 
 /**
- * Saves file to local storage and returns URL
+ * Resolves a safe, unique on-disk destination for an uploaded file without
+ * writing anything yet. Used to open a write stream directly to disk so the
+ * upload can be streamed instead of buffered entirely in memory.
  */
-export async function saveFile(file: Blob, fileName: string): Promise<string> {
-  try {
-    await ensureUploadDir()
+export async function resolveUploadDestination(fileName: string): Promise<{
+  filePath: string
+  url: string
+}> {
+  await ensureUploadDir()
 
-    // Validate file before saving
-    await validateFile(file, fileName)
+  const sanitizedName = fileName
+    .replace(/[^a-zA-Z0-9.-]/g, '_')
+    .replace(/_{2,}/g, '_')
 
-    // Sanitize filename
-    const sanitizedName = fileName
-      .replace(/[^a-zA-Z0-9.-]/g, '_')
-      .replace(/_{2,}/g, '_')
+  const timestamp = Date.now()
+  const uniqueSuffix = randomBytes(4).toString('hex')
+  const uniqueFileName = `${timestamp}-${uniqueSuffix}-${sanitizedName}`
+  const filePath = resolve(process.cwd(), UPLOAD_DIR, uniqueFileName)
 
-    // Generate unique filename with timestamp
-    const timestamp = Date.now()
-    const uniqueFileName = `${timestamp}-${sanitizedName}`
-    const filePath = resolve(process.cwd(), UPLOAD_DIR, uniqueFileName)
-
-    // Path traversal check: ensure resolved path is within upload directory
-    const uploadDirPath = resolve(process.cwd(), UPLOAD_DIR)
-    if (!filePath.startsWith(uploadDirPath)) {
-      throw new Error('Invalid file path: path traversal detected')
-    }
-
-    // Convert blob to buffer and save
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-    await writeFile(filePath, buffer)
-
-    // Return API URL for secure access
-    const url = `/api/documents/${uniqueFileName}`
-    return url
-  } catch (error) {
-    console.error('File save error:', error)
-    const message = error instanceof Error ? error.message : 'Failed to save file'
-    throw new Error(message)
+  const uploadDirPath = resolve(process.cwd(), UPLOAD_DIR)
+  if (!filePath.startsWith(uploadDirPath)) {
+    throw new Error('Invalid file path: path traversal detected')
   }
+
+  return { filePath, url: `/api/documents/${uniqueFileName}` }
 }
 
 /**
