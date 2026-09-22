@@ -31,6 +31,13 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type ReportStatus = "Published" | "Draft";
 type ReportPriority = "High" | "Medium" | "Low";
@@ -58,9 +65,6 @@ const REPORT_LANGUAGE_OPTIONS = ["English", "Kinyarwanda", "French"];
 const CURRENT_YEAR = new Date().getFullYear();
 const REPORT_YEAR_OPTIONS: string[] = [];
 for (let y = CURRENT_YEAR + 1; y >= 1995; y--) REPORT_YEAR_OPTIONS.push(String(y));
-
-const SELECT_CLASSNAME =
-  "w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring";
 
 interface ReportItem {
   id: string;
@@ -875,10 +879,9 @@ export default function ReportsManagement() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Type</label>
-                  <select
+                  <Select
                     value={showCustomType ? "Other" : form.type}
-                    onChange={(event) => {
-                      const value = event.target.value;
+                    onValueChange={(value) => {
                       if (value === "Other") {
                         setShowCustomType(true);
                         handleFormChange("type", "");
@@ -887,16 +890,19 @@ export default function ReportsManagement() {
                         handleFormChange("type", value);
                       }
                     }}
-                    className={SELECT_CLASSNAME}
                   >
-                    <option value="">Select type...</option>
-                    {REPORT_TYPE_OPTIONS.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                    <option value="Other">Other</option>
-                  </select>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select type..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {REPORT_TYPE_OPTIONS.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
                   {showCustomType && (
                     <Input
                       className="mt-2"
@@ -910,10 +916,9 @@ export default function ReportsManagement() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Category</label>
-                  <select
+                  <Select
                     value={showCustomCategory ? "Other" : form.category}
-                    onChange={(event) => {
-                      const value = event.target.value;
+                    onValueChange={(value) => {
                       if (value === "Other") {
                         setShowCustomCategory(true);
                         handleFormChange("category", "");
@@ -922,16 +927,19 @@ export default function ReportsManagement() {
                         handleFormChange("category", value);
                       }
                     }}
-                    className={SELECT_CLASSNAME}
                   >
-                    <option value="">Select category...</option>
-                    {REPORT_CATEGORY_OPTIONS.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                    <option value="Other">Other</option>
-                  </select>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select category..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {REPORT_CATEGORY_OPTIONS.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
                   {showCustomCategory && (
                     <Input
                       className="mt-2"
@@ -957,10 +965,9 @@ export default function ReportsManagement() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Language</label>
-                  <select
+                  <Select
                     value={showCustomLanguage ? "Other" : form.language}
-                    onChange={(event) => {
-                      const value = event.target.value;
+                    onValueChange={(value) => {
                       if (value === "Other") {
                         setShowCustomLanguage(true);
                         handleFormChange("language", "");
@@ -969,16 +976,19 @@ export default function ReportsManagement() {
                         handleFormChange("language", value);
                       }
                     }}
-                    className={SELECT_CLASSNAME}
                   >
-                    <option value="">Select language...</option>
-                    {REPORT_LANGUAGE_OPTIONS.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                    <option value="Other">Other</option>
-                  </select>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select language..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {REPORT_LANGUAGE_OPTIONS.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
                   {showCustomLanguage && (
                     <Input
                       className="mt-2"
@@ -1015,20 +1025,21 @@ export default function ReportsManagement() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Year</label>
-                  <select
+                  <Select
                     value={form.year}
-                    onChange={(event) =>
-                      handleFormChange("year", event.target.value)
-                    }
-                    className={SELECT_CLASSNAME}
+                    onValueChange={(value) => handleFormChange("year", value)}
                   >
-                    <option value="">Select year...</option>
-                    {REPORT_YEAR_OPTIONS.map((year) => (
-                      <option key={year} value={year}>
-                        {year}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select year..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {REPORT_YEAR_OPTIONS.map((year) => (
+                        <SelectItem key={year} value={year}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">
