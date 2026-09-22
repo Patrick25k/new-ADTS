@@ -91,6 +91,7 @@ export default function ReportsManagement() {
   });
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [isUploadingDocument, setIsUploadingDocument] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const loadReports = useCallback(async () => {
     try {
@@ -264,6 +265,51 @@ export default function ReportsManagement() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const UPLOAD_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
+
+  const uploadDocumentWithProgress = (
+    formData: FormData,
+  ): Promise<{ status: number; data: any }> => {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", "/api/admin/upload-document");
+      xhr.withCredentials = true;
+      xhr.timeout = UPLOAD_TIMEOUT_MS;
+
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          setUploadProgress(Math.round((event.loaded / event.total) * 100));
+        }
+      };
+
+      xhr.onload = () => {
+        let data: any = null;
+        try {
+          data = JSON.parse(xhr.responseText);
+        } catch {
+          // non-JSON response, leave data as null
+        }
+        resolve({ status: xhr.status, data });
+      };
+
+      xhr.onerror = () =>
+        reject(
+          new Error(
+            "Network error while uploading. Check your connection and try again.",
+          ),
+        );
+
+      xhr.ontimeout = () =>
+        reject(
+          new Error(
+            "Upload timed out after 10 minutes with no response from the server. Try a smaller file or check your connection.",
+          ),
+        );
+
+      xhr.send(formData);
+    });
+  };
+
   const handleDocumentFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
@@ -275,25 +321,20 @@ export default function ReportsManagement() {
 
     try {
       setIsUploadingDocument(true);
+      setUploadProgress(0);
       setDocumentFile(file);
 
       const formData = new FormData();
       formData.append("file", file);
       formData.append("fileName", file.name);
 
-      const response = await fetch("/api/admin/upload-document", {
-        method: "POST",
-        credentials: "include",
-        body: formData,
-      });
+      const { status, data } = await uploadDocumentWithProgress(formData);
 
-      if (!response.ok) {
-        const data = await response.json().catch(() => null);
+      if (status < 200 || status >= 300) {
         throw new Error(data?.error || "Failed to upload document");
       }
 
-      const data = await response.json();
-      const url = data.url as string | undefined;
+      const url = data?.url as string | undefined;
 
       if (!url) {
         throw new Error("Upload succeeded but no URL was returned");
@@ -323,6 +364,7 @@ export default function ReportsManagement() {
       setDocumentFile(null);
     } finally {
       setIsUploadingDocument(false);
+      setUploadProgress(0);
     }
   };
 
@@ -776,9 +818,17 @@ export default function ReportsManagement() {
                     </p>
                   )}
                   {isUploadingDocument && (
-                    <p className="text-xs text-blue-600">
-                      Uploading document...
-                    </p>
+                    <div className="space-y-1">
+                      <p className="text-xs text-blue-600">
+                        Uploading document... {uploadProgress}%
+                      </p>
+                      <div className="h-1.5 w-full rounded-full bg-gray-200 overflow-hidden">
+                        <div
+                          className="h-full bg-blue-600 transition-all duration-150"
+                          style={{ width: `${uploadProgress}%` }}
+                        />
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
