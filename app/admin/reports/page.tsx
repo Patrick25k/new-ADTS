@@ -35,6 +35,33 @@ import { useToast } from "@/components/ui/use-toast";
 type ReportStatus = "Published" | "Draft";
 type ReportPriority = "High" | "Medium" | "Low";
 
+const REPORT_TYPE_OPTIONS = [
+  "Annual Report",
+  "Financial Report",
+  "Impact Assessment",
+  "Program Report",
+  "Research Report",
+  "Evaluation Report",
+];
+
+const REPORT_CATEGORY_OPTIONS = [
+  "Financial",
+  "Impact Assessment",
+  "Program",
+  "Research",
+  "Governance",
+  "Annual Overview",
+];
+
+const REPORT_LANGUAGE_OPTIONS = ["English", "Kinyarwanda", "French"];
+
+const CURRENT_YEAR = new Date().getFullYear();
+const REPORT_YEAR_OPTIONS: string[] = [];
+for (let y = CURRENT_YEAR + 1; y >= 1995; y--) REPORT_YEAR_OPTIONS.push(String(y));
+
+const SELECT_CLASSNAME =
+  "w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring";
+
 interface ReportItem {
   id: string;
   title: string;
@@ -92,6 +119,9 @@ export default function ReportsManagement() {
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [isUploadingDocument, setIsUploadingDocument] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [showCustomType, setShowCustomType] = useState(false);
+  const [showCustomCategory, setShowCustomCategory] = useState(false);
+  const [showCustomLanguage, setShowCustomLanguage] = useState(false);
 
   const loadReports = useCallback(async () => {
     try {
@@ -233,6 +263,9 @@ export default function ReportsManagement() {
       publishDate: null,
     });
     setDocumentFile(null);
+    setShowCustomType(false);
+    setShowCustomCategory(false);
+    setShowCustomLanguage(false);
     setIsDialogOpen(true);
   };
 
@@ -255,6 +288,13 @@ export default function ReportsManagement() {
       publishDate: report.publishDate,
     });
     setDocumentFile(null);
+    setShowCustomType(!!report.type && !REPORT_TYPE_OPTIONS.includes(report.type));
+    setShowCustomCategory(
+      !!report.category && !REPORT_CATEGORY_OPTIONS.includes(report.category),
+    );
+    setShowCustomLanguage(
+      !!report.language && !REPORT_LANGUAGE_OPTIONS.includes(report.language),
+    );
     setIsDialogOpen(true);
   };
 
@@ -835,23 +875,73 @@ export default function ReportsManagement() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Type</label>
-                  <Input
-                    value={form.type}
-                    onChange={(event) =>
-                      handleFormChange("type", event.target.value)
-                    }
-                    placeholder="Annual Report, Program Report, ..."
-                  />
+                  <select
+                    value={showCustomType ? "Other" : form.type}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      if (value === "Other") {
+                        setShowCustomType(true);
+                        handleFormChange("type", "");
+                      } else {
+                        setShowCustomType(false);
+                        handleFormChange("type", value);
+                      }
+                    }}
+                    className={SELECT_CLASSNAME}
+                  >
+                    <option value="">Select type...</option>
+                    {REPORT_TYPE_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                    <option value="Other">Other</option>
+                  </select>
+                  {showCustomType && (
+                    <Input
+                      className="mt-2"
+                      value={form.type}
+                      onChange={(event) =>
+                        handleFormChange("type", event.target.value)
+                      }
+                      placeholder="Enter custom type"
+                    />
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Category</label>
-                  <Input
-                    value={form.category}
-                    onChange={(event) =>
-                      handleFormChange("category", event.target.value)
-                    }
-                    placeholder="Financial, Impact Assessment, ..."
-                  />
+                  <select
+                    value={showCustomCategory ? "Other" : form.category}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      if (value === "Other") {
+                        setShowCustomCategory(true);
+                        handleFormChange("category", "");
+                      } else {
+                        setShowCustomCategory(false);
+                        handleFormChange("category", value);
+                      }
+                    }}
+                    className={SELECT_CLASSNAME}
+                  >
+                    <option value="">Select category...</option>
+                    {REPORT_CATEGORY_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                    <option value="Other">Other</option>
+                  </select>
+                  {showCustomCategory && (
+                    <Input
+                      className="mt-2"
+                      value={form.category}
+                      onChange={(event) =>
+                        handleFormChange("category", event.target.value)
+                      }
+                      placeholder="Enter custom category"
+                    />
+                  )}
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -867,13 +957,38 @@ export default function ReportsManagement() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Language</label>
-                  <Input
-                    value={form.language}
-                    onChange={(event) =>
-                      handleFormChange("language", event.target.value)
-                    }
-                    placeholder="English, Kinyarwanda, ..."
-                  />
+                  <select
+                    value={showCustomLanguage ? "Other" : form.language}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      if (value === "Other") {
+                        setShowCustomLanguage(true);
+                        handleFormChange("language", "");
+                      } else {
+                        setShowCustomLanguage(false);
+                        handleFormChange("language", value);
+                      }
+                    }}
+                    className={SELECT_CLASSNAME}
+                  >
+                    <option value="">Select language...</option>
+                    {REPORT_LANGUAGE_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                    <option value="Other">Other</option>
+                  </select>
+                  {showCustomLanguage && (
+                    <Input
+                      className="mt-2"
+                      value={form.language}
+                      onChange={(event) =>
+                        handleFormChange("language", event.target.value)
+                      }
+                      placeholder="Enter custom language"
+                    />
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">
@@ -900,13 +1015,20 @@ export default function ReportsManagement() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Year</label>
-                  <Input
+                  <select
                     value={form.year}
                     onChange={(event) =>
                       handleFormChange("year", event.target.value)
                     }
-                    placeholder="2024"
-                  />
+                    className={SELECT_CLASSNAME}
+                  >
+                    <option value="">Select year...</option>
+                    {REPORT_YEAR_OPTIONS.map((year) => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">
