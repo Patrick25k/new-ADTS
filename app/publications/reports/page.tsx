@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import React from "react";
 import {
   FileText,
   Download,
@@ -32,35 +31,20 @@ interface PublicReport {
   documentUrl: string;
 }
 
+const REPORTS_PER_PAGE = 6;
+
 export default function Reports() {
   const { toast } = useToast();
   const [reports, setReports] = useState<PublicReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [previewReport, setPreviewReport] = useState<PublicReport | null>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
-  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const checkScroll = () => {
-    if (scrollContainerRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } =
-        scrollContainerRef.current;
-      setCanScrollLeft(scrollLeft > 0);
-      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
-    }
-  };
-
-  const scroll = (direction: "left" | "right") => {
-    if (scrollContainerRef.current) {
-      const scrollAmount = 400;
-      const newScrollLeft =
-        direction === "left"
-          ? scrollContainerRef.current.scrollLeft - scrollAmount
-          : scrollContainerRef.current.scrollLeft + scrollAmount;
-      scrollContainerRef.current.scrollLeft = newScrollLeft;
-      setTimeout(checkScroll, 0);
-    }
-  };
+  const totalPages = Math.max(1, Math.ceil(reports.length / REPORTS_PER_PAGE));
+  const paginatedReports = reports.slice(
+    (currentPage - 1) * REPORTS_PER_PAGE,
+    currentPage * REPORTS_PER_PAGE,
+  );
 
   const closePreview = () => setPreviewReport(null);
 
@@ -143,7 +127,7 @@ export default function Reports() {
   }, [toast]);
 
   useEffect(() => {
-    checkScroll();
+    setCurrentPage(1);
   }, [reports]);
 
   return (
@@ -205,7 +189,7 @@ export default function Reports() {
       {/* Reports List */}
       <section className="py-20 bg-accent/30">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-5xl mx-auto">
             <h2 className="text-3xl font-bold mb-12">Available Reports</h2>
             {isLoading && reports.length === 0 && (
               <p className="text-sm text-foreground/60">Loading reports...</p>
@@ -216,39 +200,12 @@ export default function Reports() {
               </p>
             )}
             {reports.length > 0 && (
-              <div className="relative mt-8">
-                {reports.length > 2 && (
-                  <>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute left-0 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/90 shadow-md hover:bg-white"
-                      onClick={() => scroll("left")}
-                      disabled={!canScrollLeft}
-                    >
-                      <ChevronLeft className="h-5 w-5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-0 top-1/2 z-10 translate-x-1/2 -translate-y-1/2 rounded-full bg-white/90 shadow-md hover:bg-white"
-                      onClick={() => scroll("right")}
-                      disabled={!canScrollRight}
-                    >
-                      <ChevronRight className="h-5 w-5" />
-                    </Button>
-                  </>
-                )}
-
-                <div
-                  ref={scrollContainerRef}
-                  onScroll={checkScroll}
-                  className="flex gap-6 overflow-x-auto scroll-smooth pb-4 snap-x snap-mandatory"
-                >
-                  {reports.map((report) => (
+              <>
+                <div className="grid gap-6 md:grid-cols-2">
+                  {paginatedReports.map((report) => (
                     <article
                       key={report.id}
-                      className="w-[85vw] min-w-[85vw] sm:w-[42rem] sm:min-w-[42rem] snap-start bg-background rounded-lg border p-6"
+                      className="bg-background rounded-lg border p-6"
                     >
                       <div className="flex items-start gap-4">
                         <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -312,7 +269,47 @@ export default function Reports() {
                     </article>
                   ))}
                 </div>
-              </div>
+
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-10">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      aria-label="Previous page"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                      (page) => (
+                        <Button
+                          key={page}
+                          variant={page === currentPage ? "default" : "outline"}
+                          size="icon"
+                          onClick={() => setCurrentPage(page)}
+                          aria-current={page === currentPage ? "page" : undefined}
+                        >
+                          {page}
+                        </Button>
+                      ),
+                    )}
+
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() =>
+                        setCurrentPage((p) => Math.min(totalPages, p + 1))
+                      }
+                      disabled={currentPage === totalPages}
+                      aria-label="Next page"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

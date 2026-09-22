@@ -4,7 +4,7 @@ import { existsSync } from 'fs'
 
 // Configuration
 const UPLOAD_DIR = process.env.UPLOAD_DIR || 'storage/uploads/documents'
-const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50 MB
+const MAX_FILE_SIZE = 200 * 1024 * 1024 // 200 MB
 const ALLOWED_MIME_TYPES = ['application/pdf']
 
 const ALLOWED_EXTENSIONS = ['.pdf']
@@ -101,7 +101,8 @@ export async function saveFile(file: Blob, fileName: string): Promise<string> {
     return url
   } catch (error) {
     console.error('File save error:', error)
-    throw new Error('Failed to save file')
+    const message = error instanceof Error ? error.message : 'Failed to save file'
+    throw new Error(message)
   }
 }
 

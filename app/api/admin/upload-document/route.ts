@@ -61,7 +61,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Save file to local storage
-    const url = await saveFile(file, fileName)
+    let url: string
+    try {
+      url = await saveFile(file, fileName)
+    } catch (saveError: any) {
+      return NextResponse.json(
+        { error: saveError?.message || 'Failed to save file' },
+        { status: 500 }
+      )
+    }
     const sizeText = getFileSizeText(file.size)
 
     return NextResponse.json({
