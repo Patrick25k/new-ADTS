@@ -1,14 +1,23 @@
 /**
  * Simple PDF metadata extraction
- * Extracts page count by parsing PDF structure
+ * Extracts page count by scanning the raw PDF bytes for the page tree.
+ *
+ * This intentionally avoids decoding the whole file to a JS string and
+ * avoids regex with unbounded lazy quantifiers (`[\s\S]*?`) over that
+ * string: on large PDFs (tens/hundreds of MB) that combination can trigger
+ * catastrophic backtracking and block Node's single event loop for a very
+ * long time, which looks like a hung upload with no error to the user.
+ * Buffer.indexOf is a native, linear-time search and is safe at any size.
  */
+
+const MAX_FALLBACK_SCAN_BYTES = 20 * 1024 * 1024 // cap the /Page counting fallback to the first 20 MB
 
 export async function extractPDFMetadata(file: Blob): Promise<{
   pages: number;
 }> {
   try {
     const buffer = await file.arrayBuffer();
-    const pages = extractPageCount(buffer);
+    const pages = extractPageCount(Buffer.from(buffer));
     return { pages };
   } catch (error) {
     console.warn('Failed to extract PDF metadata:', error);
@@ -16,23 +25,57 @@ export async function extractPDFMetadata(file: Blob): Promise<{
   }
 }
 
-function extractPageCount(buffer: ArrayBuffer): number {
-  const uint8Array = new Uint8Array(buffer);
-  const text = new TextDecoder().decode(uint8Array);
-
-  // Try to find /Type /Pages and /Count
-  const pagesMatch = text.match(/\/Type\s*\/Pages[\s\S]*?\/Count\s*(\d+)/);
-  if (pagesMatch && pagesMatch[1]) {
-    return parseInt(pagesMatch[1], 10);
+function extractPageCount(buf: Buffer): number {
+  const countFromPagesDict = findCountNearPagesDict(buf);
+  if (countFromPagesDict !== null) {
+    return countFromPagesDict;
   }
 
-  // Fallback: count /Page objects (less reliable but works for simple PDFs)
-  const pageMatches = text.match(/\/Type\s*\/Page(?!s)[\s\S]*?(?=\/Type|(?:\r\n|\r|\n)endobj|$)/g);
-  if (pageMatches) {
-    return pageMatches.length;
+  const pageObjectCount = countPageObjects(buf);
+  if (pageObjectCount > 0) {
+    return pageObjectCount;
   }
 
   // Fallback: estimate based on file size (rough average of 5KB per page)
-  const estimatedPages = Math.max(1, Math.round(buffer.byteLength / 5000));
-  return estimatedPages;
+  return Math.max(1, Math.round(buf.length / 5000));
+}
+
+function findCountNearPagesDict(buf: Buffer): number | null {
+  const markers = ['/Type/Pages', '/Type /Pages'];
+  for (const marker of markers) {
+    const idx = buf.indexOf(marker, 0, 'latin1');
+    if (idx === -1) continue;
+
+    const windowEnd = Math.min(buf.length, idx + 500);
+    const window = buf.toString('latin1', idx, windowEnd);
+    const match = window.match(/\/Count\s+(\d+)/);
+    if (match) {
+      return parseInt(match[1], 10);
+    }
+  }
+  return null;
+}
+
+function countPageObjects(buf: Buffer): number {
+  const needle = '/Type/Page';
+  const needleSpaced = '/Type /Page';
+  const scanLimit = Math.min(buf.length, MAX_FALLBACK_SCAN_BYTES);
+
+  let count = 0;
+  for (const pattern of [needle, needleSpaced]) {
+    let searchIdx = 0;
+    while (searchIdx < scanLimit) {
+      const found = buf.indexOf(pattern, searchIdx, 'latin1');
+      if (found === -1 || found >= scanLimit) break;
+
+      const nextChar = buf[found + pattern.length];
+      if (nextChar !== 0x73 /* 's' -> would be "/Type/Pages" */) {
+        count++;
+      }
+      searchIdx = found + pattern.length;
+    }
+    if (count > 0) break;
+  }
+
+  return count;
 }
